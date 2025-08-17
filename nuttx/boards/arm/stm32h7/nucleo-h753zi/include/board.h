@@ -312,7 +312,7 @@
 #define BOARD_NLEDS       3
 
 #define BOARD_LED_GREEN   BOARD_LED1
-#define BOARD_LED_BLUE    BOARD_LED2
+#define BOARD_LED_ORANGE  BOARD_LED2
 #define BOARD_LED_RED     BOARD_LED3
 
 /* LED bits for use with board_userled_all() */
@@ -327,7 +327,7 @@
  *
  *
  *   SYMBOL                     Meaning                      LED state
- *                                                        Red   Green Blue
+ *                                                        Red   Green Orange
  *   ----------------------  --------------------------  ------ ------ ---
  */
 

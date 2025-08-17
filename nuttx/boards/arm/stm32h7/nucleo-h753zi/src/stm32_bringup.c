@@ -252,12 +252,24 @@ static void stm32_i2ctool(void)
 
 int stm32_bringup(void)
 {
-  int ret = OK;
+  
+  int ret;
+
 #ifdef HAVE_RTC_DRIVER
   struct rtc_lowerhalf_s *lower;
 #endif
 
-  UNUSED(ret);
+/* board LEDs configuration */
+
+#ifdef CONFIG_USERLED
+  ret = userled_lower_initialize("/dev/userleds");
+  
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: userled_lower_initialize() failed: %d\n", ret);
+    }
+#endif
+
 
 #if defined(CONFIG_I2C) && defined(CONFIG_SYSTEM_I2CTOOL)
   stm32_i2ctool();

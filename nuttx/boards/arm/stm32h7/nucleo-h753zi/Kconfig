@@ -27,4 +27,8 @@ config STM32_ROMFS_IMAGEFILE
 	depends on STM32_ROMFS
 	default "../../../rom.img"
 
+#
+# LEDs usage
+#
+
 endif # ARCH_BOARD_NUCLEO_H753ZI
