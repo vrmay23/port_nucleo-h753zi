@@ -1,0 +1,55 @@
+1 - I have ran:
+/start_new_port.sh nucleo-h743zi STM32H7_NUCLEO_H743ZI 743ZI : nucleo-h753zi STM32H7_NUCLEO_H753ZI 753ZI
+
+
+
+
+2 - I will remove all previous configuration and keep only /configs/nsh/
+
+
+
+
+3 - I will edit Kconfig file located at source "nuttx/boards/Kconfig" including the changes as listed below:
+config ARCH_BOARD
+	default "nucleo-h753zi"             if ARCH_BOARD_NUCLEO_H753ZI
+
+if ARCH_BOARD_NUCLEO_H753ZI
+source "boards/arm/stm32h7/nucleo-h753zi/Kconfig"
+endif
+
+config ARCH_BOARD_NUCLEO_H753ZI
+	bool "STM32H753 Nucleo H753ZI"
+	depends on ARCH_CHIP_STM32H753ZI
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+        select ARCH_HAVE_IRQBUTTONS
+	---help---
+		STMicro Nucleo H753ZI board based on the STMicro STM32H753ZI MCU.
+
+
+
+4 - Run  ./tools/configure.sh nucleo-h753zi:nsh
+
+
+
+5 - make menuconfig
+Check the 'Board Selectio/Selected target board' if we have: STM32H753 Nucleo H753ZI.
+
+
+
+6 - make
+
+
+
+7 - flash
+
+
+
+8 - uname -a
+It will appear 0.0.0 because I have removed .git folder from nuttx and nuttx-apps.
+
+
+
+
+
+
