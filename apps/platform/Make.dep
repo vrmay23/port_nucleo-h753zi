@@ -1,0 +1,5 @@
+# Gen Make.dep automatically
+dummy.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.platform.o: \
+ board/dummy.c
+# No files specified for dependency generation
+# No files specified for dependency generation
