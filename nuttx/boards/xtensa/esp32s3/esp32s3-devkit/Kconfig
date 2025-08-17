@@ -1,0 +1,19 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+if ARCH_BOARD_ESP32S3_DEVKIT
+
+choice
+	prompt "ESP32-S3-DevKitC-1 version"
+	default ESP32S3_DEVKITC_1_V10
+
+config ESP32S3_DEVKITC_1_V10
+	bool "ESP32-S3-DevKitC-1 v1.0"
+
+config ESP32S3_DEVKITC_1_V11
+	bool "ESP32-S3-DevKitC-1 v1.1"
+endchoice
+
+endif # ARCH_BOARD_ESP32S3_DEVKIT

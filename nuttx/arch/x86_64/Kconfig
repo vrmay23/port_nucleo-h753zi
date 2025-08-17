@@ -1,0 +1,188 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+if ARCH_X86_64
+comment "x86_64 Configuration Options"
+
+config ARCH
+	string
+	default "x86_64"
+
+choice
+	prompt "x86_64 arch selection"
+	default ARCH_INTEL64
+
+config ARCH_INTEL64
+	bool "Intel x86_64"
+	select ARCH_HAVE_MMU
+	select ARCH_USE_MMU
+	select ARCH_HAVE_ADDRENV
+	select ARCH_NEED_ADDRENV_MAPPING
+	select ARCH_HAVE_ELF_EXECUTABLE
+	select ARCH_HAVE_TICKLESS
+	select ARCH_HAVE_STACKCHECK
+	select ARCH_HAVE_RNG
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_MMX
+	select ARCH_HAVE_SSE
+	select ARCH_HAVE_SSE2
+	select ARCH_HAVE_SSE3
+	select ARCH_HAVE_SSSE3
+	select ARCH_HAVE_SSE41
+	select ARCH_HAVE_SSE42
+	select ARCH_HAVE_SSE4A
+	select ARCH_HAVE_FMA if ARCH_X86_64_HAVE_XSAVE
+	select ARCH_HAVE_AVX if ARCH_X86_64_HAVE_XSAVE
+	select ARCH_HAVE_AVX512 if ARCH_X86_64_HAVE_XSAVE
+	select ARCH_ICACHE
+	select ARCH_DCACHE
+	select ARCH_HAVE_IRQTRIGGER
+	select ARCH_HAVE_DEBUG
+	---help---
+		Intel x86_64 architecture
+
+config ARCH_CHIP_X86_64_CUSTOM
+	bool "Custom x86_64 chip"
+	select ARCH_CHIP_CUSTOM
+	---help---
+		Select this option if there is no directory for the chip under arch/x86_64/src/.
+
+endchoice
+
+if SCHED_BACKTRACE
+choice
+	prompt "Choose x86_64 unwinder"
+	default X86_64_UNWINDER_FRAME_POINTER
+	---help---
+		This determines which method will be used for unwinding nuttx stack
+		traces for debug.
+
+config X86_64_UNWINDER_FRAME_POINTER
+	bool "Frame pointer unwinder"
+	select FRAME_POINTER
+	---help---
+		This option enables the frame pointer unwinder for unwinding
+		nuttx stack traces.
+
+endchoice # Choose x86_64 unwinder
+endif
+
+# CPU features
+
+config ARCH_HAVE_MMX
+	bool
+	default n
+
+config ARCH_HAVE_SSE
+	bool
+	default y
+
+config ARCH_HAVE_SSE2
+	bool
+	default y
+
+config ARCH_HAVE_SSE3
+	bool
+	default n
+
+config ARCH_HAVE_SSSE3
+	bool
+	default n
+
+config ARCH_HAVE_SSE41
+	bool
+	default n
+
+config ARCH_HAVE_SSE42
+	bool
+	default n
+
+config ARCH_HAVE_SSE4A
+	bool
+	default n
+
+config ARCH_HAVE_FMA
+	bool
+	default n
+
+config ARCH_HAVE_AVX
+	bool
+	default n
+
+config ARCH_HAVE_AVX512
+	bool
+	default n
+
+source "arch/x86_64/src/common/Kconfig"
+
+if ARCH_INTEL64
+source "arch/x86_64/src/intel64/Kconfig"
+
+config ARCH_CHIP
+	string
+	default "intel64"
+
+endif # ARCH_INTEL64
+
+config ARCH_MULTIBOOT1
+	bool "Enable ELF32/Multiboot1"
+	default n
+	---help---
+		This enables generating `nuttx32` and allows x86 QEMU
+		`-kernel` boot in multiboot1 protocol.
+
+config ARCH_MULTIBOOT2
+	bool "Append multiboot2 header"
+	default y
+	---help---
+		Include a multiboot2 header.  This also provides information to the
+		system to enable certain features like the low level framebuffer.
+
+if ARCH_MULTIBOOT2
+
+config MULTBOOT2_FB_TERM
+	bool "Multiboot2 framebuffer terminal"
+	default n
+	depends on NXFONTS && MULTBOOT2_FB
+	---help---
+		Enable a framebuffer terminal for early debug printing
+
+config MULTBOOT2_FB
+	bool "Multiboot2 framebuffer"
+	default n
+	---help---
+		Enable a framebuffer support
+
+if MULTBOOT2_FB
+
+config MULTBOOT2_FB_WIDTH
+	int "Multiboot2 framebuffer width"
+	default 1024
+	---help---
+		Requested framebuffer width
+
+config MULTBOOT2_FB_HEIGHT
+	int "Multiboot2 framebuffer height"
+	default 768
+	---help---
+		Requested framebuffer height
+
+config MULTBOOT2_FB_DEEPTH
+	int "Multiboot2 framebuffer deepth"
+	default 32
+	---help---
+		Requested framebuffer deepth
+
+endif # MULTBOOT2_FB
+
+endif # ARCH_MULTIBOOT2
+
+config ARCH_PVHBOOT
+	bool "Append Xen PVH ELF Note"
+	default y
+	---help---
+		This allows x86 QEMU `-kernel` boot in PVH protocol.
+
+endif # ARCH_X86_64
