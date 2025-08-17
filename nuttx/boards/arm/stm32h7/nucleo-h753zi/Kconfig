@@ -6,29 +6,88 @@
 if ARCH_BOARD_NUCLEO_H753ZI
 
 config STM32_ROMFS
-	bool "Automount baked-in ROMFS image"
+	bool "Automount built-in ROMFS image"
 	default n
 	depends on FS_ROMFS
 	---help---
 		Select STM32_ROMFS_IMAGEFILE, STM32_ROMFS_DEV_MINOR, STM32_ROMFS_MOUNTPOINT
 
 config STM32_ROMFS_DEV_MINOR
-	int "Minor for the block device backing the data"
+	int "Minor number for the block device backing the data"
 	depends on STM32_ROMFS
 	default 64
 
 config STM32_ROMFS_MOUNTPOINT
-	string "Mountpoint of the custom romfs image"
+	string "Mount point of the custom ROMFS image"
 	depends on STM32_ROMFS
 	default "/rom"
 
 config STM32_ROMFS_IMAGEFILE
-	string "ROMFS image file to include into build"
+	string "ROMFS image file to include in the build"
 	depends on STM32_ROMFS
 	default "../../../rom.img"
 
 #
-# LEDs usage
+# LEDs Configuration
 #
 
+choice
+	prompt "LED Control Mode"
+	default NUCLEO_H753ZI_LEDS_AUTO
+	---help---
+		Select how the onboard LEDs should be controlled.
+
+config NUCLEO_H753ZI_LEDS_AUTO
+	bool "Automatic LEDs (Kernel controlled)"
+	select ARCH_LEDS
+	---help---
+		LEDs are automatically controlled by the kernel to indicate
+		system status (boot stages, interrupts, panics, etc.).
+		The LEDs will show:
+		- GREEN: System ready, signals
+		- ORANGE: Heap allocation, IRQs  
+		- RED: Assertions, panics, idle
+
+config NUCLEO_H753ZI_LEDS_USER
+	bool "User-controlled LEDs"
+	select USERLED
+	select USERLED_LOWER
+	select BOARD_LATE_INITIALIZE
+	---help---
+		LEDs are controlled by user applications via /dev/userleds.
+		Applications can turn individual LEDs on/off as needed.
+		Kernel status indication is disabled.
+
+config NUCLEO_H753ZI_LEDS_DISABLED
+	bool "LEDs disabled"
+	---help---
+		LED functionality is completely disabled to save resources.
+
+endchoice
+
+# Automatic configuration based on selection
+config NUCLEO_H753ZI_AUTO_LED_CONFIG
+	bool
+	default y
+	depends on NUCLEO_H753ZI_LEDS_AUTO || NUCLEO_H753ZI_LEDS_USER
+
+# Force necessary configurations for USER LEDs
+config BOARD_LATE_INITIALIZE
+	bool
+	default y if NUCLEO_H753ZI_LEDS_USER
+
+config USERLED
+	bool
+	default y if NUCLEO_H753ZI_LEDS_USER
+
+config USERLED_LOWER  
+	bool
+	default y if NUCLEO_H753ZI_LEDS_USER
+
+# Force necessary configurations for AUTO LEDs
+config ARCH_LEDS
+	bool
+	default y if NUCLEO_H753ZI_LEDS_AUTO
+
 endif # ARCH_BOARD_NUCLEO_H753ZI
+

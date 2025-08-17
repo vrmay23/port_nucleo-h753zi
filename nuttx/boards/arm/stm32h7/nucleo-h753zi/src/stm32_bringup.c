@@ -44,6 +44,10 @@
 
 #include "nucleo-h753zi.h"
 
+#ifdef CONFIG_USERLED
+#  include <nuttx/leds/userled.h>
+#endif
+
 #ifdef CONFIG_INPUT_BUTTONS
 #  include <nuttx/input/buttons.h>
 #endif
@@ -144,7 +148,7 @@ static int stm32_capture_setup(void)
       return OK;
     }
 
-  /* This will register “/dev/cap0” ... “/dev/cap<count-1>” */
+  /* This will register â€œ/dev/cap0â€ ... â€œ/dev/cap<count-1>â€ */
 
   ret = cap_register_multiple("/dev/cap", lower, count);
   if (ret == EINVAL)
@@ -259,8 +263,36 @@ int stm32_bringup(void)
   struct rtc_lowerhalf_s *lower;
 #endif
 
-/* board LEDs configuration */
+/* ========================================================================
+ * LED Configuration - Nova seção consolidada
+ * ========================================================================*/
 
+#ifdef CONFIG_NUCLEO_H753ZI_LEDS_USER
+  /* User-controlled LEDs via /dev/userleds */
+  ret = userled_lower_initialize("/dev/userleds");
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: userled_lower_initialize() failed: %d\n", ret);
+    }
+  else
+    {
+      syslog(LOG_INFO, "User LEDs initialized at /dev/userleds\n");
+    }
+
+#elif defined(CONFIG_NUCLEO_H753ZI_LEDS_AUTO)
+  /* Automatic LEDs - initialized by kernel via board_autoled_initialize() */
+  syslog(LOG_INFO, "Auto LEDs enabled for system status indication\n");
+
+#elif defined(CONFIG_NUCLEO_H753ZI_LEDS_DISABLED)
+  /* LEDs completely disabled */
+  syslog(LOG_INFO, "LEDs disabled by configuration\n");
+
+#endif
+
+/* ========================================================================
+ * SEÇÃO ANTIGA REMOVIDA - substituída pela seção acima
+ * ========================================================================*/
+/*
 #ifdef CONFIG_USERLED
   ret = userled_lower_initialize("/dev/userleds");
   
@@ -269,6 +301,7 @@ int stm32_bringup(void)
       syslog(LOG_ERR, "ERROR: userled_lower_initialize() failed: %d\n", ret);
     }
 #endif
+*/
 
 
 #if defined(CONFIG_I2C) && defined(CONFIG_SYSTEM_I2CTOOL)
@@ -500,3 +533,4 @@ int stm32_bringup(void)
 
   return OK;
 }
+

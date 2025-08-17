@@ -37,6 +37,7 @@
 #include "stm32_gpio.h"
 #include "nucleo-h753zi.h"
 
+/* Only compile when AUTO LEDs mode is enabled */
 #ifdef CONFIG_ARCH_LEDS
 
 /****************************************************************************
@@ -77,12 +78,17 @@ void board_autoled_initialize(void)
 {
   int i;
 
-  /* Configure the LD1 GPIO for output. Initial state is OFF */
+  /* Configure the LED GPIOs for output. Initial state is OFF */
 
   for (i = 0; i < nitems(g_ledmap); i++)
     {
       stm32_configgpio(g_ledmap[i]);
     }
+
+#ifdef CONFIG_NUCLEO_H753ZI_LEDS_AUTO
+  /* Log only when explicitly configured for AUTO mode */
+  ledinfo("Auto LEDs initialized for kernel status indication\n");
+#endif
 }
 
 /****************************************************************************
