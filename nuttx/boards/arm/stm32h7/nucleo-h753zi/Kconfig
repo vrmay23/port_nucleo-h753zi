@@ -61,4 +61,62 @@ config NUCLEO_H753ZI_LEDS_DISABLED
 		NOTE: You should manually disable:
 		Board Selection → Board LED Status support
 endchoice
+
+#
+# HSE source
+#
+choice
+	prompt "HSE clock source"
+	default BOARD_HSE_SOURCE_STLINK
+	---help---
+		Select the source for the High Speed External (HSE) clock.
+		This choice determines the solder bridge configuration needed
+		on the Nucleo-H753ZI board.
+
+config BOARD_HSE_SOURCE_STLINK
+	bool "ST-LINK MCO 8 MHz (default Nucleo)"
+	---help---
+		Default configuration for Nucleo-H753ZI.
+		Uses 8 MHz MCO output from ST-LINK.
+		
+		Solder Bridge Configuration:
+		SB45=ON, SB44=OFF, SB46=OFF, SB3=OFF, SB4=OFF.
+		
+		This is the factory default configuration and requires
+		no hardware modifications.
+
+config BOARD_HSE_SOURCE_X3
+	bool "External crystal X3"
+	---help---
+		Uses external crystal connected to X3 footprint.
+		Supports various crystal frequencies (8-25 MHz).
+		
+		Solder Bridge Configuration:
+		SB3=ON, SB4=ON, SB45=OFF, SB44=OFF, SB46=OFF.
+		
+		You must solder a crystal to the X3 footprint and
+		configure the solder bridges as indicated.
+
+endchoice
+
+config BOARD_HSE_X3_FREQ
+	int "X3 crystal frequency (Hz)"
+	depends on BOARD_HSE_SOURCE_X3
+	default 25000000
+	range 8000000 25000000
+	---help---
+		Frequency of the external crystal X3.
+		
+		Supported frequencies:
+		- 8000000  (8 MHz)
+		- 12000000 (12 MHz) 
+		- 16000000 (16 MHz)
+		- 20000000 (20 MHz)
+		- 24000000 (24 MHz)
+		- 25000000 (25 MHz)
+		
+		The PLL configuration will be automatically adjusted
+		to maintain 400 MHz SYSCLK regardless of the chosen
+		HSE frequency.
+
 endif # ARCH_BOARD_NUCLEO_H753ZI
