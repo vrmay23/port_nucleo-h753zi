@@ -1,4 +1,21 @@
 branch: led-driver_support
+date: 2025-08-19
+by: viniciusmay
+modifications:
+
+
+1 - Kconfig: Add option to automate LED driver use case
+
+Introduces a new Kconfig entry to simplify LED driver configuration.
+Note: some hierarchical definitions in NuttX Kconfig still require manual adjustment.
+
+
+=======================================================================================================================================
+=======================================================================================================================================
+
+
+
+branch: led-driver_support
 date: 2025-08-17
 by: viniciusmay
 modifications:
