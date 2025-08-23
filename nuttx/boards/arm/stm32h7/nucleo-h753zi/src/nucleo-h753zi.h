@@ -134,18 +134,45 @@
 
 #define LED_DRIVER_PATH "/dev/userleds"
 
-/* BUTTONS
+/* BUTTONS ******************************************************************/
+/*
+ * Button GPIO configurations are now dynamically generated based on
+ * Kconfig settings. The static definitions have been moved to the
+ * button driver implementation.
  *
- * The Blue pushbutton B1, labeled "User", is connected to GPIO PC13.
- * A high value will be sensed when the button is depressed.
- * Note:
- *    1) That the EXTI is included in the definition to enable an interrupt
- *       on this IO.
- *    2) The following definitions assume the default Solder Bridges are
- *       installed.
+ * Built-in button (PC13):
+ * - The blue pushbutton connected to GPIO PC13 is the USER button (B1)
+ * - Connected with pull-down configuration
+ * - Low value when pressed, high when released
+ * - EXTI interrupt support enabled
+ *
+ * External buttons:
+ * - Configured via NUCLEO_H753ZI_BUTTON_PINS Kconfig setting
+ * - Same electrical characteristics as built-in button
+ * - All assume pull-down resistor configuration
  */
 
-#define GPIO_BTN_USER  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | GPIO_PORTC | GPIO_PIN13)
+#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT
+
+/* Built-in button definition (if enabled) */
+#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
+#define GPIO_BTN_BUILT_IN  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
+                            GPIO_PORTC | GPIO_PIN13)
+#endif
+
+/* Button driver path */
+#define BUTTONS_DRIVER_PATH "/dev/buttons"
+
+/* IRQ range for buttons */
+#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
+#define MIN_IRQBUTTON  0
+#else
+#define MIN_IRQBUTTON  0
+#endif
+#define MAX_IRQBUTTON  (CONFIG_NUCLEO_H753ZI_BUTTON_COUNT - 1)
+#define NUM_IRQBUTTONS (MAX_IRQBUTTON - MIN_IRQBUTTON + 1)
+
+#endif /* CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT */
 
 /* USB OTG FS
  *

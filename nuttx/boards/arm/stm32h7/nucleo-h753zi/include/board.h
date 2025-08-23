@@ -513,13 +513,24 @@
 
 /* LED Configuration ********************************************************/
 
-/* The Nucleo-144 board has numerous LEDs but only three, LD1 a Green LED,
- * LD2 a Blue LED and LD3 a Red LED, that can be controlled by software.
- * The following definitions assume the default Solder Bridges are installed.
+/* The Nucleo-H753ZI board has several LEDs.
+ * Only three are user-controllable:
  *
- * If CONFIG_ARCH_LEDS is not defined, then the user can control the LEDs in
- * any way.
- * The following definitions are used to access individual LEDs.
+ *   LD1 -> Green
+ *   LD2 -> Orange
+ *   LD3 -> Red
+ *
+ * Behavior depends on CONFIG_ARCH_LEDS:
+ *
+ *   SYMBOL            OWNER     USAGE
+ *   ----------------  --------  -------------------------------
+ *   CONFIG_ARCH_LEDS=n User     /dev/leds
+ *                                boards/.../stm32_userleds.c
+ *                                apps/examples/leds
+ *
+ *   CONFIG_ARCH_LEDS=y NuttX    boards/.../stm32_autoleds.c
+ *
+ *   For more information, check the Kconfig file or use the menuconfig help.
  */
 
 /* LED index values for use with board_userled() */
@@ -559,22 +570,71 @@
 #define LED_PANIC          7 /* The system has crashed   Blink   OFF    N/C  */
 #define LED_IDLE           8 /* MCU is is sleep mode     ON      OFF    OFF  */
 
-/* Thus if the Green LED is statically on, NuttX has successfully booted and
- * is, apparently, running normally.  If the Red LED is flashing at
- * approximately 2Hz, then a fatal error has been detected and the system
- * has halted.
- */
-
 /* Button Configuration *****************************************************/
-
-/* The NUCLEO board supports one button:  Pushbutton B1, labeled "User", is
- * connected to GPIO PI11.
- * A high value will be sensed when the button is depressed.
+/* 
+ * Dynamic Button Configuration
+ * 
+ * The button configuration is now dynamic and controlled by Kconfig.
+ * The number of buttons and GPIO pins are configured at build time.
+ *
+ * Configuration is done via menuconfig:
+ *   Board Selection -> Button Configuration
+ *
+ * Button indices are assigned as follows:
+ * - Button 0: Built-in button (PC13) if enabled
+ * - Button 1+: External buttons in order specified in pin list
+ *
+ * All buttons assume pull-down resistor configuration.
  */
 
-#define BUTTON_USER        0
-#define NUM_BUTTONS        1
-#define BUTTON_USER_BIT    (1 << BUTTON_USER)
+#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT
+
+/* Dynamic button count based on configuration */
+#define NUM_BUTTONS    CONFIG_NUCLEO_H753ZI_BUTTON_COUNT
+
+/* Button index definitions (backwards compatibility) */
+#define BUTTON_BUILT_IN    0
+#if NUM_BUTTONS > 1
+#define BUTTON_EXTERN_1    1
+#endif
+#if NUM_BUTTONS > 2
+#define BUTTON_EXTERN_2    2
+#endif
+#if NUM_BUTTONS > 3
+#define BUTTON_EXTERN_3    3
+#endif
+#if NUM_BUTTONS > 4
+#define BUTTON_EXTERN_4    4
+#endif
+
+/* Button bit definitions (backwards compatibility) */
+#define BUTTON_BUILT_IN_BIT    (1 << 0)
+#if NUM_BUTTONS > 1
+#define BUTTON_EXTERN_1_BIT    (1 << 1)
+#endif
+#if NUM_BUTTONS > 2
+#define BUTTON_EXTERN_2_BIT    (1 << 2)
+#endif
+#if NUM_BUTTONS > 3
+#define BUTTON_EXTERN_3_BIT    (1 << 3)
+#endif
+#if NUM_BUTTONS > 4
+#define BUTTON_EXTERN_4_BIT    (1 << 4)
+#endif
+
+/* IRQ button range */
+#define MIN_IRQBUTTON      0
+#define MAX_IRQBUTTON      (NUM_BUTTONS - 1)
+#define NUM_IRQBUTTONS     NUM_BUTTONS
+
+#else /* !CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT */
+
+/* No button support */
+#define NUM_BUTTONS        0
+#define NUM_IRQBUTTONS     0
+
+#endif /* CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT */
+
 
 /* GPIO Pin Alternate Function Selections ***********************************/
 
