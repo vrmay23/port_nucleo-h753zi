@@ -235,9 +235,14 @@ stm32_buttons.o: stm32_buttons.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/inttypes.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/irq.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdbool.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/string.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/alloca.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdlib.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/syslog.h \
+ /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/irq.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/irq.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/syscall.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/chip/irq.h \
@@ -246,6 +251,7 @@ stm32_buttons.o: stm32_buttons.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/armv7-m/nvicpri.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/chip/chip.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/board.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/board/board.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/stm32_gpio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/chip.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/stm32h7/chip.h \
@@ -257,8 +263,7 @@ stm32_buttons.o: stm32_buttons.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/hardware/stm32_memorymap.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/hardware/stm32h7x3xx_memorymap.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/hardware/stm32_gpio.h \
- nucleo-h753zi.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/board/board.h
+ nucleo-h753zi.h
 stm32_appinitialize.o: stm32_appinitialize.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/config.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \

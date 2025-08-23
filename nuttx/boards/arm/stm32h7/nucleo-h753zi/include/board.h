@@ -571,52 +571,69 @@
 #define LED_IDLE           8 /* MCU is is sleep mode     ON      OFF    OFF  */
 
 /* Button Configuration *****************************************************/
-
-/* The STM32H7 Discovery has just one user_button natively (B1), which one is
- * connected to GPIO PC13. This button, in this context, named as BUILT_IN,
- * is connected in a pulldown resistor. Thus, when it changes from default
- * value (LOW) to HIGH value, it is considered as 'pressed'.
+/* 
+ * Dynamic Button Configuration
+ * 
+ * The button configuration is now dynamic and controlled by Kconfig.
+ * The number of buttons and GPIO pins are configured at build time.
  *
- * Plus, we can use the same strategy like in stm32103-minimun (bluepill) to
- * provide more freedom to the users. Hence, four additional buttons will be
- * available now and, then, five buttons can be directly handled.
+ * Configuration is done via menuconfig:
+ *   Board Selection -> Button Configuration
  *
- * Please, make sure to also use your external buttons with a pulldown
- * resistor as well, otherwise it will not work as expected.
+ * Button indices are assigned as follows:
+ * - Button 0: Built-in button (PC13) if enabled
+ * - Button 1+: External buttons in order specified in pin list
  *
- * For this example we'll use the available pin as listed below:
- *
- *
- *   -------------------|----------|------------|-----------------
- *      button_name     | pin_name | pin_number |  stm32_gpio_pin
- *   -------------------|----------|------------|-----------------
- *     BUTTON_EXTERN_1  |    D2    |     12     |     PF_15
- *     BUTTON_EXTERN_2  |    D1    |     14     |     PG_14
- *     BUTTON_EXTERN_3  |    D0    |     16     |     PG_9
- *     BUTTON_EXTERN_4  |    D34   |     33     |     PE_0
- *   -------------------------------------------------------------
- *
- *   Ps.: This buttons are handled by IRQ. Hence, make sure you have
- *   enabled it via menuconfig at:
- *
- *     Board Selection
- *                    | [ x ] Board button support
- *                    | [ x ] Button interrupt support <----- IRQ
+ * All buttons assume pull-down resistor configuration.
  */
 
-#define BUTTON_BUILT_IN        0
-#define BUTTON_EXTERN_1        1
-#define BUTTON_EXTERN_2        2
-#define BUTTON_EXTERN_3        3
-#define BUTTON_EXTERN_4        4
+#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT
 
-#define BUTTON_BUILT_IN_BIT    (1 << BUTTON_BUILT_IN)
-#define BUTTON_EXTERN_1_BIT    (1 << BUTTON_EXTERN_1)
-#define BUTTON_EXTERN_2_BIT    (1 << BUTTON_EXTERN_2)
-#define BUTTON_EXTERN_3_BIT    (1 << BUTTON_EXTERN_3)
-#define BUTTON_EXTERN_4_BIT    (1 << BUTTON_EXTERN_4)
+/* Dynamic button count based on configuration */
+#define NUM_BUTTONS    CONFIG_NUCLEO_H753ZI_BUTTON_COUNT
 
-#define NUM_BUTTONS            5
+/* Button index definitions (backwards compatibility) */
+#define BUTTON_BUILT_IN    0
+#if NUM_BUTTONS > 1
+#define BUTTON_EXTERN_1    1
+#endif
+#if NUM_BUTTONS > 2
+#define BUTTON_EXTERN_2    2
+#endif
+#if NUM_BUTTONS > 3
+#define BUTTON_EXTERN_3    3
+#endif
+#if NUM_BUTTONS > 4
+#define BUTTON_EXTERN_4    4
+#endif
+
+/* Button bit definitions (backwards compatibility) */
+#define BUTTON_BUILT_IN_BIT    (1 << 0)
+#if NUM_BUTTONS > 1
+#define BUTTON_EXTERN_1_BIT    (1 << 1)
+#endif
+#if NUM_BUTTONS > 2
+#define BUTTON_EXTERN_2_BIT    (1 << 2)
+#endif
+#if NUM_BUTTONS > 3
+#define BUTTON_EXTERN_3_BIT    (1 << 3)
+#endif
+#if NUM_BUTTONS > 4
+#define BUTTON_EXTERN_4_BIT    (1 << 4)
+#endif
+
+/* IRQ button range */
+#define MIN_IRQBUTTON      0
+#define MAX_IRQBUTTON      (NUM_BUTTONS - 1)
+#define NUM_IRQBUTTONS     NUM_BUTTONS
+
+#else /* !CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT */
+
+/* No button support */
+#define NUM_BUTTONS        0
+#define NUM_IRQBUTTONS     0
+
+#endif /* CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT */
 
 
 /* GPIO Pin Alternate Function Selections ***********************************/

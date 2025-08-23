@@ -134,45 +134,45 @@
 
 #define LED_DRIVER_PATH "/dev/userleds"
 
-/* BUTTONS
+/* BUTTONS ******************************************************************/
+/*
+ * Button GPIO configurations are now dynamically generated based on
+ * Kconfig settings. The static definitions have been moved to the
+ * button driver implementation.
  *
- * The Blue pushbutton connected to GPIO PC13 is the USER button (B1).
- * On this context, this button is called 'GPIO_BTN_BUILT_IN'.
+ * Built-in button (PC13):
+ * - The blue pushbutton connected to GPIO PC13 is the USER button (B1)
+ * - Connected with pull-down configuration
+ * - Low value when pressed, high when released
+ * - EXTI interrupt support enabled
  *
- * The other buttons (GPIO_BNT_EXERN_X) are the external buttons already
- * available for the user.
- *
- * Since this button is connected using a pullDown configuration:
- *   - A low value will be sensed when the button is pressed
- *   - A high value will be sensed when the button is depressed.
- *
- * Note:
- *    1) That the EXTI is included in the definition to enable an interrupt
- *       on this IO.
- *    2) The following definitions assume the default Solder Bridges are
- *       installed.
+ * External buttons:
+ * - Configured via NUCLEO_H753ZI_BUTTON_PINS Kconfig setting
+ * - Same electrical characteristics as built-in button
+ * - All assume pull-down resistor configuration
  */
 
+#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT
+
+/* Built-in button definition (if enabled) */
+#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
 #define GPIO_BTN_BUILT_IN  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
                             GPIO_PORTC | GPIO_PIN13)
+#endif
 
-#define GPIO_BTN_EXTERN_1  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
-                            GPIO_PORTF | GPIO_PIN15)
+/* Button driver path */
+#define BUTTONS_DRIVER_PATH "/dev/buttons"
 
-#define GPIO_BTN_EXTERN_2  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
-                            GPIO_PORTG | GPIO_PIN14)
-
-#define GPIO_BTN_EXTERN_3  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
-                            GPIO_PORTG | GPIO_PIN9)
-
-#define GPIO_BTN_EXTERN_4  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
-                            GPIO_PORTE | GPIO_PIN0)
-
-#define MIN_IRQBUTTON  BUTTON_BUILT_IN
-#define MAX_IRQBUTTON  BUTTON_EXTERN_4
+/* IRQ range for buttons */
+#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
+#define MIN_IRQBUTTON  0
+#else
+#define MIN_IRQBUTTON  0
+#endif
+#define MAX_IRQBUTTON  (CONFIG_NUCLEO_H753ZI_BUTTON_COUNT - 1)
 #define NUM_IRQBUTTONS (MAX_IRQBUTTON - MIN_IRQBUTTON + 1)
 
-#define BUTTONS_DRIVER_PATH "/dev/buttons"
+#endif /* CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT */
 
 /* USB OTG FS
  *

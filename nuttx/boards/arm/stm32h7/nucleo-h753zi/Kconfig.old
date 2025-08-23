@@ -2,41 +2,33 @@
 # For a description of the syntax of this configuration file,
 # see the file kconfig-language.txt in the NuttX tools repository.
 #
-
 if ARCH_BOARD_NUCLEO_H753ZI
-
 config STM32_ROMFS
 	bool "Automount built-in ROMFS image"
 	default n
 	depends on FS_ROMFS
 	---help---
 		Select STM32_ROMFS_IMAGEFILE, STM32_ROMFS_DEV_MINOR, STM32_ROMFS_MOUNTPOINT
-
 config STM32_ROMFS_DEV_MINOR
 	int "Minor number for the block device backing the data"
 	depends on STM32_ROMFS
 	default 64
-
 config STM32_ROMFS_MOUNTPOINT
 	string "Mount point of the custom ROMFS image"
 	depends on STM32_ROMFS
 	default "/rom"
-
 config STM32_ROMFS_IMAGEFILE
 	string "ROMFS image file to include in the build"
 	depends on STM32_ROMFS
 	default "../../../rom.img"
-
 #
 # LEDs Configuration
 #
-
 choice
 	prompt "LED Control Mode"
 	default NUCLEO_H753ZI_LEDS_AUTO
 	---help---
 		Select how the onboard LEDs should be controlled.
-
 config NUCLEO_H753ZI_LEDS_AUTO
 	bool "Automatic LEDs (Kernel controlled)"
 	---help---
@@ -49,7 +41,6 @@ config NUCLEO_H753ZI_LEDS_AUTO
 		
 		NOTE: You still need to manually enable:
 		Board Selection → Board LED Status support
-
 config NUCLEO_H753ZI_LEDS_USER
 	bool "User-controlled LEDs"
 	select USERLED
@@ -62,7 +53,6 @@ config NUCLEO_H753ZI_LEDS_USER
 		
 		NOTE: You must manually disable:
 		Board Selection → Board LED Status support (to avoid conflicts)
-
 config NUCLEO_H753ZI_LEDS_DISABLED
 	bool "LEDs disabled"
 	---help---
@@ -70,13 +60,11 @@ config NUCLEO_H753ZI_LEDS_DISABLED
 		
 		NOTE: You should manually disable:
 		Board Selection → Board LED Status support
-
 endchoice
 
 #
 # HSE source
 #
-
 choice
 	prompt "HSE clock source"
 	default BOARD_HSE_SOURCE_STLINK
@@ -130,72 +118,5 @@ config BOARD_HSE_X3_FREQ
 		The PLL configuration will be automatically adjusted
 		to maintain 400 MHz SYSCLK regardless of the chosen
 		HSE frequency.
-
-#
-# Button Configuration
-#
-
-menu "Button Configuration"
-
-config NUCLEO_H753ZI_BUTTON_SUPPORT
-	bool "Enable button support"
-	default n
-	select ARCH_BUTTONS
-	---help---
-		Enable GPIO button support for the Nucleo-H753ZI board.
-
-config NUCLEO_H753ZI_BUTTON_COUNT
-	int "Number of buttons"
-	depends on NUCLEO_H753ZI_BUTTON_SUPPORT
-	default 1
-	range 1 32
-	---help---
-		Total number of buttons to configure (1-32).
-		
-		The STM32H7 button driver supports up to 32 buttons using
-		a 32-bit bitmask for button states.
-
-config NUCLEO_H753ZI_BUTTON_BUILTIN
-	bool "Include built-in user button (PC13)"
-	depends on NUCLEO_H753ZI_BUTTON_SUPPORT
-	default y
-	---help---
-		Include the built-in blue user button connected to PC13.
-		This button will always be assigned as button index 0.
-		
-		If enabled, you need (BUTTON_COUNT - 1) additional pins.
-		If disabled, you need exactly BUTTON_COUNT pins.
-
-config NUCLEO_H753ZI_BUTTON_PINS
-	string "Button GPIO pin list"
-	depends on NUCLEO_H753ZI_BUTTON_SUPPORT
-	default ""
-	---help---
-		Comma-separated list of GPIO pins for buttons.
-		
-		Format: PORT+PIN (e.g., "PF15,PG14,PG9,PE0,PA0,PB12")
-		
-		Number of pins required:
-		- With built-in: (BUTTON_COUNT - 1) pins
-		- Without built-in: BUTTON_COUNT pins
-		
-		Example for 5 buttons with built-in enabled:
-		"PF15,PG14,PG9,PE0"
-		
-		Common Nucleo-H753ZI pins:
-		Arduino Headers: PF15(D2), PG14(D1), PG9(D0), PE0(D34)
-		Morpho Headers: PA0-PA15, PB0-PB15, PC0-PC15, PD0-PD15,
-		               PE0-PE15, PF0-PF15, PG0-PG15, PH0-PH1
-		
-		Note: All buttons assume pull-down resistor configuration.
-
-config NUCLEO_H753ZI_BUTTON_VALIDATION
-	bool "Validate pin configuration at compile time"
-	depends on NUCLEO_H753ZI_BUTTON_SUPPORT
-	default y
-	---help---
-		Perform compile-time validation of GPIO pin assignments.
-
-endmenu
 
 endif # ARCH_BOARD_NUCLEO_H753ZI
