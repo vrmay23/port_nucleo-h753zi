@@ -513,13 +513,24 @@
 
 /* LED Configuration ********************************************************/
 
-/* The Nucleo-144 board has numerous LEDs but only three, LD1 a Green LED,
- * LD2 a Blue LED and LD3 a Red LED, that can be controlled by software.
- * The following definitions assume the default Solder Bridges are installed.
+/* The Nucleo-H753ZI board has several LEDs.
+ * Only three are user-controllable:
  *
- * If CONFIG_ARCH_LEDS is not defined, then the user can control the LEDs in
- * any way.
- * The following definitions are used to access individual LEDs.
+ *   LD1 -> Green
+ *   LD2 -> Orange
+ *   LD3 -> Red
+ *
+ * Behavior depends on CONFIG_ARCH_LEDS:
+ *
+ *   SYMBOL            OWNER     USAGE
+ *   ----------------  --------  -------------------------------
+ *   CONFIG_ARCH_LEDS=n User     /dev/leds
+ *                                boards/.../stm32_userleds.c
+ *                                apps/examples/leds
+ *
+ *   CONFIG_ARCH_LEDS=y NuttX    boards/.../stm32_autoleds.c
+ *
+ *   For more information, check the Kconfig file or use the menuconfig help.
  */
 
 /* LED index values for use with board_userled() */
@@ -559,22 +570,54 @@
 #define LED_PANIC          7 /* The system has crashed   Blink   OFF    N/C  */
 #define LED_IDLE           8 /* MCU is is sleep mode     ON      OFF    OFF  */
 
-/* Thus if the Green LED is statically on, NuttX has successfully booted and
- * is, apparently, running normally.  If the Red LED is flashing at
- * approximately 2Hz, then a fatal error has been detected and the system
- * has halted.
- */
-
 /* Button Configuration *****************************************************/
 
-/* The NUCLEO board supports one button:  Pushbutton B1, labeled "User", is
- * connected to GPIO PI11.
- * A high value will be sensed when the button is depressed.
+/* The STM32H7 Discovery has just one user_button natively (B1), which one is
+ * connected to GPIO PC13. This button, in this context, named as BUILT_IN,
+ * is connected in a pulldown resistor. Thus, when it changes from default
+ * value (LOW) to HIGH value, it is considered as 'pressed'.
+ *
+ * Plus, we can use the same strategy like in stm32103-minimun (bluepill) to
+ * provide more freedom to the users. Hence, four additional buttons will be
+ * available now and, then, five buttons can be directly handled.
+ *
+ * Please, make sure to also use your external buttons with a pulldown
+ * resistor as well, otherwise it will not work as expected.
+ *
+ * For this example we'll use the available pin as listed below:
+ *
+ *
+ *   -------------------|----------|------------|-----------------
+ *      button_name     | pin_name | pin_number |  stm32_gpio_pin
+ *   -------------------|----------|------------|-----------------
+ *     BUTTON_EXTERN_1  |    D2    |     12     |     PF_15
+ *     BUTTON_EXTERN_2  |    D1    |     14     |     PG_14
+ *     BUTTON_EXTERN_3  |    D0    |     16     |     PG_9
+ *     BUTTON_EXTERN_4  |    D34   |     33     |     PE_0
+ *   -------------------------------------------------------------
+ *
+ *   Ps.: This buttons are handled by IRQ. Hence, make sure you have
+ *   enabled it via menuconfig at:
+ *
+ *     Board Selection
+ *                    | [ x ] Board button support
+ *                    | [ x ] Button interrupt support <----- IRQ
  */
 
-#define BUTTON_USER        0
-#define NUM_BUTTONS        1
-#define BUTTON_USER_BIT    (1 << BUTTON_USER)
+#define BUTTON_BUILT_IN        0
+#define BUTTON_EXTERN_1        1
+#define BUTTON_EXTERN_2        2
+#define BUTTON_EXTERN_3        3
+#define BUTTON_EXTERN_4        4
+
+#define BUTTON_BUILT_IN_BIT    (1 << BUTTON_BUILT_IN)
+#define BUTTON_EXTERN_1_BIT    (1 << BUTTON_EXTERN_1)
+#define BUTTON_EXTERN_2_BIT    (1 << BUTTON_EXTERN_2)
+#define BUTTON_EXTERN_3_BIT    (1 << BUTTON_EXTERN_3)
+#define BUTTON_EXTERN_4_BIT    (1 << BUTTON_EXTERN_4)
+
+#define NUM_BUTTONS            5
+
 
 /* GPIO Pin Alternate Function Selections ***********************************/
 

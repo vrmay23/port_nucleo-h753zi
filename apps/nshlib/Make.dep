@@ -168,6 +168,7 @@ nsh_console.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.nshlib.o: \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
  /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
@@ -403,6 +404,7 @@ nsh_fscmds.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.nshlib.o: \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdbool.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/ctype.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/langinfo.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nl_types.h \
@@ -544,6 +546,7 @@ nsh_proccmds.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.nshlib.o: \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/locale.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/fcntl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/ioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/sysinfo.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/param.h \
  nsh.h \
@@ -681,6 +684,7 @@ nsh_timcmds.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.nshlib.o: \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/malloc.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/fcntl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/ioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/stat.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/timers/rtc.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/time.h \
@@ -791,6 +795,7 @@ nsh_syscmds.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.nshlib.o: \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/malloc.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/boardctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/ioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/utsname.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/fcntl.h nsh.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/usb/usbdev_trace.h \
@@ -1048,6 +1053,7 @@ nsh_builtin.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.nshlib.o: \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/wait.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/signal.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \

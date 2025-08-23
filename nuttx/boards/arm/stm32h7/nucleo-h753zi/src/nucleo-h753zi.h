@@ -136,8 +136,16 @@
 
 /* BUTTONS
  *
- * The Blue pushbutton B1, labeled "User", is connected to GPIO PC13.
- * A high value will be sensed when the button is depressed.
+ * The Blue pushbutton connected to GPIO PC13 is the USER button (B1).
+ * On this context, this button is called 'GPIO_BTN_BUILT_IN'.
+ *
+ * The other buttons (GPIO_BNT_EXERN_X) are the external buttons already
+ * available for the user.
+ *
+ * Since this button is connected using a pullDown configuration:
+ *   - A low value will be sensed when the button is pressed
+ *   - A high value will be sensed when the button is depressed.
+ *
  * Note:
  *    1) That the EXTI is included in the definition to enable an interrupt
  *       on this IO.
@@ -145,7 +153,26 @@
  *       installed.
  */
 
-#define GPIO_BTN_USER  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | GPIO_PORTC | GPIO_PIN13)
+#define GPIO_BTN_BUILT_IN  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
+                            GPIO_PORTC | GPIO_PIN13)
+
+#define GPIO_BTN_EXTERN_1  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
+                            GPIO_PORTF | GPIO_PIN15)
+
+#define GPIO_BTN_EXTERN_2  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
+                            GPIO_PORTG | GPIO_PIN14)
+
+#define GPIO_BTN_EXTERN_3  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
+                            GPIO_PORTG | GPIO_PIN9)
+
+#define GPIO_BTN_EXTERN_4  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
+                            GPIO_PORTE | GPIO_PIN0)
+
+#define MIN_IRQBUTTON  BUTTON_BUILT_IN
+#define MAX_IRQBUTTON  BUTTON_EXTERN_4
+#define NUM_IRQBUTTONS (MAX_IRQBUTTON - MIN_IRQBUTTON + 1)
+
+#define BUTTONS_DRIVER_PATH "/dev/buttons"
 
 /* USB OTG FS
  *
