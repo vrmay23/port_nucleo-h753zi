@@ -26,7 +26,7 @@ CONFIG_HOST_LINUX=y
 # Build Configuration
 #
 CONFIG_APPS_DIR="../apps"
-CONFIG_BASE_DEFCONFIG="nucleo-h753zi:nsh"
+CONFIG_BASE_DEFCONFIG="nucleo-h753zi:nsh-dirty"
 CONFIG_BUILD_FLAT=y
 # CONFIG_BUILD_PIC is not set
 # CONFIG_BUILD_2PASS is not set
