@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "==========================================="
-echo "=== Commit and push all local changes ===="
+echo "=== Commit and push current branch ===="
 echo "==========================================="
 echo
 
@@ -14,58 +14,49 @@ APPS_HASH=$(cd apps && git rev-parse --short HEAD 2>/dev/null || echo "N/A")
 read -p "Add extra commit message (optional): " USER_MSG
 
 COMMIT_MSG="Update submodules: nuttx@$NUTTX_HASH apps@$APPS_HASH on $(date '+%Y-%m-%d %H:%M:%S')"
-
 if [ -n "$USER_MSG" ]; then
   COMMIT_MSG="$COMMIT_MSG - $USER_MSG"
 fi
 
-echo "Adding all changes to Git index..."
+echo "Adding all changes..."
 git add -A || { echo "Failed to add changes."; exit 1; }
 
 if git diff --cached --quiet; then
   echo "No changes to commit. Working tree is clean."
 else
-  echo "Committing changes..."
-  git commit -m "$COMMIT_MSG" || { echo "Failed to commit changes."; exit 1; }
+  echo "Committing..."
+  git commit -m "$COMMIT_MSG" || { echo "Commit failed"; exit 1; }
 fi
 
-# Check if branch exists on remote before pull
-if git ls-remote --heads origin "$CURRENT_BRANCH" | grep -q "$CURRENT_BRANCH"; then
-  echo "Pulling latest changes from origin/$CURRENT_BRANCH before pushing..."
-  if git pull origin "$CURRENT_BRANCH"; then
-    echo "Successfully pulled latest changes."
-  else
-    echo "Git pull failed or conflicts, fix manually."
-    exit 1
-  fi
-else
-  echo "Branch $CURRENT_BRANCH does not exist on remote. Skipping pull."
-fi
-
-echo "Pushing changes to origin/$CURRENT_BRANCH..."
-git push origin "$CURRENT_BRANCH" || { echo "Failed to push changes to remote."; exit 1; }
-
-# Merge into main branch if current is not main
-if [ "$CURRENT_BRANCH" != "main" ]; then
-  echo "Checking out main branch..."
-  git checkout main || { echo "Failed to checkout main"; exit 1; }
-
-  echo "Pulling latest main from origin/main..."
-  git pull origin main || { echo "Failed to pull origin/main"; exit 1; }
-
-  echo "Merging $CURRENT_BRANCH into main..."
-  git merge --no-ff "$CURRENT_BRANCH" -m "Merge branch '$CURRENT_BRANCH' into main" || {
-    echo "Merge failed, resolve conflicts manually."
-    exit 1
-  }
-
-  echo "Pushing updated main branch..."
-  git push origin main || { echo "Failed to push main branch"; exit 1; }
-
-  echo "Switching back to $CURRENT_BRANCH..."
-  git checkout "$CURRENT_BRANCH" || { echo "Failed to switch back to $CURRENT_BRANCH"; exit 1; }
-fi
+# Push current branch
+echo "Pushing branch $CURRENT_BRANCH..."
+git push origin "$CURRENT_BRANCH" || { echo "Push failed"; exit 1; }
 
 echo
-echo "All changes committed, pushed, and merged into main where applicable."
+echo "=== WAIT: Confirm that PR was merged into main remotely ==="
+read -p "Press Enter to continue after merge..."
+
+# Update main local
+echo "Fetching latest main from remote..."
+git fetch origin main || { echo "Fetch failed"; exit 1; }
+
+echo "Switching to main..."
+git checkout main || { echo "Checkout main failed"; exit 1; }
+
+echo "Resetting local main to match origin/main..."
+git reset --hard origin/main || { echo "Reset failed"; exit 1; }
+
+# Go back to original branch
+echo "Switching back to $CURRENT_BRANCH..."
+git checkout "$CURRENT_BRANCH" || { echo "Checkout $CURRENT_BRANCH failed"; exit 1; }
+
+# Rebase on top of updated main
+echo "Rebasing $CURRENT_BRANCH on top of main..."
+git rebase main || {
+    echo "Rebase failed. Resolve conflicts manually."
+    exit 1
+}
+
+echo
+echo "Done. Branch $CURRENT_BRANCH is now up-to-date with main."
 
