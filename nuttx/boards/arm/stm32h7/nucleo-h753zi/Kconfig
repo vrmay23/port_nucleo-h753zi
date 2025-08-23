@@ -28,52 +28,6 @@ config STM32_ROMFS_IMAGEFILE
 	default "../../../rom.img"
 
 #
-# LEDs Configuration
-#
-
-choice
-	prompt "LED Control Mode"
-	default NUCLEO_H753ZI_LEDS_AUTO
-	---help---
-		Select how the onboard LEDs should be controlled.
-
-config NUCLEO_H753ZI_LEDS_AUTO
-	bool "Automatic LEDs (Kernel controlled)"
-	---help---
-		LEDs are automatically controlled by the kernel to indicate
-		system status (boot stages, interrupts, panics, etc.).
-		The LEDs will show:
-		- GREEN: System ready, signals
-		- ORANGE: Heap allocation, IRQs  
-		- RED: Assertions, panics, idle
-		
-		NOTE: You still need to manually enable:
-		Board Selection → Board LED Status support
-
-config NUCLEO_H753ZI_LEDS_USER
-	bool "User-controlled LEDs"
-	select USERLED
-	select USERLED_LOWER
-	select BOARD_LATE_INITIALIZE
-	---help---
-		LEDs are controlled by user applications via /dev/userleds.
-		Applications can turn individual LEDs on/off as needed.
-		Kernel status indication is disabled.
-		
-		NOTE: You must manually disable:
-		Board Selection → Board LED Status support (to avoid conflicts)
-
-config NUCLEO_H753ZI_LEDS_DISABLED
-	bool "LEDs disabled"
-	---help---
-		LED functionality is completely disabled to save resources.
-		
-		NOTE: You should manually disable:
-		Board Selection → Board LED Status support
-
-endchoice
-
-#
 # HSE source
 #
 
@@ -130,6 +84,53 @@ config BOARD_HSE_X3_FREQ
 		The PLL configuration will be automatically adjusted
 		to maintain 400 MHz SYSCLK regardless of the chosen
 		HSE frequency.
+
+#
+# LEDs Configuration
+#
+
+choice
+	prompt "LED Control Mode"
+	default NUCLEO_H753ZI_LEDS_AUTO
+	---help---
+		Select how the onboard LEDs should be controlled.
+
+config NUCLEO_H753ZI_LEDS_AUTO
+	bool "Automatic LEDs (Kernel controlled)"
+	---help---
+		LEDs are automatically controlled by the kernel to indicate
+		system status (boot stages, interrupts, panics, etc.).
+		The LEDs will show:
+		- GREEN: System ready, signals
+		- ORANGE: Heap allocation, IRQs  
+		- RED: Assertions, panics, idle
+		
+		NOTE: You still need to manually enable:
+		Board Selection → Board LED Status support
+
+config NUCLEO_H753ZI_LEDS_USER
+	bool "User-controlled LEDs"
+	select USERLED
+	select USERLED_LOWER
+	select BOARD_LATE_INITIALIZE
+	---help---
+		LEDs are controlled by user applications via /dev/userleds.
+		Applications can turn individual LEDs on/off as needed.
+		Kernel status indication is disabled.
+		
+		NOTE: You must manually disable:
+		Board Selection → Board LED Status support (to avoid conflicts)
+
+config NUCLEO_H753ZI_LEDS_DISABLED
+	bool "LEDs disabled"
+	---help---
+		LED functionality is completely disabled to save resources.
+		
+		NOTE: You should manually disable:
+		Board Selection → Board LED Status support
+
+endchoice
+
 
 #
 # Button Configuration
