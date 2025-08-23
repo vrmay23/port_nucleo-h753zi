@@ -136,7 +136,6 @@ stm32_bringup.o: stm32_bringup.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/armv7-m/nvicpri.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/chip/chip.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spinlock_type.h \
- nucleo-h753zi.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/leds/userled.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/stm32_gpio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/chip.h \
@@ -148,7 +147,8 @@ stm32_bringup.o: stm32_bringup.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/hardware/stm32h7x3xx_gpio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/hardware/stm32_memorymap.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/hardware/stm32h7x3xx_memorymap.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/hardware/stm32_gpio.h
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/hardware/stm32_gpio.h \
+ nucleo-h753zi.h
 stm32_userleds.o: stm32_userleds.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/config.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdbool.h \
