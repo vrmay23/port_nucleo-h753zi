@@ -84,6 +84,7 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
   FAR char *endptr;
   long pin_num;
   uint32_t port_base;
+  uint32_t gpio_pin;
 
   *error = 0;
 
@@ -122,54 +123,71 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
 
   pin_num_str = &pin_str[2];
   pin_num = strtol(pin_num_str, &endptr, 10);
-
   if (*endptr != '\0' || pin_num < 0 || pin_num > 15)
     {
       *error = -EINVAL;
       return 0;
     }
 
+  /* Map port letter to STM32 port base */
+
   switch (port)
     {
       case 'A':
         port_base = GPIO_PORTA;
         break;
-
       case 'B':
         port_base = GPIO_PORTB;
         break;
-
       case 'C':
         port_base = GPIO_PORTC;
         break;
-
       case 'D':
         port_base = GPIO_PORTD;
         break;
-
       case 'E':
         port_base = GPIO_PORTE;
         break;
-
       case 'F':
         port_base = GPIO_PORTF;
         break;
-
       case 'G':
         port_base = GPIO_PORTG;
         break;
-
       case 'H':
         port_base = GPIO_PORTH;
         break;
-
       default:
         *error = -EINVAL;
         return 0;
     }
 
-  return (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI |
-          port_base | (1 << pin_num));
+  /* Use correct STM32 GPIO pin macros instead of bit shifting */
+
+  switch (pin_num)
+    {
+      case 0:  gpio_pin = GPIO_PIN0;  break;
+      case 1:  gpio_pin = GPIO_PIN1;  break;
+      case 2:  gpio_pin = GPIO_PIN2;  break;
+      case 3:  gpio_pin = GPIO_PIN3;  break;
+      case 4:  gpio_pin = GPIO_PIN4;  break;
+      case 5:  gpio_pin = GPIO_PIN5;  break;
+      case 6:  gpio_pin = GPIO_PIN6;  break;
+      case 7:  gpio_pin = GPIO_PIN7;  break;
+      case 8:  gpio_pin = GPIO_PIN8;  break;
+      case 9:  gpio_pin = GPIO_PIN9;  break;
+      case 10: gpio_pin = GPIO_PIN10; break;
+      case 11: gpio_pin = GPIO_PIN11; break;
+      case 12: gpio_pin = GPIO_PIN12; break;
+      case 13: gpio_pin = GPIO_PIN13; break;
+      case 14: gpio_pin = GPIO_PIN14; break;
+      case 15: gpio_pin = GPIO_PIN15; break;
+      default:
+        *error = -EINVAL;
+        return 0;
+    }
+
+  return (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | port_base | gpio_pin);
 }
 
 /****************************************************************************
@@ -300,11 +318,9 @@ static int init_button_configs(void)
 
   pin = strtok(pins_str, ", \t\n\r");
   pin_index = 0;
-
   while (pin != NULL && g_button_count < CONFIG_NUCLEO_H753ZI_BUTTON_COUNT)
     {
       gpio_config = parse_gpio_pin(pin, &error);
-
       if (error != 0)
         {
           syslog(LOG_ERR, "nucleo-h753zi: ERROR: Invalid GPIO pin at "
@@ -395,7 +411,7 @@ uint32_t board_button_initialize(void)
              "invalid button configuration.\n");
       syslog(LOG_ERR, "nucleo-h753zi: Please fix the configuration "
              "errors above and rebuild.\n");
-      syslog(LOG_ERR, "nucleo-h753zi: ==========================="
+      syslog(LOG_ERR, "nucleo-h753zi: ============================="
              "==========\n");
       return 0;  /* Return 0 to indicate failure */
     }
@@ -415,6 +431,7 @@ uint32_t board_button_initialize(void)
 
   syslog(LOG_INFO, "nucleo-h753zi: Button driver initialized with "
          "%d buttons\n", g_button_count);
+
   return g_button_count;
 }
 
