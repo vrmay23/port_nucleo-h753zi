@@ -10,7 +10,7 @@
  * "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-20.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -168,17 +168,19 @@ static int nucleo_led_initialize(void)
 static int nucleo_filesystem_initialize(void)
 {
   int ret = OK;
-  int local_ret;
 
 /* Mount the procfs file system */
 
 #ifdef CONFIG_FS_PROCFS
 
-  local_ret = nx_mount(NULL, STM32_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
+  int local_ret = nx_mount(NULL, STM32_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to mount PROCFS: %d\n", local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -191,12 +193,15 @@ static int nucleo_filesystem_initialize(void)
 
 #ifdef CONFIG_STM32_ROMFS
 
-  local_ret = stm32_romfs_initialize();
+  int local_ret = stm32_romfs_initialize();
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to mount ROMFS at %s: %d\n",
              CONFIG_STM32_ROMFS_MOUNTPOINT, local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -295,15 +300,17 @@ static int nucleo_input_initialize(void)
 static int nucleo_usb_initialize(void)
 {
   int ret = OK;
-  int local_ret;
 
 #ifdef HAVE_USBHOST
   /* Initialize USB host operation */
-  local_ret = stm32_usbhost_initialize();
+  int local_ret = stm32_usbhost_initialize();
   if (local_ret != OK)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize USB host: %d\n", local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -313,11 +320,14 @@ static int nucleo_usb_initialize(void)
 
 #ifdef HAVE_USBMONITOR
   /* Start the USB Monitor */
-  local_ret = usbmonitor_start();
+  int local_ret = usbmonitor_start();
   if (local_ret != OK)
     {
       syslog(LOG_ERR, "ERROR: Failed to start USB monitor: %d\n", local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -329,11 +339,14 @@ static int nucleo_usb_initialize(void)
     !defined(CONFIG_CDCACM_COMPOSITE)
   /* Initialize CDC/ACM USB device */
   syslog(LOG_INFO, "Initializing CDC/ACM device\n");
-  local_ret = cdcacm_initialize(0, NULL);
+  int local_ret = cdcacm_initialize(0, NULL);
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: cdcacm_initialize failed: %d\n", local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -351,11 +364,14 @@ static int nucleo_usb_initialize(void)
   mac[4] = (CONFIG_NETINIT_MACADDR_1 >> (8 * 1)) & 0xff;
   mac[5] = (CONFIG_NETINIT_MACADDR_1 >> (8 * 0)) & 0xff;
 
-  local_ret = usbdev_rndis_initialize(mac);
+  int local_ret = usbdev_rndis_initialize(mac);
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: RNDIS initialization failed: %d\n", local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -442,15 +458,17 @@ static int nucleo_gpio_initialize(void)
 static int nucleo_sensors_initialize(void)
 {
   int ret = OK;
-  int local_ret;
 
 #ifdef CONFIG_SENSORS_LSM6DSL
-  local_ret = stm32_lsm6dsl_initialize("/dev/lsm6dsl0");
+  int local_ret = stm32_lsm6dsl_initialize("/dev/lsm6dsl0");
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize LSM6DSL driver: %d\n",
              local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -459,12 +477,15 @@ static int nucleo_sensors_initialize(void)
 #endif /* CONFIG_SENSORS_LSM6DSL */
 
 #ifdef CONFIG_SENSORS_LSM9DS1
-  local_ret = stm32_lsm9ds1_initialize();
+  int local_ret = stm32_lsm9ds1_initialize();
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize LSM9DS1 driver: %d\n",
              local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -473,12 +494,15 @@ static int nucleo_sensors_initialize(void)
 #endif /* CONFIG_SENSORS_LSM9DS1 */
 
 #ifdef CONFIG_SENSORS_LSM303AGR
-  local_ret = stm32_lsm303agr_initialize("/dev/lsm303mag0");
+  int local_ret = stm32_lsm303agr_initialize("/dev/lsm303mag0");
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize LSM303AGR driver: %d\n",
              local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -593,15 +617,17 @@ static int nucleo_storage_initialize(void)
 static int nucleo_timers_initialize(void)
 {
   int ret = OK;
-  int local_ret;
 
 #ifdef CONFIG_PWM
   /* Initialize PWM and register the PWM device */
-  local_ret = stm32_pwm_setup();
+  int local_ret = stm32_pwm_setup();
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: stm32_pwm_setup() failed: %d\n", local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -611,11 +637,14 @@ static int nucleo_timers_initialize(void)
 
 #ifdef CONFIG_CAPTURE
   /* Initialize the capture driver */
-  local_ret = nucleo_capture_initialize();
+  int local_ret = nucleo_capture_initialize();
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: nucleo_capture_initialize() failed: %d\n", local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
@@ -814,6 +843,21 @@ static int nucleo_capture_initialize(void)
  * in a controlled manner, ensuring that failures in one subsystem do
  * not prevent initialization of others.
  *
+ * The core logic is to handle errors gracefully:
+ * 1. Individual subsystem failures are logged via syslog.
+ * 2. The function continues to initialize other subsystems even if one fails.
+ * 3. A single return value (ret) tracks the status of the *first* failure encountered.
+ * 4. This ensures that a single, non-critical driver failure does not
+ * halt the entire system boot process, while still reporting the
+ * root cause of the first problem to the caller.
+ *
+ * The logic 'if (subsys_ret != OK && ret == OK)' is critical here. It:
+ * - Checks if the most recent subsystem initialization failed (subsys_ret != OK).
+ * - Checks if this is the first error found so far (ret == OK).
+ * - If both are true, it updates 'ret' with the error code, but only once.
+ * - This prevents subsequent errors from overwriting the first error code,
+ * which is typically the most useful for debugging root causes.
+ *
  * Input Parameters:
  * None
  *
@@ -982,5 +1026,5 @@ int stm32_bringup(void)
              "System is functional, but some drivers may be unavailable\n");
     }
 
-  return OK; /* Always return OK - let system continue even with driver failures */
+  return ret;
 }
