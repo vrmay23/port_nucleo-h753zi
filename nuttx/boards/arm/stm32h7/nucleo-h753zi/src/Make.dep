@@ -150,7 +150,7 @@ stm32_bringup.o: stm32_bringup.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/arch/arm/src/chip/hardware/stm32_gpio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/buttons.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/leds/userled.h
-stm32_autoleds.o: stm32_autoleds.c \
+stm32_userleds.o: stm32_userleds.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/config.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdbool.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/compiler.h \
