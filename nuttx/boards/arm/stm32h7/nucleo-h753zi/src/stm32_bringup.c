@@ -173,30 +173,33 @@ static int nucleo_filesystem_initialize(void)
 /* Mount the procfs file system */
 
 #ifdef CONFIG_FS_PROCFS
-
   local_ret = nx_mount(NULL, STM32_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to mount PROCFS: %d\n", local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {
       syslog(LOG_INFO, "PROCFS mounted at %s\n", STM32_PROCFS_MOUNTPOINT);
     }
-
 #endif /* CONFIG_FS_PROCFS */
 
 /* Mount the ROMFS partition */
 
 #ifdef CONFIG_STM32_ROMFS
-
   local_ret = stm32_romfs_initialize();
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to mount ROMFS at %s: %d\n",
              CONFIG_STM32_ROMFS_MOUNTPOINT, local_ret);
-      ret = local_ret; /* Report error but continue */
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
     }
   else
     {

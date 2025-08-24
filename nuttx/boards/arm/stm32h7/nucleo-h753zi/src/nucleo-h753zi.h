@@ -10,7 +10,7 @@
  * "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -29,14 +29,22 @@
 
 #include <nuttx/config.h>
 #include <nuttx/compiler.h>
-
 #include <stdint.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Configuration ************************************************************/
+/* ==========================================================================
+ * FEATURE CONFIGURATION
+ * ==========================================================================
+ *
+ * This section defines which features are available based on the
+ * configuration. Features are automatically disabled if their dependencies
+ * are not met.
+ */
+
+/* Core System Features */
 
 #define HAVE_PROC            1
 #define HAVE_USBDEV          1
@@ -44,37 +52,32 @@
 #define HAVE_USBMONITOR      1
 #define HAVE_MTDCONFIG       1
 #define HAVE_PROGMEM_CHARDEV 1
+#define HAVE_RTC_DRIVER      1
 
-/* Can't support USB host or device features if USB OTG FS is not enabled */
+/* USB Feature Dependencies */
 
 #ifndef CONFIG_STM32H7_OTGFS
 #  undef HAVE_USBDEV
 #  undef HAVE_USBHOST
 #endif
 
-/* Can't support USB device if USB device is not enabled */
-
 #ifndef CONFIG_USBDEV
 #  undef HAVE_USBDEV
 #endif
-
-/* Can't support USB host is USB host is not enabled */
 
 #ifndef CONFIG_USBHOST
 #  undef HAVE_USBHOST
 #endif
 
-/* Check if we should enable the USB monitor before starting NSH */
-
 #ifndef CONFIG_USBMONITOR
 #  undef HAVE_USBMONITOR
 #endif
 
-#ifndef HAVE_USBDEV
+#if !defined(HAVE_USBDEV)
 #  undef CONFIG_USBDEV_TRACE
 #endif
 
-#ifndef HAVE_USBHOST
+#if !defined(HAVE_USBHOST)
 #  undef CONFIG_USBHOST_TRACE
 #endif
 
@@ -82,20 +85,34 @@
 #  undef HAVE_USBMONITOR
 #endif
 
+/* MTD Feature Dependencies */
+
 #if !defined(CONFIG_STM32H7_PROGMEM) || !defined(CONFIG_MTD_PROGMEM)
 #  undef HAVE_PROGMEM_CHARDEV
 #endif
 
-/* This is the on-chip progmem memory driver minor number */
+/* RTC Feature Dependencies */
 
-#define PROGMEM_MTD_MINOR 0
+#if !defined(CONFIG_RTC) || !defined(CONFIG_RTC_DRIVER)
+#  undef HAVE_RTC_DRIVER
+#endif
 
-/* flash  */
+/* Flash-based Parameters */
+
 #if defined(CONFIG_MMCSD)
 #  define FLASH_BASED_PARAMS
 #endif
 
-/* procfs File System */
+/* ==========================================================================
+ * DEVICE DRIVER PATHS
+ * ==========================================================================
+ *
+ * This section centralizes the file system paths for all device drivers.
+ */
+
+#define LED_DRIVER_PATH      "/dev/userleds"
+#define BUTTONS_DRIVER_PATH  "/dev/buttons"
+#define RTC_DRIVER_PATH      "/dev/rtc0"
 
 #ifdef CONFIG_FS_PROCFS
 #  ifdef CONFIG_NSH_PROC_MOUNTPOINT
@@ -105,152 +122,124 @@
 #  endif
 #endif
 
-/* Check if we can support the RTC driver */
+#define PROGMEM_MTD_MINOR    0
 
-#define HAVE_RTC_DRIVER 1
-#if !defined(CONFIG_RTC) || !defined(CONFIG_RTC_DRIVER)
-#  undef HAVE_RTC_DRIVER
-#endif
-
-/* LED
+/* ==========================================================================
+ * GPIO PIN DEFINITIONS
+ * ==========================================================================
  *
- * The Nucleo-144 board has numerous LEDs but only three, LD1 a Green LED,
- * LD2 a Blue LED and LD3 a Red LED, that can be controlled by software. The
- * following definitions assume the default Solder Bridges are installed.
+ * This section groups all GPIO pin configurations.
  */
 
-#define GPIO_LD1        (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
-                         GPIO_OUTPUT_CLEAR | GPIO_PORTB | GPIO_PIN0)
+/* LED GPIO Definitions */
+
+#define GPIO_LD1         (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
+                          GPIO_OUTPUT_CLEAR | GPIO_PORTB | GPIO_PIN0)
 
 #define GPIO_LD2         (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
-                          GPIO_OUTPUT_CLEAR | GPIO_PORTE | GPIO_PIN1) 
+                          GPIO_OUTPUT_CLEAR | GPIO_PORTE | GPIO_PIN1)  
 
-#define GPIO_LD3        (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
-                         GPIO_OUTPUT_CLEAR | GPIO_PORTB | GPIO_PIN14)
+#define GPIO_LD3         (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
+                          GPIO_OUTPUT_CLEAR | GPIO_PORTB | GPIO_PIN14)
 
-#define GPIO_LED_GREEN   GPIO_LD1
-#define GPIO_LED_ORANGE  GPIO_LD2
-#define GPIO_LED_RED     GPIO_LD3
+/* LED Logical Name Aliases */
 
-#define LED_DRIVER_PATH "/dev/userleds"
+#define GPIO_LED_GREEN       GPIO_LD1
+#define GPIO_LED_ORANGE      GPIO_LD2
+#define GPIO_LED_RED         GPIO_LD3
 
-/* BUTTONS ******************************************************************/
-/*
- * Button GPIO configurations are now dynamically generated based on
- * Kconfig settings. The static definitions have been moved to the
- * button driver implementation.
- *
- * Built-in button (PC13):
- * - The blue pushbutton connected to GPIO PC13 is the USER button (B1)
- * - Connected with pull-down configuration
- * - Low value when pressed, high when released
- * - EXTI interrupt support enabled
- *
- * External buttons:
- * - Configured via NUCLEO_H753ZI_BUTTON_PINS Kconfig setting
- * - Same electrical characteristics as built-in button
- * - All assume pull-down resistor configuration
- */
+/* Button GPIO Definitions */
 
 #ifdef CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT
 
-/* Built-in button definition (if enabled) */
 #ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
-#define GPIO_BTN_BUILT_IN  (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
-                            GPIO_PORTC | GPIO_PIN13)
+#  define GPIO_BTN_BUILT_IN    (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
+                                GPIO_PORTC | GPIO_PIN13)
 #endif
 
-/* Button driver path */
-#define BUTTONS_DRIVER_PATH "/dev/buttons"
+/*
+ * already on board.h
+ 
+#define MIN_IRQBUTTON        0
+#define MAX_IRQBUTTON        (CONFIG_NUCLEO_H753ZI_BUTTON_COUNT - 1)
+#define NUM_IRQBUTTONS       (MAX_IRQBUTTON - MIN_IRQBUTTON + 1)
 
-/* IRQ range for buttons */
-#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
-#define MIN_IRQBUTTON  0
-#else
-#define MIN_IRQBUTTON  0
-#endif
-#define MAX_IRQBUTTON  (CONFIG_NUCLEO_H753ZI_BUTTON_COUNT - 1)
-#define NUM_IRQBUTTONS (MAX_IRQBUTTON - MIN_IRQBUTTON + 1)
+*/
 
 #endif /* CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT */
 
-/* USB OTG FS
- *
- * PA9  OTG_FS_VBUS VBUS sensing (also connected to the green LED)
- * PG6  OTG_FS_PowerSwitchOn
- * PG7  OTG_FS_Overcurrent
- */
+/* USB OTG FS GPIO Definitions */
 
-#define GPIO_OTGFS_VBUS   (GPIO_INPUT|GPIO_FLOAT|GPIO_SPEED_100MHz| \
-                           GPIO_OPENDRAIN|GPIO_PORTA|GPIO_PIN9)
+#define GPIO_OTGFS_VBUS      (GPIO_INPUT | GPIO_FLOAT | GPIO_SPEED_100MHz | \
+                              GPIO_OPENDRAIN | GPIO_PORTA | GPIO_PIN9)
 
-#define GPIO_OTGFS_PWRON  (GPIO_OUTPUT|GPIO_FLOAT|GPIO_SPEED_100MHz|  \
-                           GPIO_PUSHPULL|GPIO_PORTG|GPIO_PIN6)
-
+#define GPIO_OTGFS_PWRON     (GPIO_OUTPUT | GPIO_FLOAT | GPIO_SPEED_100MHz | \
+                              GPIO_PUSHPULL | GPIO_PORTG | GPIO_PIN6)
 #ifdef CONFIG_USBHOST
-#  define GPIO_OTGFS_OVER (GPIO_INPUT|GPIO_EXTI|GPIO_FLOAT| \
-                           GPIO_SPEED_100MHz|GPIO_PUSHPULL| \
-                           GPIO_PORTG|GPIO_PIN7)
+#  define GPIO_OTGFS_OVER    (GPIO_INPUT | GPIO_EXTI | GPIO_FLOAT | \
+                              GPIO_SPEED_100MHz | GPIO_PUSHPULL |   \
+                              GPIO_PORTG | GPIO_PIN7)
 #else
-#  define GPIO_OTGFS_OVER (GPIO_INPUT|GPIO_FLOAT|GPIO_SPEED_100MHz| \
-                           GPIO_PUSHPULL|GPIO_PORTG|GPIO_PIN7)
+#  define GPIO_OTGFS_OVER    (GPIO_INPUT | GPIO_FLOAT | GPIO_SPEED_100MHz | \
+                              GPIO_PUSHPULL | GPIO_PORTG | GPIO_PIN7)
 #endif
 
-/* GPIO pins used by the GPIO Subsystem */
+/* GPIO Subsystem Definitions */
 
-#define BOARD_NGPIOIN     1 /* Amount of GPIO Input pins */
-#define BOARD_NGPIOOUT    1 /* Amount of GPIO Output pins */
-#define BOARD_NGPIOINT    1 /* Amount of GPIO Input w/ Interruption pins */
+#define BOARD_NGPIOIN        1
+#define BOARD_NGPIOOUT       1
+#define BOARD_NGPIOINT       1
 
-/* Example, used free Ports on the board */
+#define GPIO_IN1             (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | GPIO_PIN2)
 
-#define GPIO_IN1          (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | GPIO_PIN2)
-#define GPIO_OUT1         (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
-                           GPIO_OUTPUT_SET | GPIO_PORTE | GPIO_PIN4)
-#define GPIO_INT1         (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | GPIO_PIN5)
+#define GPIO_OUT1            (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
+                              GPIO_OUTPUT_SET | GPIO_PORTE | GPIO_PIN4)
 
-/* X-NUCLEO IKS01A2 */
+#define GPIO_INT1            (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | GPIO_PIN5)
 
-#define GPIO_LPS22HB_INT1 (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN10)
-#define GPIO_LSM6DSL_INT1 (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN4)
-#define GPIO_LSM6DSL_INT2 (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN5)
+/* Sensor GPIO Definitions */
 
-/* NRF24L01
- * CS  - PA4
- * CE  - PF12 (D8)
- * IRQ - PD15 (D9)
+#define GPIO_LPS22HB_INT1    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN10)
+#define GPIO_LSM6DSL_INT1    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN4)
+#define GPIO_LSM6DSL_INT2    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN5)
+
+/* Wireless GPIO Definitions */
+
+#define GPIO_NRF24L01_CS     (GPIO_OUTPUT | GPIO_SPEED_50MHz | \
+                              GPIO_OUTPUT_SET | GPIO_PORTA | GPIO_PIN4)
+#define GPIO_NRF24L01_CE     (GPIO_OUTPUT | GPIO_SPEED_50MHz | \
+                              GPIO_OUTPUT_CLEAR | GPIO_PORTF | GPIO_PIN12)
+#define GPIO_NRF24L01_IRQ    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTD | GPIO_PIN15)
+
+/* Storage GPIO Definitions */
+
+#define GPIO_MMCSD_CS        (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
+                              GPIO_OUTPUT_SET | GPIO_PORTD | GPIO_PIN15)
+#define GPIO_MMCSD_NCD       (GPIO_INPUT | GPIO_PULLUP | GPIO_EXTI | \
+                              GPIO_PORTF | GPIO_PIN12)
+
+/* ==========================================================================
+ * PERIPHERAL DEVICE DEFINITIONS
+ * ==========================================================================
+ *
+ * This section contains peripheral-specific configurations that do not
+ * fall under other categories.
  */
 
-#define GPIO_NRF24L01_CS   (GPIO_OUTPUT | GPIO_SPEED_50MHz| \
-                            GPIO_OUTPUT_SET | GPIO_PORTA | GPIO_PIN4)
-#define GPIO_NRF24L01_CE   (GPIO_OUTPUT | GPIO_SPEED_50MHz| \
-                            GPIO_OUTPUT_CLEAR | GPIO_PORTF | GPIO_PIN12)
-#define GPIO_NRF24L01_IRQ  (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTD | GPIO_PIN15)
-
-/* MMC/SD
- * CS  - PD15 (D9)
- * NCD - PF12 (D8)
- */
-
-#define GPIO_MMCSD_CS    (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
-                          GPIO_OUTPUT_SET | GPIO_PORTD | GPIO_PIN15)
-#define GPIO_MMCSD_NCD    (GPIO_INPUT | GPIO_PULLUP | GPIO_EXTI |  \
-                           GPIO_PORTF | GPIO_PIN12)
-
-/* LMS9DS1 configuration */
+/* Sensor Configuration */
 
 #define LMS9DS1_I2CBUS 1
 
-/* PCA9635 configuration */
+/* PCA9635 LED Controller Configuration */
 
-#define PCA9635_I2CBUS  1
-#define PCA9635_I2CADDR 0x40
+#define PCA9635_I2CBUS       1
+#define PCA9635_I2CADDR      0x40
 
-/* Oled configuration */
+/* OLED Display Configuration */
 
-#define OLED_I2C_PORT   2
+#define OLED_I2C_PORT        2
 
-/* PWM */
+/* PWM Timer Configuration */
 
 #define NUCLEOH753ZI_PWMTIMER 1
 
@@ -262,173 +251,77 @@
  * Name: stm32_bringup
  *
  * Description:
- *   Perform architecture-specific initialization
+ * Perform architecture-specific initialization
  *
- *   CONFIG_BOARD_LATE_INITIALIZE=y :
- *     Called from board_late_initialize().
+ * CONFIG_BOARD_LATE_INITIALIZE=y :
+ * Called from board_late_initialize().
  *
- *   CONFIG_BOARD_LATE_INITIALIZE=n && CONFIG_BOARDCTL=y &&
- *   CONFIG_NSH_ARCHINIT:
- *     Called from the NSH library
+ * CONFIG_BOARD_LATE_INITIALIZE=n && CONFIG_BOARDCTL=y &&
+ * CONFIG_NSH_ARCHINIT:
+ * Called from the NSH library
  *
  ****************************************************************************/
 
 int stm32_bringup(void);
 
-/****************************************************************************
- * Name: stm32_spidev_initialize
+/* ==========================================================================
+ * DRIVER PROTOTYPES
+ * ==========================================================================
  *
- * Description:
- *   Called to configure SPI chip select GPIO pins for the
- *   Nucleo-H753ZI board.
- *
- ****************************************************************************/
+ * This section centralizes all function prototypes for driver initializations.
+ */
 
 #ifdef CONFIG_STM32H7_SPI
 void stm32_spidev_initialize(void);
 #endif
 
-/****************************************************************************
- * Name: stm32_adc_setup
- *
- * Description:
- *   Initialize ADC and register the ADC driver.
- *
- ****************************************************************************/
-
 #ifdef CONFIG_ADC
 int stm32_adc_setup(void);
 #endif
-
-/****************************************************************************
- * Name: stm32_gpio_initialize
- *
- * Description:
- *   Initialize GPIO-Driver.
- *
- ****************************************************************************/
 
 #if defined(CONFIG_DEV_GPIO) && !defined(CONFIG_GPIO_LOWER_HALF)
 int stm32_gpio_initialize(void);
 #endif
 
-/****************************************************************************
- * Name: stm32_usbinitialize
- *
- * Description:
- *   Called from stm32_usbinitialize very early in initialization to setup
- *   USB-related GPIO pins for the NUCLEO-H753ZI board.
- *
- ****************************************************************************/
-
 #ifdef CONFIG_STM32H7_OTGFS
 void weak_function stm32_usbinitialize(void);
 #endif
-
-/****************************************************************************
- * Name: stm32_usbhost_initialize
- *
- * Description:
- *   Called at application startup time to initialize the USB host
- *   functionality. This function will start a thread that will monitor for
- *   device connection/disconnection events.
- *
- ****************************************************************************/
 
 #if defined(CONFIG_STM32H7_OTGFS) && defined(CONFIG_USBHOST)
 int stm32_usbhost_initialize(void);
 #endif
 
-/****************************************************************************
- * Name: stm32_lsm6dsl_initialize
- *
- * Description:
- *   Initialize I2C-based LSM6DSL.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_SENSORS_LSM303AGR
+#ifdef CONFIG_SENSORS_LSM6DSL
 int stm32_lsm6dsl_initialize(char *devpath);
 #endif
 
-/****************************************************************************
- * Name: stm32_lsm303agr_initialize
- *
- * Description:
- *   Initialize I2C-based LSM303AGR.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_SENSORS_LSM6DSL
+#ifdef CONFIG_SENSORS_LSM303AGR
 int stm32_lsm303agr_initialize(char *devpath);
 #endif
-
-/****************************************************************************
- * Name: stm32_wlinitialize
- *
- * Description:
- *   Initialize NRF24L01 wireless interaface.
- ****************************************************************************/
-
-#ifdef CONFIG_WL_NRF24L01
-int stm32_wlinitialize(void);
-#endif
-
-/****************************************************************************
- * Name: stm32_lsm9ds1_initialize
- *
- * Description:
- *   Initialize I2C-based LSM9DS1.
- ****************************************************************************/
 
 #ifdef CONFIG_SENSORS_LSM9DS1
 int stm32_lsm9ds1_initialize(char *devpath);
 #endif
 
-/****************************************************************************
- * Name: stm32_pca9635_initialize
- *
- * Description:
- *   Initialize I2C-based PCA9635PW LED driver.
- ****************************************************************************/
+#ifdef CONFIG_WL_NRF24L01
+int stm32_wlinitialize(void);
+#endif
 
 #ifdef CONFIG_PCA9635PW
 int stm32_pca9635_initialize(void);
 #endif
 
-/****************************************************************************
- * Name: stm32_pwm_setup
- *
- * Description:
- *   Initialize PWM and register the PWM device.
- *
- ****************************************************************************/
-
 #ifdef CONFIG_PWM
 int stm32_pwm_setup(void);
 #endif
 
-/****************************************************************************
- * Name: stm32_mtd_initialize
- *
- * Description:
- *   Initialize MTD drivers.
- *
- ****************************************************************************/
 #ifdef CONFIG_MTD
 
 #ifdef HAVE_PROGMEM_CHARDEV
 int stm32_progmem_init(void);
 #endif /* HAVE_PROGMEM_CHARDEV */
-#endif
 
-/****************************************************************************
- * Name: stm32_mmcsd_initialize
- *
- * Description:
- *   Initialize SPI-based SD card and card detect thread.
- *
- ****************************************************************************/
+#endif /* CONFIG_MTD */
 
 #ifdef CONFIG_MMCSD_SPI
 int stm32_mmcsd_initialize(int minor);
