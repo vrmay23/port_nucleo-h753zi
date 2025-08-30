@@ -84,7 +84,7 @@ if(CONFIG_WL_NRF24L01)
   list(APPEND SRCS stm32_nrf24l01.c)
 endif()
 
-if(CONFIG_DEV_GPIO)
+if(CONFIG_NUCLEO_H753ZI_GPIO_DRIVER)
   list(APPEND SRCS stm32_gpio.c)
 endif()
 

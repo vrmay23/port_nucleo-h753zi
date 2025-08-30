@@ -1,24 +1,21 @@
 # Gen Make.dep automatically
-leds_main.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.examples.leds.o: \
- leds_main.c \
+gpio_main.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.examples.gpio.o: \
+ gpio_main.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/config.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/ioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdbool.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/compiler.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdint.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/inttypes.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdlib.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
  /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdbool.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
@@ -54,12 +51,26 @@ leds_main.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.examples.leds.o: \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spinlock_type.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/lib/lib.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/kmalloc.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdlib.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/mm.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/userspace.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/pthread.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/unistd.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/malloc.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/fcntl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/leds/userled.h
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/ioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/ioexpander/gpio.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/signal.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/wqueue.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/list.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/wdog.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/sched.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/addrenv.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/arch.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/pgalloc.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/net/net.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/tls.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/cache.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atexit.h
 # No files specified for dependency generation
 # No files specified for dependency generation
