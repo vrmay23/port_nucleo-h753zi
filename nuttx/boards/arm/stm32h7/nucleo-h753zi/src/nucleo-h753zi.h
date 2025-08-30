@@ -150,23 +150,12 @@
 
 /* Button GPIO Definitions */
 
-#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT
+/* Button GPIO Definitions */
 
-#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
+#if defined(CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT) || defined(CONFIG_NUCLEO_H753ZI_GPIO_DRIVER)
 #  define GPIO_BTN_BUILT_IN    (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
                                 GPIO_PORTC | GPIO_PIN13)
 #endif
-
-/*
- * already on board.h
- 
-#define MIN_IRQBUTTON        0
-#define MAX_IRQBUTTON        (CONFIG_NUCLEO_H753ZI_BUTTON_COUNT - 1)
-#define NUM_IRQBUTTONS       (MAX_IRQBUTTON - MIN_IRQBUTTON + 1)
-
-*/
-
-#endif /* CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT */
 
 /* USB OTG FS GPIO Definitions */
 
@@ -187,8 +176,10 @@
 /* GPIO Subsystem Definitions */
 
 #define BOARD_NGPIOIN        1
-#define BOARD_NGPIOOUT       1
+#define BOARD_NGPIOOUT       3
 #define BOARD_NGPIOINT       1
+
+/* pplace holder - example for in, out and interrupt */
 
 #define GPIO_IN1             (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | GPIO_PIN2)
 
