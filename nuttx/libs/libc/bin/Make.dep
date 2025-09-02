@@ -19653,7 +19653,6 @@ bin/lib_tcflush.o: termios/lib_tcflush.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/termios.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h
 bin/lib_tcdrain.o: termios/lib_tcdrain.c \
@@ -19669,7 +19668,6 @@ bin/lib_tcdrain.o: termios/lib_tcdrain.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/termios.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h
 bin/lib_tcflow.o: termios/lib_tcflow.c \
@@ -19685,7 +19683,6 @@ bin/lib_tcflow.o: termios/lib_tcflow.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/termios.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h
 bin/lib_tcgetattr.o: termios/lib_tcgetattr.c \
@@ -19701,7 +19698,6 @@ bin/lib_tcgetattr.o: termios/lib_tcgetattr.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/termios.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h
 bin/lib_tcsetattr.o: termios/lib_tcsetattr.c \
@@ -19717,7 +19713,6 @@ bin/lib_tcsetattr.o: termios/lib_tcsetattr.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/termios.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h
 bin/lib_tcsendbreak.o: termios/lib_tcsendbreak.c \
@@ -19733,7 +19728,6 @@ bin/lib_tcsendbreak.o: termios/lib_tcsendbreak.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
- /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/termios.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h
 bin/lib_ttyname.o: termios/lib_ttyname.c \

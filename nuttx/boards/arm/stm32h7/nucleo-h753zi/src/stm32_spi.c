@@ -1,7 +1,5 @@
-/**
+/****************************************************************************
  * boards/arm/stm32h7/nucleo-h753zi/src/stm32_spi.c
- *
- * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -10,7 +8,7 @@
  * "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -18,125 +16,129 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  *
- **/
+ ****************************************************************************/
 
-/**
+/****************************************************************************
  * Included Files
- **/
+ ****************************************************************************/
 
 #include <nuttx/config.h>
-
-#include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
-#include <errno.h>
-#include <debug.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
-
+#include <errno.h>
+#include <debug.h>
 #include <nuttx/spi/spi.h>
-
-#include "arm_internal.h"
-#include "chip.h"
+#include <arch/board/board.h>
 #include "stm32_gpio.h"
 #include "stm32_spi.h"
 #include "nucleo-h753zi.h"
 
 #ifdef CONFIG_STM32H7_SPI
 
-/**
+/****************************************************************************
  * Pre-processor Definitions
- **/
+ ****************************************************************************/
 
-/* Maximum number of CS pins per SPI */
-#define MAX_CS_PINS_PER_SPI  8
+#define MAX_CS_PINS_PER_SPI 8
 
-/* SPI Device ID mapping:
- * SPI1: Device IDs 0-7  (SPIDEV_USER_DEFINED(0) to SPIDEV_USER_DEFINED(7))
- * SPI2: Device IDs 8-15 (SPIDEV_USER_DEFINED(8) to SPIDEV_USER_DEFINED(15))
- * SPI3: Device IDs 16-23 (SPIDEV_USER_DEFINED(16) to SPIDEV_USER_DEFINED(23))
- * SPI4: Device IDs 24-31 (SPIDEV_USER_DEFINED(24) to SPIDEV_USER_DEFINED(31))
- * SPI5: Device IDs 32-39 (SPIDEV_USER_DEFINED(32) to SPIDEV_USER_DEFINED(39))
- * SPI6: Device IDs 40-47 (SPIDEV_USER_DEFINED(40) to SPIDEV_USER_DEFINED(47))
- */
-#define SPI1_DEVID_BASE  0
-#define SPI2_DEVID_BASE  8
-#define SPI3_DEVID_BASE  16
-#define SPI4_DEVID_BASE  24
-#define SPI5_DEVID_BASE  32
-#define SPI6_DEVID_BASE  40
-
-/**
- * Private Types
- **/
-
-struct spi_cs_config_s
-{
-  uint32_t gpio_pins[MAX_CS_PINS_PER_SPI];  /* GPIO configurations for CS pins */
-  uint8_t num_cs;                           /* Number of configured CS pins */
-};
-
-/**
+/****************************************************************************
  * Private Data
- **/
+ ****************************************************************************/
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI1_ENABLE
-static struct spi_cs_config_s g_spi1_cs_config = {0};
-#endif
-#ifdef CONFIG_NUCLEO_H753ZI_SPI2_ENABLE
-static struct spi_cs_config_s g_spi2_cs_config = {0};
-#endif
-#ifdef CONFIG_NUCLEO_H753ZI_SPI3_ENABLE
-static struct spi_cs_config_s g_spi3_cs_config = {0};
-#endif
-#ifdef CONFIG_NUCLEO_H753ZI_SPI4_ENABLE
-static struct spi_cs_config_s g_spi4_cs_config = {0};
-#endif
-#ifdef CONFIG_NUCLEO_H753ZI_SPI5_ENABLE
-static struct spi_cs_config_s g_spi5_cs_config = {0};
-#endif
-#ifdef CONFIG_NUCLEO_H753ZI_SPI6_ENABLE
-static struct spi_cs_config_s g_spi6_cs_config = {0};
-#endif
+/* SPI CS pin configurations for each SPI */
+static uint32_t g_spi1_cs_pins[MAX_CS_PINS_PER_SPI];
+static int g_spi1_cs_count = 0;
 
-/**
+static uint32_t g_spi2_cs_pins[MAX_CS_PINS_PER_SPI];
+static int g_spi2_cs_count = 0;
+
+static uint32_t g_spi3_cs_pins[MAX_CS_PINS_PER_SPI];
+static int g_spi3_cs_count = 0;
+
+static uint32_t g_spi4_cs_pins[MAX_CS_PINS_PER_SPI];
+static int g_spi4_cs_count = 0;
+
+static uint32_t g_spi5_cs_pins[MAX_CS_PINS_PER_SPI];
+static int g_spi5_cs_count = 0;
+
+static uint32_t g_spi6_cs_pins[MAX_CS_PINS_PER_SPI];
+static int g_spi6_cs_count = 0;
+
+/****************************************************************************
  * Private Functions
- **/
+ ****************************************************************************/
 
-/**
+/****************************************************************************
  * Name: parse_gpio_pin
  *
  * Description:
- * Parse a GPIO pin string (e.g., "PE4", "PA15") and return the GPIO
- * configuration.
+ *   Parse GPIO pin string like "PA0" into STM32 GPIO configuration.
  *
  * Input Parameters:
- * pin_str - String representation of the pin (e.g., "PE4")
+ *   pin_str - GPIO pin string (e.g., "PA0", "PF15", "PC13")
+ *   error   - Pointer to error code storage
  *
  * Returned Value:
- * GPIO configuration value, or 0 if parsing fails
+ *   STM32 GPIO configuration value on success, 0 on error
  *
- **/
-static uint32_t parse_gpio_pin(const char *pin_str)
+ ****************************************************************************/
+
+static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
 {
-  if (pin_str == NULL || strlen(pin_str) < 3)
-    {
-      return 0;
-    }
-
-  char port_char = toupper(pin_str[1]); /* Corrected index for 'E' in "PE4" */
-  uint8_t pin_num = 0;
+  size_t len;
+  char port;
+  FAR const char *pin_num_str;
+  FAR char *endptr;
+  long pin_num;
   uint32_t port_base;
+  uint32_t gpio_pin;
 
-  /* Parse pin number */
-  if (sscanf(&pin_str[2], "%hhu", &pin_num) != 1 || pin_num > 15)
+  *error = 0;
+
+  if (pin_str == NULL)
     {
-      spierr("ERROR: Invalid pin number in %s\n", pin_str);
+      *error = -EINVAL;
       return 0;
     }
 
-  /* Determine port base */
-  switch (port_char)
+  /* Remove leading/trailing spaces */
+  while (*pin_str == ' ' || *pin_str == '\t')
+    {
+      pin_str++;
+    }
+
+  len = strlen(pin_str);
+  if (len < 3 || len > 4)
+    {
+      *error = -EINVAL;
+      return 0;
+    }
+
+  if (pin_str[0] != 'P')
+    {
+      *error = -EINVAL;
+      return 0;
+    }
+
+  port = pin_str[1];
+  if (port < 'A' || port > 'H') /* STM32H753ZI only has ports A-H */
+    {
+      *error = -EINVAL;
+      return 0;
+    }
+
+  pin_num_str = &pin_str[2];
+  pin_num = strtol(pin_num_str, &endptr, 10);
+  if (*endptr != '\0' || pin_num < 0 || pin_num > 15)
+    {
+      *error = -EINVAL;
+      return 0;
+    }
+
+  /* Map port letter to STM32 port base */
+  switch (port)
     {
       case 'A': port_base = GPIO_PORTA; break;
       case 'B': port_base = GPIO_PORTB; break;
@@ -146,485 +148,410 @@ static uint32_t parse_gpio_pin(const char *pin_str)
       case 'F': port_base = GPIO_PORTF; break;
       case 'G': port_base = GPIO_PORTG; break;
       case 'H': port_base = GPIO_PORTH; break;
-      case 'I': port_base = GPIO_PORTI; break;
-      case 'J': port_base = GPIO_PORTJ; break;
-      case 'K': port_base = GPIO_PORTK; break;
+      // case 'I': port_base = GPIO_PORTI; break;
+      // case 'J': port_base = GPIO_PORTJ; break;
+      // case 'K': port_base = GPIO_PORTK; break;
       default:
-        spierr("ERROR: Invalid port %c in %s\n", port_char, pin_str);
+        *error = -EINVAL;
         return 0;
     }
 
-  /* Build GPIO configuration for CS pin (output, push-pull, high speed) */
-  return (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | 
-          GPIO_OUTPUT_SET | port_base | GPIO_PIN(pin_num));
+  /* Use correct STM32 GPIO pin macros */
+  switch (pin_num)
+    {
+      case 0:  gpio_pin = GPIO_PIN0;  break;
+      case 1:  gpio_pin = GPIO_PIN1;  break;
+      case 2:  gpio_pin = GPIO_PIN2;  break;
+      case 3:  gpio_pin = GPIO_PIN3;  break;
+      case 4:  gpio_pin = GPIO_PIN4;  break;
+      case 5:  gpio_pin = GPIO_PIN5;  break;
+      case 6:  gpio_pin = GPIO_PIN6;  break;
+      case 7:  gpio_pin = GPIO_PIN7;  break;
+      case 8:  gpio_pin = GPIO_PIN8;  break;
+      case 9:  gpio_pin = GPIO_PIN9;  break;
+      case 10: gpio_pin = GPIO_PIN10; break;
+      case 11: gpio_pin = GPIO_PIN11; break;
+      case 12: gpio_pin = GPIO_PIN12; break;
+      case 13: gpio_pin = GPIO_PIN13; break;
+      case 14: gpio_pin = GPIO_PIN14; break;
+      case 15: gpio_pin = GPIO_PIN15; break;
+      default:
+        *error = -EINVAL;
+        return 0;
+    }
+
+  return (GPIO_OUTPUT | GPIO_OUTPUT_SET | port_base | gpio_pin);
 }
 
-/**
+/****************************************************************************
  * Name: parse_cs_pins
  *
  * Description:
- * Parse comma-separated CS pin configuration string.
+ *   Parse CS pin configuration string and store in array.
  *
  * Input Parameters:
- * cs_pins_str - String with comma-separated pin names (e.g., "PE0,PE1,PE3")
- * config      - Pointer to CS configuration structure to fill
+ *   cs_pins_str - Comma-separated CS pin string
+ *   cs_pins     - Array to store parsed pins
+ *   max_pins    - Maximum pins in array
+ *   cs_count    - Pointer to store actual count
  *
  * Returned Value:
- * Number of pins parsed, or negative error code
+ *   OK on success, negative errno on error
  *
- **/
-static int parse_cs_pins(const char *cs_pins_str, struct spi_cs_config_s *config)
+ ****************************************************************************/
+
+static int parse_cs_pins(FAR const char *cs_pins_str,
+                         FAR uint32_t *cs_pins,
+                         int max_pins,
+                         FAR int *cs_count)
 {
-  char *pins_copy;
-  char *token;
-  char *saveptr;
+  char pins_str[256];
+  FAR char *token;
   int pin_count = 0;
+  int error;
+  uint32_t gpio_config;
+
+  *cs_count = 0;
 
   if (cs_pins_str == NULL || strlen(cs_pins_str) == 0)
     {
-      config->num_cs = 0;
-      return 0;
+      return OK; /* No CS pins configured */
     }
 
-  /* Make a copy of the string for tokenization */
-  pins_copy = strdup(cs_pins_str);
-  if (pins_copy == NULL)
-    {
-      spierr("ERROR: Failed to allocate memory for pin parsing\n");
-      return -ENOMEM;
-    }
+  /* Make a copy for parsing */
+  strncpy(pins_str, cs_pins_str, sizeof(pins_str) - 1);
+  pins_str[sizeof(pins_str) - 1] = '\0';
 
-  /* Parse each pin */
-  token = strtok_r(pins_copy, ",", &saveptr);
-  while (token != NULL && pin_count < MAX_CS_PINS_PER_SPI)
+  token = strtok(pins_str, ", \t\n\r");
+  while (token != NULL && pin_count < max_pins)
     {
-      /* Remove leading whitespace */
-      while (isspace(*token)) token++;
-      
-      /* Remove trailing whitespace */
-      char *end = token + strlen(token) - 1;
-      while (end > token && isspace(*end)) *end-- = '\0';
-      
-      if (strlen(token) > 0)
+      gpio_config = parse_gpio_pin(token, &error);
+      if (error != 0)
         {
-          uint32_t gpio_config = parse_gpio_pin(token);
-          if (gpio_config == 0)
-            {
-              spierr("ERROR: Failed to parse GPIO pin: %s\n", token);
-              free(pins_copy);
-              return -EINVAL;
-            }
-
-          config->gpio_pins[pin_count] = gpio_config;
-          pin_count++;
-          spiinfo("Parsed CS pin %d: %s -> 0x%08x\n",
-                  pin_count - 1, token, gpio_config);
+          spierr("ERROR: Invalid CS pin: %s\n", token);
+          return error;
         }
 
-      token = strtok_r(NULL, ",", &saveptr);
+      cs_pins[pin_count] = gpio_config;
+      pin_count++;
+
+      spiinfo("Parsed CS pin %d: %s -> 0x%08lx\n",
+              pin_count - 1, token, (unsigned long)gpio_config);
+
+      token = strtok(NULL, ", \t\n\r");
     }
 
-  free(pins_copy);
-  config->num_cs = pin_count;
-  spiinfo("Parsed %d CS pins total\n", pin_count);
-  return pin_count;
+  *cs_count = pin_count;
+  return OK;
 }
 
-/**
+/****************************************************************************
  * Name: spi_cs_select
  *
  * Description:
- * Generic CS selection function for any SPI.
+ *   Select/deselect SPI chip select pin.
  *
  * Input Parameters:
- * config   - CS configuration for this SPI
- * devid    - Device ID 
- * selected - true: assert CS, false: deassert CS
- * spi_base - Base device ID for this SPI (for calculating CS index)
+ *   devid    - Device ID
+ *   selected - Select (true) or deselect (false)
  *
- **/
-static void spi_cs_select(struct spi_cs_config_s *config, uint32_t devid, 
-                          bool selected, uint32_t spi_base)
+ ****************************************************************************/
+
+static void spi_cs_select(uint32_t devid, bool selected)
 {
-  int cs_index;
+  uint32_t spi_base = devid / MAX_CS_PINS_PER_SPI;
+  uint32_t cs_index = devid % MAX_CS_PINS_PER_SPI;
+  uint32_t *cs_pins = NULL;
+  int cs_count = 0;
 
-  if (config == NULL || config->num_cs == 0)
+  /* Map device ID to appropriate CS pin array */
+  switch (spi_base)
     {
-      spiwarn("WARNING: No CS pins configured\n");
-      return;
-    }
-
-  /* Calculate CS index from device ID */
-  cs_index = devid - spi_base;
-
-  if (cs_index < 0 || cs_index >= config->num_cs)
-    {
-      spierr("ERROR: Invalid device ID %d for SPI base %d (CS index %d)\n", 
-             devid, spi_base, cs_index);
-      return;
-    }
-
-  /* Control the CS pin (active low) */
-  stm32_gpiowrite(config->gpio_pins[cs_index], !selected);
-
-  spiinfo("SPI CS%d (devid=%d): %s\n",
-          cs_index, devid, selected ? "ASSERT" : "DEASSERT");
-}
-
-/**
- * Public Functions
- **/
-
-/**
- * Name: stm32_spidev_initialize
- *
- * Description:
- * Called to configure SPI chip select GPIO pins for the Nucleo-H753ZI.
- *
- **/
-void stm32_spidev_initialize(void)
-{
-  int ret;
-  int total_pins = 0;
-
-  spiinfo("Initializing SPI CS pins for Nucleo-H753ZI\n");
-
 #ifdef CONFIG_NUCLEO_H753ZI_SPI1_ENABLE
-  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI1_CS_PINS, &g_spi1_cs_config);
-  if (ret > 0)
-    {
-      spiinfo("SPI1: Configuring %d CS pins\n", ret);
-      for (int i = 0; i < g_spi1_cs_config.num_cs; i++)
-        {
-          stm32_configgpio(g_spi1_cs_config.gpio_pins[i]);
-          stm32_gpiowrite(g_spi1_cs_config.gpio_pins[i], true); /* Deasserted */
-          total_pins++;
-        }
-    }
-  else if (ret < 0)
-    {
-      spierr("ERROR: Failed to parse SPI1 CS pins: %d\n", ret);
-    }
+      case 0: /* SPI1 */
+        cs_pins = g_spi1_cs_pins;
+        cs_count = g_spi1_cs_count;
+        break;
 #endif
-
 #ifdef CONFIG_NUCLEO_H753ZI_SPI2_ENABLE
-  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI2_CS_PINS, &g_spi2_cs_config);
-  if (ret > 0)
-    {
-      spiinfo("SPI2: Configuring %d CS pins\n", ret);
-      for (int i = 0; i < g_spi2_cs_config.num_cs; i++)
-        {
-          stm32_configgpio(g_spi2_cs_config.gpio_pins[i]);
-          stm32_gpiowrite(g_spi2_cs_config.gpio_pins[i], true); /* Deasserted */
-          total_pins++;
-        }
-    }
-  else if (ret < 0)
-    {
-      spierr("ERROR: Failed to parse SPI2 CS pins: %d\n", ret);
-    }
+      case 1: /* SPI2 */
+        cs_pins = g_spi2_cs_pins;
+        cs_count = g_spi2_cs_count;
+        break;
 #endif
-
 #ifdef CONFIG_NUCLEO_H753ZI_SPI3_ENABLE
-  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI3_CS_PINS, &g_spi3_cs_config);
-  if (ret > 0)
-    {
-      spiinfo("SPI3: Configuring %d CS pins\n", ret);
-      for (int i = 0; i < g_spi3_cs_config.num_cs; i++)
-        {
-          stm32_configgpio(g_spi3_cs_config.gpio_pins[i]);
-          stm32_gpiowrite(g_spi3_cs_config.gpio_pins[i], true); /* Deasserted */
-          total_pins++;
-        }
-    }
-  else if (ret < 0)
-    {
-      spierr("ERROR: Failed to parse SPI3 CS pins: %d\n", ret);
-    }
+      case 2: /* SPI3 */
+        cs_pins = g_spi3_cs_pins;
+        cs_count = g_spi3_cs_count;
+        break;
 #endif
-
 #ifdef CONFIG_NUCLEO_H753ZI_SPI4_ENABLE
-  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI4_CS_PINS, &g_spi4_cs_config);
-  if (ret > 0)
-    {
-      spiinfo("SPI4: Configuring %d CS pins\n", ret);
-      for (int i = 0; i < g_spi4_cs_config.num_cs; i++)
-        {
-          stm32_configgpio(g_spi4_cs_config.gpio_pins[i]);
-          stm32_gpiowrite(g_spi4_cs_config.gpio_pins[i], true); /* Deasserted */
-          total_pins++;
-        }
-    }
-  else if (ret < 0)
-    {
-      spierr("ERROR: Failed to parse SPI4 CS pins: %d\n", ret);
-    }
+      case 3: /* SPI4 */
+        cs_pins = g_spi4_cs_pins;
+        cs_count = g_spi4_cs_count;
+        break;
 #endif
-
 #ifdef CONFIG_NUCLEO_H753ZI_SPI5_ENABLE
-  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI5_CS_PINS, &g_spi5_cs_config);
-  if (ret > 0)
-    {
-      spiinfo("SPI5: Configuring %d CS pins\n", ret);
-      for (int i = 0; i < g_spi5_cs_config.num_cs; i++)
-        {
-          stm32_configgpio(g_spi5_cs_config.gpio_pins[i]);
-          stm32_gpiowrite(g_spi5_cs_config.gpio_pins[i], true); /* Deasserted */
-          total_pins++;
-        }
-    }
-  else if (ret < 0)
-    {
-      spierr("ERROR: Failed to parse SPI5 CS pins: %d\n", ret);
-    }
+      case 4: /* SPI5 */
+        cs_pins = g_spi5_cs_pins;
+        cs_count = g_spi5_cs_count;
+        break;
 #endif
-
 #ifdef CONFIG_NUCLEO_H753ZI_SPI6_ENABLE
-  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI6_CS_PINS, &g_spi6_cs_config);
-  if (ret > 0)
-    {
-      spiinfo("SPI6: Configuring %d CS pins\n", ret);
-      for (int i = 0; i < g_spi6_cs_config.num_cs; i++)
-        {
-          stm32_configgpio(g_spi6_cs_config.gpio_pins[i]);
-          stm32_gpiowrite(g_spi6_cs_config.gpio_pins[i], true); /* Deasserted */
-          total_pins++;
-        }
-    }
-  else if (ret < 0)
-    {
-      spierr("ERROR: Failed to parse SPI6 CS pins: %d\n", ret);
-    }
+      case 5: /* SPI6 */
+        cs_pins = g_spi6_cs_pins;
+        cs_count = g_spi6_cs_count;
+        break;
 #endif
+      default:
+        spierr("ERROR: Invalid device ID %lu for SPI base %lu (CS index %lu)\n",
+               (unsigned long)devid, (unsigned long)spi_base, (unsigned long)cs_index);
+        return;
+    }
 
-  spiinfo("SPI CS initialization complete: %d total pins configured\n", total_pins);
+  if (cs_pins == NULL || cs_index >= cs_count)
+    {
+      return; /* CS pin not configured */
+    }
+
+  spiinfo("SPI CS%lu (devid=%lu): %s\n",
+          (unsigned long)cs_index, (unsigned long)devid,
+          selected ? "ASSERT" : "DEASSERT");
+
+  /* CS is active low - set low to select, high to deselect */
+  stm32_gpiowrite(cs_pins[cs_index], !selected);
 }
 
-/**
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
  * Name: stm32_spi_initialize
  *
  * Description:
- * Initialize SPI buses and bind them to the SPI driver.
+ *   Initialize SPI interfaces and CS pins.
  *
- **/
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
 int stm32_spi_initialize(void)
 {
-  struct spi_dev_s *spi_dev;
   int ret = OK;
 
-  spiinfo("Initializing SPI buses\n");
-
-  /* Initialize SPI CS pins first */
-  stm32_spidev_initialize();
+  spiinfo("Initializing SPI interfaces\n");
 
 #ifdef CONFIG_NUCLEO_H753ZI_SPI1_ENABLE
-  spi_dev = stm32_spibus_initialize(1);
-  if (spi_dev == NULL)
+  /* Parse SPI1 CS pins */
+  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI1_CS_PINS,
+                      g_spi1_cs_pins, MAX_CS_PINS_PER_SPI,
+                      &g_spi1_cs_count);
+  if (ret < 0)
     {
-      spierr("ERROR: Failed to initialize SPI1\n");
-      ret = -ENODEV;
+      spierr("ERROR: Failed to parse SPI1 CS pins\n");
+      return ret;
     }
-  else
+
+  /* Configure SPI1 CS pins */
+  for (int i = 0; i < g_spi1_cs_count; i++)
     {
-      spiinfo("SPI1 initialized successfully\n");
+      ret = stm32_configgpio(g_spi1_cs_pins[i]);
+      if (ret < 0)
+        {
+          spierr("ERROR: Failed to configure SPI1 CS pin %d\n", i);
+          return ret;
+        }
+      /* Initialize CS pins as deselected (high) */
+      stm32_gpiowrite(g_spi1_cs_pins[i], true);
     }
+
+  spiinfo("SPI1 initialized with %d CS pins\n", g_spi1_cs_count);
 #endif
 
 #ifdef CONFIG_NUCLEO_H753ZI_SPI2_ENABLE
-  spi_dev = stm32_spibus_initialize(2);
-  if (spi_dev == NULL)
+  /* Parse SPI2 CS pins */
+  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI2_CS_PINS,
+                      g_spi2_cs_pins, MAX_CS_PINS_PER_SPI,
+                      &g_spi2_cs_count);
+  if (ret < 0)
     {
-      spierr("ERROR: Failed to initialize SPI2\n");
-      ret = -ENODEV;
+      spierr("ERROR: Failed to parse SPI2 CS pins\n");
+      return ret;
     }
-  else
+
+  /* Configure SPI2 CS pins */
+  for (int i = 0; i < g_spi2_cs_count; i++)
     {
-      spiinfo("SPI2 initialized successfully\n");
+      ret = stm32_configgpio(g_spi2_cs_pins[i]);
+      if (ret < 0)
+        {
+          spierr("ERROR: Failed to configure SPI2 CS pin %d\n", i);
+          return ret;
+        }
+      stm32_gpiowrite(g_spi2_cs_pins[i], true);
     }
+
+  spiinfo("SPI2 initialized with %d CS pins\n", g_spi2_cs_count);
 #endif
 
 #ifdef CONFIG_NUCLEO_H753ZI_SPI3_ENABLE
-  spi_dev = stm32_spibus_initialize(3);
-  if (spi_dev == NULL)
+  /* Parse SPI3 CS pins */
+  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI3_CS_PINS,
+                      g_spi3_cs_pins, MAX_CS_PINS_PER_SPI,
+                      &g_spi3_cs_count);
+  if (ret < 0)
     {
-      spierr("ERROR: Failed to initialize SPI3\n");
-      ret = -ENODEV;
+      spierr("ERROR: Failed to parse SPI3 CS pins\n");
+      return ret;
     }
-  else
+
+  /* Configure SPI3 CS pins */
+  for (int i = 0; i < g_spi3_cs_count; i++)
     {
-      spiinfo("SPI3 initialized successfully\n");
+      ret = stm32_configgpio(g_spi3_cs_pins[i]);
+      if (ret < 0)
+        {
+          spierr("ERROR: Failed to configure SPI3 CS pin %d\n", i);
+          return ret;
+        }
+      stm32_gpiowrite(g_spi3_cs_pins[i], true);
     }
+
+  spiinfo("SPI3 initialized with %d CS pins\n", g_spi3_cs_count);
 #endif
 
 #ifdef CONFIG_NUCLEO_H753ZI_SPI4_ENABLE
-  spi_dev = stm32_spibus_initialize(4);
-  if (spi_dev == NULL)
+  /* Parse SPI4 CS pins */
+  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI4_CS_PINS,
+                      g_spi4_cs_pins, MAX_CS_PINS_PER_SPI,
+                      &g_spi4_cs_count);
+  if (ret < 0)
     {
-      spierr("ERROR: Failed to initialize SPI4\n");
-      ret = -ENODEV;
+      spierr("ERROR: Failed to parse SPI4 CS pins\n");
+      return ret;
     }
-  else
+
+  /* Configure SPI4 CS pins */
+  for (int i = 0; i < g_spi4_cs_count; i++)
     {
-      spiinfo("SPI4 initialized successfully\n");
+      ret = stm32_configgpio(g_spi4_cs_pins[i]);
+      if (ret < 0)
+        {
+          spierr("ERROR: Failed to configure SPI4 CS pin %d\n", i);
+          return ret;
+        }
+      stm32_gpiowrite(g_spi4_cs_pins[i], true);
     }
+
+  spiinfo("SPI4 initialized with %d CS pins\n", g_spi4_cs_count);
 #endif
 
 #ifdef CONFIG_NUCLEO_H753ZI_SPI5_ENABLE
-  spi_dev = stm32_spibus_initialize(5);
-  if (spi_dev == NULL)
+  /* Parse SPI5 CS pins */
+  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI5_CS_PINS,
+                      g_spi5_cs_pins, MAX_CS_PINS_PER_SPI,
+                      &g_spi5_cs_count);
+  if (ret < 0)
     {
-      spierr("ERROR: Failed to initialize SPI5\n");
-      ret = -ENODEV;
+      spierr("ERROR: Failed to parse SPI5 CS pins\n");
+      return ret;
     }
-  else
+
+  /* Configure SPI5 CS pins */
+  for (int i = 0; i < g_spi5_cs_count; i++)
     {
-      spiinfo("SPI5 initialized successfully\n");
+      ret = stm32_configgpio(g_spi5_cs_pins[i]);
+      if (ret < 0)
+        {
+          spierr("ERROR: Failed to configure SPI5 CS pin %d\n", i);
+          return ret;
+        }
+      stm32_gpiowrite(g_spi5_cs_pins[i], true);
     }
+
+  spiinfo("SPI5 initialized with %d CS pins\n", g_spi5_cs_count);
 #endif
 
 #ifdef CONFIG_NUCLEO_H753ZI_SPI6_ENABLE
-  spi_dev = stm32_spibus_initialize(6);
-  if (spi_dev == NULL)
+  /* Parse SPI6 CS pins */
+  ret = parse_cs_pins(CONFIG_NUCLEO_H753ZI_SPI6_CS_PINS,
+                      g_spi6_cs_pins, MAX_CS_PINS_PER_SPI,
+                      &g_spi6_cs_count);
+  if (ret < 0)
     {
-      spierr("ERROR: Failed to initialize SPI6\n");
-      ret = -ENODEV;
+      spierr("ERROR: Failed to parse SPI6 CS pins\n");
+      return ret;
     }
-  else
+
+  /* Configure SPI6 CS pins */
+  for (int i = 0; i < g_spi6_cs_count; i++)
     {
-      spiinfo("SPI6 initialized successfully\n");
+      ret = stm32_configgpio(g_spi6_cs_pins[i]);
+      if (ret < 0)
+        {
+          spierr("ERROR: Failed to configure SPI6 CS pin %d\n", i);
+          return ret;
+        }
+      stm32_gpiowrite(g_spi6_cs_pins[i], true);
     }
+
+  spiinfo("SPI6 initialized with %d CS pins\n", g_spi6_cs_count);
 #endif
 
+  spiinfo("SPI initialization completed\n");
   return ret;
 }
 
-/**
- * Name: stm32_spiX_select and stm32_spiX_status
+/****************************************************************************
+ * Name: stm32_spi1/2/3/4/5/6_select
  *
  * Description:
- * SPI select and status functions for each SPI bus.
+ *   SPI select functions for each interface.
  *
- **/
-#ifdef CONFIG_NUCLEO_H753ZI_SPI1_ENABLE
-void stm32_spi1select(struct spi_dev_s *dev, uint32_t devid, bool selected)
-{
-  spi_cs_select(&g_spi1_cs_config, devid, selected, SPI1_DEVID_BASE);
-}
+ ****************************************************************************/
 
-uint8_t stm32_spi1status(struct spi_dev_s *dev, uint32_t devid)
+#ifdef CONFIG_STM32H7_SPI1
+void stm32_spi1_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  return 0; /* Device is always present */
+  spi_cs_select(devid, selected);
 }
 #endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI2_ENABLE
-void stm32_spi2select(struct spi_dev_s *dev, uint32_t devid, bool selected)
+#ifdef CONFIG_STM32H7_SPI2
+void stm32_spi2_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  spi_cs_select(&g_spi2_cs_config, devid, selected, SPI2_DEVID_BASE);
-}
-
-uint8_t stm32_spi2status(struct spi_dev_s *dev, uint32_t devid)
-{
-  return 0; /* Device is always present */
+  spi_cs_select(devid + 8, selected);
 }
 #endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI3_ENABLE
-void stm32_spi3select(struct spi_dev_s *dev, uint32_t devid, bool selected)
+#ifdef CONFIG_STM32H7_SPI3
+void stm32_spi3_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  spi_cs_select(&g_spi3_cs_config, devid, selected, SPI3_DEVID_BASE);
-}
-
-uint8_t stm32_spi3status(struct spi_dev_s *dev, uint32_t devid)
-{
-  return 0; /* Device is always present */
+  spi_cs_select(devid + 16, selected);
 }
 #endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI4_ENABLE
-void stm32_spi4select(struct spi_dev_s *dev, uint32_t devid, bool selected)
+#ifdef CONFIG_STM32H7_SPI4
+void stm32_spi4_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  spi_cs_select(&g_spi4_cs_config, devid, selected, SPI4_DEVID_BASE);
-}
-
-uint8_t stm32_spi4status(struct spi_dev_s *dev, uint32_t devid)
-{
-  return 0; /* Device is always present */
+  spi_cs_select(devid + 24, selected);
 }
 #endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI5_ENABLE
-void stm32_spi5select(struct spi_dev_s *dev, uint32_t devid, bool selected)
+#ifdef CONFIG_STM32H7_SPI5
+void stm32_spi5_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  spi_cs_select(&g_spi5_cs_config, devid, selected, SPI5_DEVID_BASE);
-}
-
-uint8_t stm32_spi5status(struct spi_dev_s *dev, uint32_t devid)
-{
-  return 0; /* Device is always present */
+  spi_cs_select(devid + 32, selected);
 }
 #endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI6_ENABLE
-void stm32_spi6select(struct spi_dev_s *dev, uint32_t devid, bool selected)
+#ifdef CONFIG_STM32H7_SPI6
+void stm32_spi6_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  spi_cs_select(&g_spi6_cs_config, devid, selected, SPI6_DEVID_BASE);
-}
-
-uint8_t stm32_spi6status(struct spi_dev_s *dev, uint32_t devid)
-{
-  return 0; /* Device is always present */
+  spi_cs_select(devid + 40, selected);
 }
 #endif
 
-/**
- * Name: stm32_spiX_cmddata
- *
- * Description:
- * Command/Data selection for SPI displays (if needed).
- *
- **/
-#ifdef CONFIG_SPI_CMDDATA
-#ifdef CONFIG_NUCLEO_H753ZI_SPI1_ENABLE
-int stm32_spi1cmddata(struct spi_dev_s *dev, uint32_t devid, bool cmd)
-{
-  return -ENODEV; /* Not implemented */
-}
-#endif
-
-#ifdef CONFIG_NUCLEO_H753ZI_SPI2_ENABLE
-int stm32_spi2cmddata(struct spi_dev_s *dev, uint32_t devid, bool cmd)
-{
-  return -ENODEV; /* Not implemented */
-}
-#endif
-
-#ifdef CONFIG_NUCLEO_H753ZI_SPI3_ENABLE
-int stm32_spi3cmddata(struct spi_dev_s *dev, uint32_t devid, bool cmd)
-{
-  return -ENODEV; /* Not implemented */
-}
-#endif
-
-#ifdef CONFIG_NUCLEO_H753ZI_SPI4_ENABLE
-int stm32_spi4cmddata(struct spi_dev_s *dev, uint32_t devid, bool cmd)
-{
-  return -ENODEV; /* Not implemented */
-}
-#endif
-
-#ifdef CONFIG_NUCLEO_H753ZI_SPI5_ENABLE
-int stm32_spi5cmddata(struct spi_dev_s *dev, uint32_t devid, bool cmd)
-{
-  return -ENODEV; /* Not implemented */
-}
-#endif
-
-#ifdef CONFIG_NUCLEO_H753ZI_SPI6_ENABLE
-int stm32_spi6cmddata(struct spi_dev_s *dev, uint32_t devid, bool cmd)
-{
-  return -ENODEV; /* Not implemented */
-}
-#endif
-#endif /* CONFIG_SPI_CMDDATA */
 #endif /* CONFIG_STM32H7_SPI */

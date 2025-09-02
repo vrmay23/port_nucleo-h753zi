@@ -934,6 +934,19 @@ int stm32_bringup(void)
       ret = subsys_ret;
     }
 
+  /* ========================================================================
+   * PHASE 3.5: SPI Bus Initialization  
+   * ======================================================================== */
+
+#ifdef CONFIG_STM32H7_SPI
+  /* Initialize SPI buses and CS pins */
+  subsys_ret = stm32_spi_initialize();
+  if (subsys_ret != OK && ret == OK)
+    {
+      ret = subsys_ret;
+    }
+#endif
+
 /* Initialize CAN subsystem */
 
 /*

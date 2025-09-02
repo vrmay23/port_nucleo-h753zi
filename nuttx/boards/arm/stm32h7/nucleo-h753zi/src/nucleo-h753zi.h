@@ -262,16 +262,50 @@ int stm32_bringup(void);
  * This section centralizes all function prototypes for driver initializations.
  */
 
-#ifdef CONFIG_STM32H7_SPI
-void stm32_spidev_initialize(void);
-#endif
 
 #ifdef CONFIG_ADC
 int stm32_adc_setup(void);
 #endif
 
-#if defined(CONFIG_DEV_GPIO) && !defined(CONFIG_GPIO_LOWER_HALF)
+/****************************************************************************
+ * Name: stm32_gpio_initialize
+ *
+ * Description:
+ *   Initialize GPIO drivers for use with /apps/examples/gpio
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_DEV_GPIO
 int stm32_gpio_initialize(void);
+#endif
+
+/****************************************************************************
+ * Name: stm32_spi_initialize
+ *
+ * Description:
+ *   Initialize SPI interfaces and CS pins.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32H7_SPI
+int stm32_spi_initialize(void);
+#endif
+
+/****************************************************************************
+ * Name: stm32_spidev_initialize
+ *
+ * Description:
+ *   Called to configure SPI chip select GPIO pins for the Nucleo-H753ZI board.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_STM32H7_SPI1) || defined(CONFIG_STM32H7_SPI2) || \
+    defined(CONFIG_STM32H7_SPI3) || defined(CONFIG_STM32H7_SPI4) || \
+    defined(CONFIG_STM32H7_SPI5) || defined(CONFIG_STM32H7_SPI6)
+void weak_function stm32_spidev_initialize(void);
 #endif
 
 #ifdef CONFIG_STM32H7_OTGFS
