@@ -587,39 +587,54 @@
  * All buttons assume pull-down resistor configuration.
  */
 
+/* Dynamic button count based on configuration */
 #ifdef CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT
 
-/* Dynamic button count based on configuration */
-#define NUM_BUTTONS    CONFIG_NUCLEO_H753ZI_BUTTON_COUNT
-
-/* Button index definitions (backwards compatibility) */
-#define BUTTON_BUILT_IN    0
-#if NUM_BUTTONS > 1
-#define BUTTON_EXTERN_1    1
-#endif
-#if NUM_BUTTONS > 2
-#define BUTTON_EXTERN_2    2
-#endif
-#if NUM_BUTTONS > 3
-#define BUTTON_EXTERN_3    3
-#endif
-#if NUM_BUTTONS > 4
-#define BUTTON_EXTERN_4    4
+/* Built-in button (only if enabled) */
+#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
+#define BUTTON_BUILT_IN         0
+#define BUTTON_BUILT_IN_BIT     (1 << 0)
 #endif
 
-/* Button bit definitions (backwards compatibility) */
-#define BUTTON_BUILT_IN_BIT    (1 << 0)
+/* External buttons (conditional based on NUM_BUTTONS) */
 #if NUM_BUTTONS > 1
-#define BUTTON_EXTERN_1_BIT    (1 << 1)
+#define BUTTON_EXTERN_1         1
+#define BUTTON_EXTERN_1_BIT     (1 << 1)
 #endif
+
 #if NUM_BUTTONS > 2
-#define BUTTON_EXTERN_2_BIT    (1 << 2)
+#define BUTTON_EXTERN_2         2
+#define BUTTON_EXTERN_2_BIT     (1 << 2)
 #endif
+
 #if NUM_BUTTONS > 3
-#define BUTTON_EXTERN_3_BIT    (1 << 3)
+#define BUTTON_EXTERN_3         3
+#define BUTTON_EXTERN_3_BIT     (1 << 3)
 #endif
+
 #if NUM_BUTTONS > 4
-#define BUTTON_EXTERN_4_BIT    (1 << 4)
+#define BUTTON_EXTERN_4         4
+#define BUTTON_EXTERN_4_BIT     (1 << 4)
+#endif
+
+#if NUM_BUTTONS > 5
+#define BUTTON_EXTERN_5         5
+#define BUTTON_EXTERN_5_BIT     (1 << 5)
+#endif
+
+#if NUM_BUTTONS > 6
+#define BUTTON_EXTERN_6         6
+#define BUTTON_EXTERN_6_BIT     (1 << 6)
+#endif
+
+#if NUM_BUTTONS > 7
+#define BUTTON_EXTERN_7         7
+#define BUTTON_EXTERN_7_BIT     (1 << 7)
+#endif
+
+#if NUM_BUTTONS > 8
+#define BUTTON_EXTERN_8         8
+#define BUTTON_EXTERN_8_BIT     (1 << 8)
 #endif
 
 /* IRQ button range */
@@ -678,11 +693,129 @@
 
 /* SPI GPIO Definitions */
 
-/* SPI3 */
-#define GPIO_SPI3_MISO    (GPIO_SPI3_MISO_1 | GPIO_SPEED_50MHz)    /* PB4 */
-#define GPIO_SPI3_MOSI    (GPIO_SPI3_MOSI_4 | GPIO_SPEED_50MHz)    /* PB5 */
-#define GPIO_SPI3_SCK     (GPIO_SPI3_SCK_1 | GPIO_SPEED_50MHz)     /* PB3 */
-#define GPIO_SPI3_NSS     (GPIO_SPI3_NSS_2 | GPIO_SPEED_50MHz)     /* PA4 */
+/* SPI GPIO Definitions - Based on Kconfig selections */
+#define GPIO_SPI_CS_SPEED     GPIO_SPEED_50MHz  /* CS pin speed */
+
+/* SPI1 Pin Configurations */
+#ifdef CONFIG_NUCLEO_H753ZI_SPI1_ENABLE
+
+#  ifdef CONFIG_NUCLEO_H753ZI_SPI1_PINSET_1
+#    define GPIO_SPI1_SCK     GPIO_SPI1_SCK_1    /* PA5 */
+#    define GPIO_SPI1_MISO    GPIO_SPI1_MISO_1   /* PA6 */
+#    define GPIO_SPI1_MOSI    GPIO_SPI1_MOSI_1   /* PA7 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI1_PINSET_2)
+#    define GPIO_SPI1_SCK     GPIO_SPI1_SCK_2    /* PB3 */
+#    define GPIO_SPI1_MISO    GPIO_SPI1_MISO_2   /* PB4 */
+#    define GPIO_SPI1_MOSI    GPIO_SPI1_MOSI_2   /* PB5 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI1_PINSET_3)
+#    define GPIO_SPI1_SCK     GPIO_SPI1_SCK_3    /* PG11 */
+#    define GPIO_SPI1_MISO    GPIO_SPI1_MISO_3   /* PG9 */
+#    define GPIO_SPI1_MOSI    GPIO_SPI1_MOSI_3   /* PD7 */
+#  endif
+
+#endif /* CONFIG_NUCLEO_H753ZI_SPI1_ENABLE */
+
+/* SPI2 Pin Configurations */
+#ifdef CONFIG_NUCLEO_H753ZI_SPI2_ENABLE
+
+#  ifdef CONFIG_NUCLEO_H753ZI_SPI2_PINSET_1
+#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_1    /* PB13 */
+#    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_1   /* PB14 */
+#    define GPIO_SPI2_MOSI    GPIO_SPI2_MOSI_1   /* PB15 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI2_PINSET_2)
+#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_2    /* PA12 */
+#    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_2   /* PC2 */
+#    define GPIO_SPI2_MOSI    GPIO_SPI2_MOSI_2   /* PC1 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI2_PINSET_3)
+#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_3    /* PD3 */
+#    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_3   /* PC2 */
+#    define GPIO_SPI2_MOSI    GPIO_SPI2_MOSI_3   /* PC3 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI2_PINSET_4)
+#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_4    /* PI1 */
+#    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_4   /* PI2 */
+#    define GPIO_SPI2_MOSI    GPIO_SPI2_MOSI_4   /* PI3 */
+#  endif
+
+#endif /* CONFIG_NUCLEO_H753ZI_SPI2_ENABLE */
+
+/* SPI3 Pin Configurations */
+#ifdef CONFIG_NUCLEO_H753ZI_SPI3_ENABLE
+
+#  ifdef CONFIG_NUCLEO_H753ZI_SPI3_PINSET_1
+#    define GPIO_SPI3_SCK     GPIO_SPI3_SCK_1    /* PB3 */
+#    define GPIO_SPI3_MISO    GPIO_SPI3_MISO_1   /* PB4 */
+#    define GPIO_SPI3_MOSI    GPIO_SPI3_MOSI_1   /* PB2 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI3_PINSET_2)
+#    define GPIO_SPI3_SCK     GPIO_SPI3_SCK_2    /* PC10 */
+#    define GPIO_SPI3_MISO    GPIO_SPI3_MISO_2   /* PC11 */
+#    define GPIO_SPI3_MOSI    GPIO_SPI3_MOSI_2   /* PC12 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI3_PINSET_3)
+#    define GPIO_SPI3_SCK     GPIO_SPI3_SCK_3    /* PB3 */
+#    define GPIO_SPI3_MISO    GPIO_SPI3_MISO_3   /* PB4 */
+#    define GPIO_SPI3_MOSI    GPIO_SPI3_MOSI_3   /* PB5 */
+#  endif
+
+#endif /* CONFIG_NUCLEO_H753ZI_SPI3_ENABLE */
+
+/* SPI4 Pin Configurations */
+#ifdef CONFIG_NUCLEO_H753ZI_SPI4_ENABLE
+
+#  ifdef CONFIG_NUCLEO_H753ZI_SPI4_PINSET_1
+#    define GPIO_SPI4_SCK     GPIO_SPI4_SCK_1    /* PE12 */
+#    define GPIO_SPI4_MISO    GPIO_SPI4_MISO_1   /* PE13 */
+#    define GPIO_SPI4_MOSI    GPIO_SPI4_MOSI_1   /* PE14 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI4_PINSET_2)
+#    define GPIO_SPI4_SCK     GPIO_SPI4_SCK_2    /* PE2 */
+#    define GPIO_SPI4_MISO    GPIO_SPI4_MISO_2   /* PE5 */
+#    define GPIO_SPI4_MOSI    GPIO_SPI4_MOSI_2   /* PE6 */
+#  endif
+
+#endif /* CONFIG_NUCLEO_H753ZI_SPI4_ENABLE */
+
+/* SPI5 Pin Configurations */
+#ifdef CONFIG_NUCLEO_H753ZI_SPI5_ENABLE
+
+#  ifdef CONFIG_NUCLEO_H753ZI_SPI5_PINSET_1
+#    define GPIO_SPI5_SCK     GPIO_SPI5_SCK_1    /* PF7 */
+#    define GPIO_SPI5_MISO    GPIO_SPI5_MISO_1   /* PF8 */
+#    define GPIO_SPI5_MOSI    GPIO_SPI5_MOSI_1   /* PF11 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI5_PINSET_2)
+#    define GPIO_SPI5_SCK     GPIO_SPI5_SCK_2    /* PF7 */
+#    define GPIO_SPI5_MISO    GPIO_SPI5_MISO_2   /* PF8 */
+#    define GPIO_SPI5_MOSI    GPIO_SPI5_MOSI_2   /* PF9 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI5_PINSET_3)
+#    define GPIO_SPI5_SCK     GPIO_SPI5_SCK_3    /* PH6 */
+#    define GPIO_SPI5_MISO    GPIO_SPI5_MISO_3   /* PH7 */
+#    define GPIO_SPI5_MOSI    GPIO_SPI5_MOSI_3   /* PF11 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI5_PINSET_4)
+#    define GPIO_SPI5_SCK     GPIO_SPI5_SCK_4    /* PK0 */
+#    define GPIO_SPI5_MISO    GPIO_SPI5_MISO_4   /* PJ11 */
+#    define GPIO_SPI5_MOSI    GPIO_SPI5_MOSI_4   /* PJ10 */
+#  endif
+
+#endif /* CONFIG_NUCLEO_H753ZI_SPI5_ENABLE */
+
+/* SPI6 Pin Configurations */
+#ifdef CONFIG_NUCLEO_H753ZI_SPI6_ENABLE
+
+#  ifdef CONFIG_NUCLEO_H753ZI_SPI6_PINSET_1
+#    define GPIO_SPI6_SCK     GPIO_SPI6_SCK_1    /* PG13 */
+#    define GPIO_SPI6_MISO    GPIO_SPI6_MISO_1   /* PG12 */
+#    define GPIO_SPI6_MOSI    GPIO_SPI6_MOSI_1   /* PG14 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI6_PINSET_2)
+#    define GPIO_SPI6_SCK     GPIO_SPI6_SCK_2    /* PA5 */
+#    define GPIO_SPI6_MISO    GPIO_SPI6_MISO_2   /* PA6 */
+#    define GPIO_SPI6_MOSI    GPIO_SPI6_MOSI_2   /* PA7 */
+#  elif defined(CONFIG_NUCLEO_H753ZI_SPI6_PINSET_3)
+#    define GPIO_SPI6_SCK     GPIO_SPI6_SCK_3    /* PB3 */
+#    define GPIO_SPI6_MISO    GPIO_SPI6_MISO_3   /* PB4 */
+#    define GPIO_SPI6_MOSI    GPIO_SPI6_MOSI_3   /* PB5 */
+#  endif
+
+#endif /* CONFIG_NUCLEO_H753ZI_SPI6_ENABLE */
+
+/* Function prototypes */
+int stm32_spi_initialize(void);
 
 /* Timer GPIO Definitions */
 

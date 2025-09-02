@@ -156,7 +156,6 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
         break;
       case 'H':
         port_base = GPIO_PORTH;
-        break;
       default:
         *error = -EINVAL;
         return 0;

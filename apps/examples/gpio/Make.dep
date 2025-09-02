@@ -59,6 +59,7 @@ gpio_main.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.examples.gpio.o: \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/malloc.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/fcntl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/ioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/input/ioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/ioexpander/gpio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/signal.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/wqueue.h \
