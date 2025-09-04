@@ -34,7 +34,6 @@
 #include "stm32_gpio.h"
 #include "stm32_spi.h"
 #include "nucleo-h753zi.h"
-#include <nuttx/spi/spi_transfer.h>  /*  temp include. need to migrate spi_init to bingup*/
 
 #ifdef CONFIG_STM32H7_SPI
 
@@ -49,35 +48,23 @@
  ****************************************************************************/
 
 /* SPI CS pin configurations for each SPI */
-#ifdef CONFIG_NUCLEO_H753ZI_SPI1_ENABLE
 static uint32_t g_spi1_cs_pins[MAX_CS_PINS_PER_SPI];
 static int g_spi1_cs_count = 0;
-#endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI2_ENABLE
 static uint32_t g_spi2_cs_pins[MAX_CS_PINS_PER_SPI];
 static int g_spi2_cs_count = 0;
-#endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI3_ENABLE
 static uint32_t g_spi3_cs_pins[MAX_CS_PINS_PER_SPI];
 static int g_spi3_cs_count = 0;
-#endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI4_ENABLE
 static uint32_t g_spi4_cs_pins[MAX_CS_PINS_PER_SPI];
 static int g_spi4_cs_count = 0;
-#endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI5_ENABLE
 static uint32_t g_spi5_cs_pins[MAX_CS_PINS_PER_SPI];
 static int g_spi5_cs_count = 0;
-#endif
 
-#ifdef CONFIG_NUCLEO_H753ZI_SPI6_ENABLE
 static uint32_t g_spi6_cs_pins[MAX_CS_PINS_PER_SPI];
 static int g_spi6_cs_count = 0;
-#endif
 
 /****************************************************************************
  * Private Functions
@@ -517,133 +504,6 @@ int stm32_spi_initialize(void)
   return ret;
 }
 
-
-/****************************************************************************
- * Name: stm32_spidev_register_all
- *
- * Description:
- * Register SPI devices for user access via /dev/spiN.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_SPI_DRIVER
-
-int stm32_spidev_register_all(void)
-{
-  int ret = OK;
-
-#ifdef CONFIG_STM32H7_SPI1
-  FAR struct spi_dev_s *spi1;
-
-  spi1 = stm32_spibus_initialize(1);
-  if (spi1)
-    {
-      ret = spi_register(spi1, 1);
-      if (ret < 0)
-        {
-          syslog(LOG_ERR, "ERROR: Failed to register SPI1: %d\n", ret);
-        }
-      else
-        {
-          syslog(LOG_INFO, "SPI1 registered as /dev/spi1\n");
-        }
-    }
-#endif
-
-#ifdef CONFIG_STM32H7_SPI2
-  FAR struct spi_dev_s *spi2; // Use spi2, not spi1
-
-  spi2 = stm32_spibus_initialize(2); // Atribui a spi2
-  if (spi2) // Verifica spi2
-    {
-      ret = spi_register(spi2, 2);
-      if (ret < 0)
-        {
-          syslog(LOG_ERR, "ERROR: Failed to register SPI2: %d\n", ret);
-        }
-      else
-        {
-          syslog(LOG_INFO, "SPI2 registered as /dev/spi2\n"); // Mensagem de log correta
-        }
-    }
-#endif
-
-#ifdef CONFIG_STM32H7_SPI3
-  FAR struct spi_dev_s *spi3; // Use spi3
-
-  spi3 = stm32_spibus_initialize(3); // Atribui a spi3
-  if (spi3) // Verifica spi3
-    {
-      ret = spi_register(spi3, 3);
-      if (ret < 0)
-        {
-          syslog(LOG_ERR, "ERROR: Failed to register SPI3: %d\n", ret);
-        }
-      else
-        {
-          syslog(LOG_INFO, "SPI3 registered as /dev/spi3\n"); // Mensagem de log correta
-        }
-    }
-#endif
-
-#ifdef CONFIG_STM32H7_SPI4
-  FAR struct spi_dev_s *spi4; // Use spi4
-
-  spi4 = stm32_spibus_initialize(4); // Atribui a spi4
-  if (spi4) // Verifica spi4
-    {
-      ret = spi_register(spi4, 4);
-      if (ret < 0)
-        {
-          syslog(LOG_ERR, "ERROR: Failed to register SPI4: %d\n", ret);
-        }
-      else
-        {
-          syslog(LOG_INFO, "SPI4 registered as /dev/spi4\n"); // Mensagem de log correta
-        }
-    }
-#endif
-
-#ifdef CONFIG_STM32H7_SPI5 // Corrigido
-  FAR struct spi_dev_s *spi5; // Use spi5
-
-  spi5 = stm32_spibus_initialize(5); // Atribui a spi5
-  if (spi5) // Verifica spi5
-    {
-      ret = spi_register(spi5, 5);
-      if (ret < 0)
-        {
-          syslog(LOG_ERR, "ERROR: Failed to register SPI5: %d\n", ret);
-        }
-      else
-        {
-          syslog(LOG_INFO, "SPI5 registered as /dev/spi5\n"); // Mensagem de log correta
-        }
-    }
-#endif
-
-#ifdef CONFIG_STM32H7_SPI6
-  FAR struct spi_dev_s *spi6; // Use spi6
-
-  spi6 = stm32_spibus_initialize(6); // Atribui a spi6
-  if (spi6) // Verifica spi6
-    {
-      ret = spi_register(spi6, 6);
-      if (ret < 0)
-        {
-          syslog(LOG_ERR, "ERROR: Failed to register SPI6: %d\n", ret);
-        }
-      else
-        {
-          syslog(LOG_INFO, "SPI6 registered as /dev/spi6\n"); // Mensagem de log correta
-        }
-    }
-#endif
-
-  return ret;
-}
-#endif
-
 /****************************************************************************
  * Name: stm32_spi1/2/3/4/5/6_select
  *
@@ -653,92 +513,44 @@ int stm32_spidev_register_all(void)
  ****************************************************************************/
 
 #ifdef CONFIG_STM32H7_SPI1
-void stm32_spi1select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+void stm32_spi1_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
   spi_cs_select(devid, selected);
-}
-uint8_t stm32_spi1status(FAR struct spi_dev_s *dev, uint32_t devid)
-{
-  /* The NuttX framework expects this function to exist.
-   * If you need to check the status of your chip-select pin,
-   * you can implement the logic here.
-   */
-  return SPI_STATUS_PRESENT;
 }
 #endif
 
 #ifdef CONFIG_STM32H7_SPI2
-void stm32_spi2select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+void stm32_spi2_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
   spi_cs_select(devid + 8, selected);
-}
-uint8_t stm32_spi2status(FAR struct spi_dev_s *dev, uint32_t devid)
-{
-  /* The NuttX framework expects this function to exist.
-   * If you need to check the status of your chip-select pin,
-   * you can implement the logic here.
-   */
-  return SPI_STATUS_PRESENT;
 }
 #endif
 
 #ifdef CONFIG_STM32H7_SPI3
-void stm32_spi3select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+void stm32_spi3_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
   spi_cs_select(devid + 16, selected);
-}
-uint8_t stm32_spi3status(FAR struct spi_dev_s *dev, uint32_t devid)
-{
-  /* The NuttX framework expects this function to exist.
-   * If you need to check the status of your chip-select pin,
-   * you can implement the logic here.
-   */
-  return SPI_STATUS_PRESENT;
 }
 #endif
 
 #ifdef CONFIG_STM32H7_SPI4
-void stm32_spi4select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+void stm32_spi4_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
   spi_cs_select(devid + 24, selected);
-}
-uint8_t stm32_spi4status(FAR struct spi_dev_s *dev, uint32_t devid)
-{
-  /* The NuttX framework expects this function to exist.
-   * If you need to check the status of your chip-select pin,
-   * you can implement the logic here.
-   */
-  return SPI_STATUS_PRESENT;
 }
 #endif
 
 #ifdef CONFIG_STM32H7_SPI5
-void stm32_spi5select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+void stm32_spi5_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
   spi_cs_select(devid + 32, selected);
-}
-uint8_t stm32_spi5status(FAR struct spi_dev_s *dev, uint32_t devid)
-{
-  /* The NuttX framework expects this function to exist.
-   * If you need to check the status of your chip-select pin,
-   * you can implement the logic here.
-   */
-  return SPI_STATUS_PRESENT;
 }
 #endif
 
 #ifdef CONFIG_STM32H7_SPI6
-void stm32_spi6select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+void stm32_spi6_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
   spi_cs_select(devid + 40, selected);
-}
-uint8_t stm32_spi6status(FAR struct spi_dev_s *dev, uint32_t devid)
-{
-  /* The NuttX framework expects this function to exist.
-   * If you need to check the status of your chip-select pin,
-   * you can implement the logic here.
-   */
-  return SPI_STATUS_PRESENT;
 }
 #endif
 

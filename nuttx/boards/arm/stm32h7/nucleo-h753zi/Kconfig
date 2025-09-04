@@ -88,6 +88,7 @@ config BOARD_HSE_X3_FREQ
 #
 # Board-specific GPIO Driver
 #
+
 config NUCLEO_H753ZI_GPIO_DRIVER
 	bool "Enable Nucleo H753ZI board GPIO driver"
 	default n
@@ -143,13 +144,11 @@ config NUCLEO_H753ZI_LEDS_DISABLED
 
 endchoice
 
-
 #
 # Button Configuration
 #
 
 menu "Button Configuration"
-	depends on ARCH_BUTTONS
 
 config NUCLEO_H753ZI_BUTTON_SUPPORT
 	bool "Enable button support"
@@ -221,6 +220,7 @@ comment "SPI4: IDs 24-31, SPI5: IDs 32-39, SPI6: IDs 40-47"
 comment "Use SPIDEV_USER_DEFINED(ID) to access specific CS pins"
 
 if STM32H7_SPI1
+
 menu "SPI1 Configuration"
 
 config NUCLEO_H753ZI_SPI1_ENABLE
@@ -244,7 +244,6 @@ config NUCLEO_H753ZI_SPI1_PINSET_1
 		- SCK: PA5 (D13 - Arduino SCK)
 		- MISO: PA6 (D12 - Arduino MISO)
 		- MOSI: PA7 (D11 - Arduino MOSI)
-
 		This is the standard Arduino SPI pinout.
 
 config NUCLEO_H753ZI_SPI1_PINSET_2
@@ -271,21 +270,20 @@ config NUCLEO_H753ZI_SPI1_CS_PINS
 	default ""
 	help
 		Comma-separated list of GPIO pins for SPI1 chip select.
-
 		Format: PORT+PIN (e.g., "PE0,PE1,PE3")
 		Maximum: 8 CS pins per SPI
-
 		Example: "PE0,PE1,PE3" configures 3 CS pins
 		- First device: SPIDEV_USER_DEFINED(0) -> PE0
 		- Second device: SPIDEV_USER_DEFINED(1) -> PE1
 		- Third device: SPIDEV_USER_DEFINED(2) -> PE3
-
 		Avoid conflicts with selected MISO/MOSI/SCK pins above.
 
 endmenu
+
 endif
 
 if STM32H7_SPI2
+
 menu "SPI2 Configuration"
 
 config NUCLEO_H753ZI_SPI2_ENABLE
@@ -344,9 +342,11 @@ config NUCLEO_H753ZI_SPI2_CS_PINS
 		Avoid conflicts with selected MISO/MOSI/SCK pins above.
 
 endmenu
+
 endif
 
 if STM32H7_SPI3
+
 menu "SPI3 Configuration"
 
 config NUCLEO_H753ZI_SPI3_ENABLE
@@ -397,9 +397,11 @@ config NUCLEO_H753ZI_SPI3_CS_PINS
 		Avoid conflicts with selected MISO/MOSI/SCK pins above.
 
 endmenu
+
 endif
 
 if STM32H7_SPI4
+
 menu "SPI4 Configuration"
 
 config NUCLEO_H753ZI_SPI4_ENABLE
@@ -442,9 +444,11 @@ config NUCLEO_H753ZI_SPI4_CS_PINS
 		Avoid conflicts with selected MISO/MOSI/SCK pins above.
 
 endmenu
+
 endif
 
 if STM32H7_SPI5
+
 menu "SPI5 Configuration"
 
 config NUCLEO_H753ZI_SPI5_ENABLE
@@ -503,9 +507,11 @@ config NUCLEO_H753ZI_SPI5_CS_PINS
 		Avoid conflicts with selected MISO/MOSI/SCK pins above.
 
 endmenu
+
 endif
 
 if STM32H7_SPI6
+
 menu "SPI6 Configuration"
 
 config NUCLEO_H753ZI_SPI6_ENABLE
@@ -558,6 +564,7 @@ config NUCLEO_H753ZI_SPI6_CS_PINS
 		Avoid conflicts with selected MISO/MOSI/SCK pins above.
 
 endmenu
+
 endif
 
 endmenu

@@ -26,6 +26,8 @@
 
 #include <nuttx/config.h>
 #include <arch/board/board.h>
+#include  <nuttx/spi/spi.h>
+
 #include <nuttx/fs/fs.h>
 
 #include <sys/types.h>
@@ -76,6 +78,10 @@
 #ifdef CONFIG_RNDIS
 #  include <nuttx/usb/rndis.h>
 #endif
+
+/* need to change it to 'if def' */
+#include <nuttx/spi/spi.h>
+#include "stm32_spi.h"  /* Para stm32_spibus_initialize */
 
 /****************************************************************************
  * Private Function Prototypes
@@ -934,18 +940,28 @@ int stm32_bringup(void)
       ret = subsys_ret;
     }
 
+
   /* ========================================================================
    * PHASE 3.5: SPI Bus Initialization  
    * ======================================================================== */
-
-#ifdef CONFIG_STM32H7_SPI
-  /* Initialize SPI buses and CS pins */
   subsys_ret = stm32_spi_initialize();
-  if (subsys_ret != OK && ret == OK)
+  if (subsys_ret < 0)
     {
-      ret = subsys_ret;
+      syslog(LOG_ERR, "ERROR: stm32_spi_initialize failed: %d\n",
+             subsys_ret);
+    }
+
+/* Register SPI devices */
+#ifdef CONFIG_SPI_DRIVER
+  subsys_ret = stm32_spidev_register_all();
+  if (subsys_ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_spidev_register_all failed: %d\n",
+             subsys_ret);
     }
 #endif
+
+
 
 /* Initialize CAN subsystem */
 
@@ -988,6 +1004,7 @@ int stm32_bringup(void)
     {
       ret = subsys_ret;
     }
+    
 
   /* ========================================================================
    * PHASE 6: Storage and Memory

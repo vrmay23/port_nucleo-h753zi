@@ -294,6 +294,10 @@ int stm32_gpio_initialize(void);
 int stm32_spi_initialize(void);
 #endif
 
+#ifdef CONFIG_SPI_DRIVER
+int stm32_spidev_register_all(void);
+#endif
+
 /****************************************************************************
  * Name: stm32_spidev_initialize
  *
