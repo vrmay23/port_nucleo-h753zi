@@ -44,6 +44,10 @@ if(CONFIG_STM32H7_SPI)
   list(APPEND SRCS stm32_spi.c)
 endif()
 
+if(CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE)
+  list(APPEND SRCS stm32_mfrc522.c)
+endif()
+
 if(CONFIG_STM32H7_OTGFS)
   list(APPEND SRCS stm32_usb.c)
 endif()

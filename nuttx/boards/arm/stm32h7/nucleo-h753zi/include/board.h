@@ -69,6 +69,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <stdbool.h>
 
 #ifndef __ASSEMBLY__
 #  include <stdint.h>
@@ -698,7 +699,6 @@
 
 /* SPI1 Pin Configurations */
 #ifdef CONFIG_NUCLEO_H753ZI_SPI1_ENABLE
-
 #  ifdef CONFIG_NUCLEO_H753ZI_SPI1_PINSET_1
 #    define GPIO_SPI1_SCK     GPIO_SPI1_SCK_1    /* PA5 */
 #    define GPIO_SPI1_MISO    GPIO_SPI1_MISO_1   /* PA6 */
@@ -712,12 +712,10 @@
 #    define GPIO_SPI1_MISO    GPIO_SPI1_MISO_3   /* PG9 */
 #    define GPIO_SPI1_MOSI    GPIO_SPI1_MOSI_3   /* PD7 */
 #  endif
-
 #endif /* CONFIG_NUCLEO_H753ZI_SPI1_ENABLE */
 
 /* SPI2 Pin Configurations */
 #ifdef CONFIG_NUCLEO_H753ZI_SPI2_ENABLE
-
 #  ifdef CONFIG_NUCLEO_H753ZI_SPI2_PINSET_1
 #    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_1    /* PB13 */
 #    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_1   /* PB14 */
@@ -735,7 +733,6 @@
 #    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_4   /* PI2 */
 #    define GPIO_SPI2_MOSI    GPIO_SPI2_MOSI_4   /* PI3 */
 #  endif
-
 #endif /* CONFIG_NUCLEO_H753ZI_SPI2_ENABLE */
 
 /* SPI3 Pin Configurations */
@@ -754,12 +751,10 @@
 #    define GPIO_SPI3_MISO    GPIO_SPI3_MISO_3   /* PB4 */
 #    define GPIO_SPI3_MOSI    GPIO_SPI3_MOSI_3   /* PB5 */
 #  endif
-
 #endif /* CONFIG_NUCLEO_H753ZI_SPI3_ENABLE */
 
 /* SPI4 Pin Configurations */
 #ifdef CONFIG_NUCLEO_H753ZI_SPI4_ENABLE
-
 #  ifdef CONFIG_NUCLEO_H753ZI_SPI4_PINSET_1
 #    define GPIO_SPI4_SCK     GPIO_SPI4_SCK_1    /* PE12 */
 #    define GPIO_SPI4_MISO    GPIO_SPI4_MISO_1   /* PE13 */
@@ -769,12 +764,10 @@
 #    define GPIO_SPI4_MISO    GPIO_SPI4_MISO_2   /* PE5 */
 #    define GPIO_SPI4_MOSI    GPIO_SPI4_MOSI_2   /* PE6 */
 #  endif
-
 #endif /* CONFIG_NUCLEO_H753ZI_SPI4_ENABLE */
 
 /* SPI5 Pin Configurations */
 #ifdef CONFIG_NUCLEO_H753ZI_SPI5_ENABLE
-
 #  ifdef CONFIG_NUCLEO_H753ZI_SPI5_PINSET_1
 #    define GPIO_SPI5_SCK     GPIO_SPI5_SCK_1    /* PF7 */
 #    define GPIO_SPI5_MISO    GPIO_SPI5_MISO_1   /* PF8 */
@@ -792,12 +785,10 @@
 #    define GPIO_SPI5_MISO    GPIO_SPI5_MISO_4   /* PJ11 */
 #    define GPIO_SPI5_MOSI    GPIO_SPI5_MOSI_4   /* PJ10 */
 #  endif
-
 #endif /* CONFIG_NUCLEO_H753ZI_SPI5_ENABLE */
 
 /* SPI6 Pin Configurations */
 #ifdef CONFIG_NUCLEO_H753ZI_SPI6_ENABLE
-
 #  ifdef CONFIG_NUCLEO_H753ZI_SPI6_PINSET_1
 #    define GPIO_SPI6_SCK     GPIO_SPI6_SCK_1    /* PG13 */
 #    define GPIO_SPI6_MISO    GPIO_SPI6_MISO_1   /* PG12 */
@@ -811,8 +802,50 @@
 #    define GPIO_SPI6_MISO    GPIO_SPI6_MISO_3   /* PB4 */
 #    define GPIO_SPI6_MOSI    GPIO_SPI6_MOSI_3   /* PB5 */
 #  endif
-
 #endif /* CONFIG_NUCLEO_H753ZI_SPI6_ENABLE */
+
+
+
+/* ==========================================================================
+ * SPI CS REGISTRATION PROTOTYPES
+ * ==========================================================================
+ */
+
+#ifdef CONFIG_STM32H7_SPI
+/**
+ * Name: stm32_spi_register_cs_device
+ *
+ * Description:
+ *   Register a CS device for a specific SPI bus and device ID.
+ *
+ * Input Parameters:
+ *   spi_bus     - SPI bus number (1-6)
+ *   devid       - Device ID (0-15)
+ *   cs_pin      - CS pin string (e.g., "PF1")
+ *   active_low  - true if CS is active low, false if active high
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ */
+int stm32_spi_register_cs_device(int spi_bus, uint32_t devid, 
+                                  const char *cs_pin, bool active_low);
+
+/**
+ * Name: stm32_spi_unregister_cs_device
+ *
+ * Description:
+ *   Unregister a CS device.
+ *
+ * Input Parameters:
+ *   spi_bus - SPI bus number (1-6)
+ *   devid   - Device ID
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ */
+int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid);
+#endif /* CONFIG_STM32H7_SPI */
+
 
 /* Function prototypes */
 int stm32_spi_initialize(void);

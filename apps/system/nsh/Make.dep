@@ -1,0 +1,86 @@
+# Gen Make.dep automatically
+nsh_main.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.system.nsh.o: \
+ nsh_main.c \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/config.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/compiler.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sched.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdint.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/types.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/inttypes.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/limits.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdbool.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/strings.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/string.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stddef.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/alloca.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
+ /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
+ /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/assert.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/semaphore.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/queue.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/clock.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/lib/math32.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/inttypes.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/map.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/gran.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/spawn.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/signal.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/irq.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/irq.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/syscall.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/chip/irq.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/stm32h7/stm32h7x3xx_irq.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/armv7-m/irq.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/armv7-m/nvicpri.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/chip/chip.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spinlock_type.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/lib/lib.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/kmalloc.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdlib.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/mm.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/userspace.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/pthread.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/unistd.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/malloc.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/boardctl.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/stat.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/apps/include/nshlib/nshlib.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arpa/inet.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/netinet/in.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/socket.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/endian.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/endian.h
+sh_main.c.home.vinicius.Desktop.port_nucleo-h753zi.apps.system.nsh.o: \
+ sh_main.c \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/config.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/apps/include/nshlib/nshlib.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arpa/inet.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/types.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/compiler.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdint.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/types.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/inttypes.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/limits.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/netinet/in.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/socket.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/endian.h \
+ /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/endian.h
+# No files specified for dependency generation
+# No files specified for dependency generation

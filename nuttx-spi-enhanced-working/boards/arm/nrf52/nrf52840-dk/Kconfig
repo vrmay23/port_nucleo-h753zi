@@ -1,0 +1,19 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+if ARCH_BOARD_NRF52840_DK
+
+config NRF52840DK_HIGHPRI
+	bool "High priority interrupt test"
+	default n
+
+config NRF52840DK_BTNLEDS_GPIO
+	bool "Export board LEDS and BUTTONS as GPIO"
+	default n
+	depends on !ARCH_LEDS && !ARCH_BUTTONS && GPIO_LOWER_HALF && DEV_GPIO
+	---help---
+		Export board LEDS and buttons as GPIOs.
+
+endif

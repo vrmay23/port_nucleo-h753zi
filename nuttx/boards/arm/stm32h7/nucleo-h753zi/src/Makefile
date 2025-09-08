@@ -46,6 +46,10 @@ ifeq ($(CONFIG_STM32H7_SPI),y)
 CSRCS += stm32_spi.c
 endif
 
+ifeq ($(CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE),y)
+CSRCS += stm32_mfrc522.c
+endif
+
 ifeq ($(CONFIG_STM32H7_OTGFS),y)
 CSRCS += stm32_usb.c
 endif

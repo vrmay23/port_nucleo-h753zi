@@ -1,0 +1,12 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+if ARCH_BOARD_STM32H745I_DISCO
+
+config ARCH_BOARD_STM32H745I_DISCO_TOUCHSCREEN_SWAPXY
+	bool "STM32H745I DISCO Touchscreen sway X/Y"
+	depends on INPUT_TOUCHSCREEN
+
+endif # ARCH_BOARD_STM32H745I_DISCO
