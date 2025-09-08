@@ -113,6 +113,7 @@
 #define LED_DRIVER_PATH      "/dev/userleds"
 #define BUTTONS_DRIVER_PATH  "/dev/buttons"
 #define RTC_DRIVER_PATH      "/dev/rtc0"
+#define MFRC522_DEVPATH      "/dev/rfid0"
 
 #ifdef CONFIG_FS_PROCFS
 #  ifdef CONFIG_NSH_PROC_MOUNTPOINT
@@ -292,6 +293,11 @@ int stm32_gpio_initialize(void);
 
 #ifdef CONFIG_STM32H7_SPI
 int stm32_spi_initialize(void);
+
+/* SPI CS device registration functions */
+int stm32_spi_register_cs_device(int spi_bus, uint32_t devid, 
+                                  const char *cs_pin, bool active_low);
+int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid);
 #endif
 
 #ifdef CONFIG_SPI_DRIVER
@@ -318,6 +324,14 @@ void weak_function stm32_usbinitialize(void);
 
 #if defined(CONFIG_STM32H7_OTGFS) && defined(CONFIG_USBHOST)
 int stm32_usbhost_initialize(void);
+#endif
+
+/*****************************************************************************
+ * Sensors - driver registration
+ ****************************************************************************/
+
+#ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
+int stm32_mfrc522initialize(const char *devpath);
 #endif
 
 #ifdef CONFIG_SENSORS_LSM6DSL
@@ -355,5 +369,25 @@ int stm32_progmem_init(void);
 #ifdef CONFIG_MMCSD_SPI
 int stm32_mmcsd_initialize(int minor);
 #endif
+
+/* ==========================================================================
+ * SENSOR CONFIGURATION VALUES
+ * ==========================================================================
+ */
+
+/* MFRC522 Configuration derived from Kconfig */
+#ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
+#  define MFRC522_SPI_BUS            CONFIG_NUCLEO_H753ZI_MFRC522_SPI_BUS
+#  define MFRC522_DEVICE_ID          CONFIG_NUCLEO_H753ZI_MFRC522_DEVID  
+#  define MFRC522_CS_PIN             CONFIG_NUCLEO_H753ZI_MFRC522_CS_PIN
+#  define MFRC522_CS_ACTIVE_LOW      CONFIG_NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
+
+#  ifdef CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_ENABLE
+#    define MFRC522_IRQ_PIN          CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_PIN
+#    define MFRC522_IRQ_ENABLED      true
+#  else
+#    define MFRC522_IRQ_ENABLED      false
+#  endif
+#endif /* CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE */
 
 #endif /* __BOARDS_ARM_STM32H7_NUCLEO_H753ZI_SRC_NUCLEO_H753ZI_H */

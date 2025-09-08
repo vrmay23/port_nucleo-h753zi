@@ -1,0 +1,82 @@
+branch: led-driver_support
+date: 2025-08-19
+by: viniciusmay
+modifications:
+
+
+1 - Kconfig: Add option to automate LED driver use case
+
+Introduces a new Kconfig entry to simplify LED driver configuration.
+Note: some hierarchical definitions in NuttX Kconfig still require manual adjustment.
+
+
+=======================================================================================================================================
+=======================================================================================================================================
+
+
+
+branch: led-driver_support
+date: 2025-08-17
+by: viniciusmay
+modifications:
+
+
+1 - /dev/leds aren't being initialized. To solve it, edit menuconfig like below:
+
+
+  │ Symbol: BOARD_LATE_INITIALIZE [=y]                                                    │  
+  │ Type  : boolean                                                                       │  
+  │ Prompt: Custom board late initialization                                              │  
+  │   Location:                                                                           │  
+  │     -> RTOS Features                                                                  │  
+  │ (1)   -> RTOS hooks                                                                   │  
+  │   Defined at sched/Kconfig:1509                                                       │  
+  │
+
+
+=======================================================================================================================================
+=======================================================================================================================================
+
+branch: board_has_been_added
+date: 2025-08-17
+by: viniciusmay
+modifications:
+
+1 - I have ran:
+/start_new_port.sh nucleo-h743zi STM32H7_NUCLEO_H743ZI 743ZI : nucleo-h753zi STM32H7_NUCLEO_H753ZI 753ZI
+
+2 - I will remove all previous configuration and keep only /configs/nsh/
+
+3 - I will edit Kconfig file located at source "nuttx/boards/Kconfig" including the changes as listed below:
+config ARCH_BOARD
+	default "nucleo-h753zi"             if ARCH_BOARD_NUCLEO_H753ZI
+
+if ARCH_BOARD_NUCLEO_H753ZI
+source "boards/arm/stm32h7/nucleo-h753zi/Kconfig"
+endif
+
+config ARCH_BOARD_NUCLEO_H753ZI
+	bool "STM32H753 Nucleo H753ZI"
+	depends on ARCH_CHIP_STM32H753ZI
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+        select ARCH_HAVE_IRQBUTTONS
+	---help---
+		STMicro Nucleo H753ZI board based on the STMicro STM32H753ZI MCU.
+
+4 - Run  ./tools/configure.sh nucleo-h753zi:nsh
+
+5 - make menuconfig
+Check the 'Board Selectio/Selected target board' if we have: STM32H753 Nucleo H753ZI.
+
+6 - make
+
+7 - flash
+
+8 - uname -a
+It will appear 0.0.0 because I have removed .git folder from nuttx and nuttx-apps.
+
+
+=======================================================================================================================================
+=======================================================================================================================================
+

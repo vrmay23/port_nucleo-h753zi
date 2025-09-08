@@ -464,9 +464,10 @@ static int nucleo_gpio_initialize(void)
 static int nucleo_sensors_initialize(void)
 {
   int ret = OK;
+  int local_ret;  /* Add local variable for subsystem results */
 
 #ifdef CONFIG_SENSORS_LSM6DSL
-  int local_ret = stm32_lsm6dsl_initialize("/dev/lsm6dsl0");
+  local_ret = stm32_lsm6dsl_initialize("/dev/lsm6dsl0");
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize LSM6DSL driver: %d\n",
@@ -483,7 +484,7 @@ static int nucleo_sensors_initialize(void)
 #endif /* CONFIG_SENSORS_LSM6DSL */
 
 #ifdef CONFIG_SENSORS_LSM9DS1
-  int local_ret = stm32_lsm9ds1_initialize();
+  local_ret = stm32_lsm9ds1_initialize();
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize LSM9DS1 driver: %d\n",
@@ -500,7 +501,7 @@ static int nucleo_sensors_initialize(void)
 #endif /* CONFIG_SENSORS_LSM9DS1 */
 
 #ifdef CONFIG_SENSORS_LSM303AGR
-  int local_ret = stm32_lsm303agr_initialize("/dev/lsm303mag0");
+  local_ret = stm32_lsm303agr_initialize("/dev/lsm303mag0");
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize LSM303AGR driver: %d\n",
@@ -515,6 +516,26 @@ static int nucleo_sensors_initialize(void)
       syslog(LOG_INFO, "LSM303AGR magnetometer initialized as /dev/lsm303mag0\n");
     }
 #endif /* CONFIG_SENSORS_LSM303AGR */
+
+#ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
+  /* Initialize MFRC522 RFID reader using the path defined in header */
+  local_ret = stm32_mfrc522initialize(MFRC522_DEVPATH);
+  if (local_ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_mfrc522initialize() failed: %d\n", 
+             local_ret);
+      
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
+    }
+  else
+    {
+      syslog(LOG_INFO, "MFRC522 RFID reader initialized successfully at %s\n", 
+             MFRC522_DEVPATH);
+    }
+#endif /* CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE */
 
   return ret;
 }
@@ -993,8 +1014,7 @@ int stm32_bringup(void)
       ret = subsys_ret;
     }
 
-
-  /* ========================================================================
+/* ========================================================================
    * PHASE 5: Sensors and Measurement
    * ======================================================================== */
 
@@ -1004,7 +1024,6 @@ int stm32_bringup(void)
     {
       ret = subsys_ret;
     }
-    
 
   /* ========================================================================
    * PHASE 6: Storage and Memory
