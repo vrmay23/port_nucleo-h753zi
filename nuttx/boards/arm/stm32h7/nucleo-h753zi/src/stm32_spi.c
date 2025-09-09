@@ -280,12 +280,12 @@ static void spi_cs_control(int spi_bus, uint32_t devid, bool selected)
     {
       actual_devid = (devid & 0x0000FFFF);
       spiinfo("Detected SPIDEV type 0x%04lX, using index %lu for SPI%d\n",
-              (devid >> 16), (unsigned long)actual_devid, spi_bus);
+              (unsigned long)(devid >> 16), (unsigned long)actual_devid, spi_bus);
     }
   /* FALLBACK: If device ID is invalid, try to use device ID 0 as fallback */
   else if (devid >= MAX_CS_DEVICES_PER_SPI)
     {
-      spiinfo("WARNING: Device ID %lu >= maximum %d for SPI%d, trying fallback to ID 0\n",
+      spiwarn("WARNING: Device ID %lu >= maximum %d for SPI%d, trying fallback to ID 0\n",
              (unsigned long)devid, MAX_CS_DEVICES_PER_SPI, spi_bus);
       
       /* Check if device ID 0 is registered */
@@ -341,6 +341,18 @@ static void spi_cs_control(int spi_bus, uint32_t devid, bool selected)
  *
  * Returned Value:
  * OK on success, negative errno on error
+ * 
+ * memset ---> do the same as: fill_out_with_zeroes(MAX_CS_DEVICES_PER_SPI)
+ * 
+ * 
+ * fill_out_with_zeroes(MAX_CS_DEVICES_PER_SPI){
+ *    for (int i = 0; i < MAX_CS_DEVICES_PER_SPI; i++)
+ *    {
+ *     g_spi1_cs_devices[i].gpio_config = 0;
+ *     g_spi1_cs_devices[i].active_low = false;
+ *     g_spi1_cs_devices[i].in_use = false;
+ *    }
+ * }
  *
  ****************************************************************************/
 
@@ -645,8 +657,8 @@ int stm32_spidev_register_all(void)
 #ifdef CONFIG_STM32H7_SPI1
 void stm32_spi1select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  syslog(LOG_INFO, "DEBUG: SPI1 CS: received devid=%u, action=%s\n",
-         devid, selected ? "SELECT" : "DESELECT");
+  spiinfo("SPI1 CS: devid=%lu, %s\n",
+          (unsigned long)devid, selected ? "SELECT" : "DESELECT");
   spi_cs_control(1, devid, selected);
 }
 
@@ -659,8 +671,8 @@ uint8_t stm32_spi1status(FAR struct spi_dev_s *dev, uint32_t devid)
 #ifdef CONFIG_STM32H7_SPI2
 void stm32_spi2select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  syslog(LOG_INFO, "DEBUG: SPI%d CS: received devid=%u, action=%s\n",
-         port, devid, selected ? "SELECT" : "DESELECT");
+  spiinfo("SPI2 CS: devid=%lu, %s\n",
+          (unsigned long)devid, selected ? "SELECT" : "DESELECT");
   spi_cs_control(2, devid, selected);
 }
 
@@ -673,8 +685,8 @@ uint8_t stm32_spi2status(FAR struct spi_dev_s *dev, uint32_t devid)
 #ifdef CONFIG_STM32H7_SPI3
 void stm32_spi3select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  syslog(LOG_INFO, "DEBUG: SPI%d CS: received devid=%u, action=%s\n",
-         port, devid, selected ? "SELECT" : "DESELECT");
+  spiinfo("SPI3 CS: devid=%lu, %s\n",
+          (unsigned long)devid, selected ? "SELECT" : "DESELECT");
   spi_cs_control(3, devid, selected);
 }
 
@@ -687,8 +699,8 @@ uint8_t stm32_spi3status(FAR struct spi_dev_s *dev, uint32_t devid)
 #ifdef CONFIG_STM32H7_SPI4
 void stm32_spi4select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  syslog(LOG_INFO, "DEBUG: SPI%d CS: received devid=%u, action=%s\n",
-         port, devid, selected ? "SELECT" : "DESELECT");
+  spiinfo("SPI4 CS: devid=%lu, %s\n",
+          (unsigned long)devid, selected ? "SELECT" : "DESELECT");
   spi_cs_control(4, devid, selected);
 }
 
@@ -701,8 +713,8 @@ uint8_t stm32_spi4status(FAR struct spi_dev_s *dev, uint32_t devid)
 #ifdef CONFIG_STM32H7_SPI5
 void stm32_spi5select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  syslog(LOG_INFO, "DEBUG: SPI%d CS: received devid=%u, action=%s\n",
-         port, devid, selected ? "SELECT" : "DESELECT");
+  spiinfo("SPI5 CS: devid=%lu, %s\n",
+          (unsigned long)devid, selected ? "SELECT" : "DESELECT");
   spi_cs_control(5, devid, selected);
 }
 
@@ -715,8 +727,8 @@ uint8_t stm32_spi5status(FAR struct spi_dev_s *dev, uint32_t devid)
 #ifdef CONFIG_STM32H7_SPI6
 void stm32_spi6select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-  syslog(LOG_INFO, "DEBUG: SPI6 CS: received devid=%u, action=%s\n",
-         devid, selected ? "SELECT" : "DESELECT");
+  spiinfo("SPI6 CS: devid=%lu, %s\n",
+          (unsigned long)devid, selected ? "SELECT" : "DESELECT");
   spi_cs_control(6, devid, selected);
 }
 
