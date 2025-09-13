@@ -153,7 +153,8 @@
 
 /* Button GPIO Definitions */
 
-#if defined(CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT) || defined(CONFIG_NUCLEO_H753ZI_GPIO_DRIVER)
+#if defined(CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT) || \
+    defined(CONFIG_NUCLEO_H753ZI_GPIO_DRIVER)
 #  define GPIO_BTN_BUILT_IN    (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
                                 GPIO_PORTC | GPIO_PIN13)
 #endif
