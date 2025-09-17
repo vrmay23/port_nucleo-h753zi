@@ -625,6 +625,10 @@ CONFIG_NUCLEO_H753ZI_LEDS_AUTO=y
 # CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT is not set
 
 #
+# Sensors Configuration
+#
+
+#
 # Board-Common Options
 #
 # CONFIG_ARCH_BOARD_COMMON is not set
@@ -1978,6 +1982,7 @@ CONFIG_READLINE_ECHO=y
 # CONFIG_SYSTEM_YMODEM is not set
 # CONFIG_LIB_ZLIB is not set
 # CONFIG_SYSTEM_ZMODEM is not set
+# CONFIG_TASKMGR is not set
 
 #
 # TEE Libraries Support

@@ -1,0 +1,10 @@
+include $(APPDIR)/Make.defs
+
+PROGNAME = taskmgr
+PRIORITY = SCHED_PRIORITY_DEFAULT
+STACKSIZE = $(CONFIG_DEFAULT_TASK_STACKSIZE)
+MODULE = $(CONFIG_TASKMGR)
+
+CSRCS = taskmgr.c
+
+include $(APPDIR)/Application.mk

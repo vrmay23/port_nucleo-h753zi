@@ -27,7 +27,7 @@
  *
  * Based on the following documents:
  * - Schematics: 19250.pdf
- * - User Manual: UM2407
+
  *
  * |----------------------|---------------|-----------|-----------------------|----------------------------------------------|
  * |Function / Peripheral | Logical Name  | STM32 Pin | A.F                   | Notes                                        |
@@ -717,21 +717,17 @@
 /* SPI2 Pin Configurations */
 #ifdef CONFIG_NUCLEO_H753ZI_SPI2_ENABLE
 #  ifdef CONFIG_NUCLEO_H753ZI_SPI2_PINSET_1
-#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_1    /* PB13 */
+#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_4    /* PB13 */
 #    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_1   /* PB14 */
 #    define GPIO_SPI2_MOSI    GPIO_SPI2_MOSI_1   /* PB15 */
 #  elif defined(CONFIG_NUCLEO_H753ZI_SPI2_PINSET_2)
-#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_2    /* PA12 */
+#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_1    /* PA12 */
 #    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_2   /* PC2 */
 #    define GPIO_SPI2_MOSI    GPIO_SPI2_MOSI_2   /* PC1 */
 #  elif defined(CONFIG_NUCLEO_H753ZI_SPI2_PINSET_3)
-#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_3    /* PD3 */
-#    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_3   /* PC2 */
+#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_5    /* PD3 */
+#    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_2   /* PC2 */
 #    define GPIO_SPI2_MOSI    GPIO_SPI2_MOSI_3   /* PC3 */
-#  elif defined(CONFIG_NUCLEO_H753ZI_SPI2_PINSET_4)
-#    define GPIO_SPI2_SCK     GPIO_SPI2_SCK_4    /* PI1 */
-#    define GPIO_SPI2_MISO    GPIO_SPI2_MISO_4   /* PI2 */
-#    define GPIO_SPI2_MOSI    GPIO_SPI2_MOSI_4   /* PI3 */
 #  endif
 #endif /* CONFIG_NUCLEO_H753ZI_SPI2_ENABLE */
 

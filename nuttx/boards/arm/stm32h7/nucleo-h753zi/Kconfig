@@ -309,13 +309,7 @@ config NUCLEO_H753ZI_SPI2_PINSET_3
 		- MISO: PC2
 		- MOSI: PC3
 
-config NUCLEO_H753ZI_SPI2_PINSET_4
-	bool "Pin Set 4: PI1(SCK), PI2(MISO), PI3(MOSI)"
-	help
-		SPI2 Pin Set 4:
-		- SCK: PI1
-		- MISO: PI2
-		- MOSI: PI3
+# Pin Set 4 REMOVIDO - STM32H753ZI não possui porta I (GPIO_PORTI)
 
 endchoice
 

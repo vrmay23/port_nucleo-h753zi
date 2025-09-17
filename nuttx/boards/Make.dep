@@ -51,10 +51,10 @@ boardctl.o: boardctl.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/map.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/gran.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \

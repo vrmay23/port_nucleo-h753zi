@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 #include <arch/board/board.h>
-#include  <nuttx/spi/spi.h>
+#include <nuttx/spi/spi.h>
 
 #include <nuttx/fs/fs.h>
 
@@ -34,10 +34,8 @@
 #include <syslog.h>
 #include <errno.h>
 
-/* board-specific includes */
-
-#include "nucleo-h753zi.h"
 #include "stm32_gpio.h"
+#include "nucleo-h753zi.h"
 
 /* Driver-specific includes */
 
@@ -63,7 +61,7 @@
 #endif
 
 #ifdef CONFIG_STM32_ROMFS
-#  include "stm32_romfs.h"
+#  include "drivers/driver_middleware/stm32_romfs.h"
 #endif
 
 #ifdef CONFIG_CAPTURE
@@ -79,9 +77,10 @@
 #  include <nuttx/usb/rndis.h>
 #endif
 
-/* need to change it to 'if def' */
-#include <nuttx/spi/spi.h>
-#include "stm32_spi.h"  /* Para stm32_spibus_initialize */
+#ifdef CONFIG_STM32H7_SPI
+#  include <nuttx/spi/spi.h>
+#include "stm32_spi.h" 
+#endif
 
 /****************************************************************************
  * Private Function Prototypes
@@ -965,12 +964,14 @@ int stm32_bringup(void)
   /* ========================================================================
    * PHASE 3.5: SPI Bus Initialization  
    * ======================================================================== */
+#ifdef CONFIG_STM32H7_SPI
   subsys_ret = stm32_spi_initialize();
   if (subsys_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: stm32_spi_initialize failed: %d\n",
              subsys_ret);
     }
+#endif
 
 /* Register SPI devices */
 #ifdef CONFIG_SPI_DRIVER

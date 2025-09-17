@@ -14,7 +14,7 @@ bin/mm_initialize.o: mm_heap/mm_initialize.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/debug.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -24,7 +24,7 @@ bin/mm_initialize.o: mm_heap/mm_initialize.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
@@ -93,7 +93,7 @@ bin/mm_lock.o: mm_heap/mm_lock.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/debug.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -103,7 +103,7 @@ bin/mm_lock.o: mm_heap/mm_lock.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/semaphore.h \
@@ -169,7 +169,7 @@ bin/mm_malloc_size.o: mm_heap/mm_malloc_size.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/debug.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -179,7 +179,7 @@ bin/mm_malloc_size.o: mm_heap/mm_malloc_size.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
@@ -287,10 +287,10 @@ bin/mm_shrinkchunk.o: mm_heap/mm_shrinkchunk.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/map.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/gran.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \
@@ -358,10 +358,10 @@ bin/mm_brkaddr.o: mm_heap/mm_brkaddr.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/map.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/gran.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \
@@ -460,10 +460,10 @@ bin/mm_extend.o: mm_heap/mm_extend.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/map.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/gran.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \
@@ -491,7 +491,7 @@ bin/mm_free.o: mm_heap/mm_free.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/debug.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -501,7 +501,7 @@ bin/mm_free.o: mm_heap/mm_free.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
@@ -571,7 +571,7 @@ bin/mm_mallinfo.o: mm_heap/mm_mallinfo.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/debug.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -581,7 +581,7 @@ bin/mm_mallinfo.o: mm_heap/mm_mallinfo.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
@@ -648,7 +648,7 @@ bin/mm_malloc.o: mm_heap/mm_malloc.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/debug.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -658,7 +658,7 @@ bin/mm_malloc.o: mm_heap/mm_malloc.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
@@ -728,7 +728,7 @@ bin/mm_foreach.o: mm_heap/mm_foreach.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/debug.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -738,7 +738,7 @@ bin/mm_foreach.o: mm_heap/mm_foreach.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
@@ -805,7 +805,7 @@ bin/mm_memalign.o: mm_heap/mm_memalign.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/debug.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -815,7 +815,7 @@ bin/mm_memalign.o: mm_heap/mm_memalign.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
@@ -886,7 +886,7 @@ bin/mm_realloc.o: mm_heap/mm_realloc.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stddef.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/alloca.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -896,7 +896,7 @@ bin/mm_realloc.o: mm_heap/mm_realloc.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/assert.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
@@ -994,7 +994,7 @@ bin/mm_heapmember.o: mm_heap/mm_heapmember.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/debug.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -1004,7 +1004,7 @@ bin/mm_heapmember.o: mm_heap/mm_heapmember.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/errno.h \
@@ -1069,7 +1069,7 @@ bin/mm_memdump.o: mm_heap/mm_memdump.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/inttypes.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/limits.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/arch/limits.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/time.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/ioctl.h \
@@ -1079,7 +1079,7 @@ bin/mm_memdump.o: mm_heap/mm_memdump.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/assert.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/semaphore.h \
@@ -1225,10 +1225,10 @@ bin/umm_initialize.o: umm_heap/umm_initialize.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/map.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/gran.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \
@@ -1785,10 +1785,10 @@ bin/mempool.o: mempool/mempool.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/map.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/gran.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \
@@ -1827,7 +1827,7 @@ bin/mempool_multiple.o: mempool/mempool_multiple.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stddef.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/alloca.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/syslog.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/stdbool.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/param.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mutex.h \
@@ -1858,7 +1858,7 @@ bin/mempool_multiple.o: mempool/mempool_multiple.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/map.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/gran.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \
@@ -1937,10 +1937,10 @@ bin/hook.o: kasan/hook.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/map.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/mm/gran.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \
@@ -2010,10 +2010,10 @@ bin/mm_map.o: map/mm_map.c \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/serial/tioctl.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/sys/uio.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdarg.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/dirent.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/13.2.1/include/stdatomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spawn.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/spawn.h \
  /home/vinicius/Desktop/port_nucleo-h753zi/nuttx/include/nuttx/spinlock_type.h \
