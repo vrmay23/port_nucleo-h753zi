@@ -1,0 +1,701 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+if ARCH_BOARD_NUCLEO_H753ZI
+
+config STM32_ROMFS
+	bool "Automount built-in ROMFS image"
+	default n
+	depends on FS_ROMFS
+	help
+		Select STM32_ROMFS_IMAGEFILE, STM32_ROMFS_DEV_MINOR, STM32_ROMFS_MOUNTPOINT
+
+config STM32_ROMFS_DEV_MINOR
+	int "Minor number for the block device backing the data"
+	depends on STM32_ROMFS
+	default 64
+
+config STM32_ROMFS_MOUNTPOINT
+	string "Mount point of the custom ROMFS image"
+	depends on STM32_ROMFS
+	default "/rom"
+
+config STM32_ROMFS_IMAGEFILE
+	string "ROMFS image file to include in the build"
+	depends on STM32_ROMFS
+	default "../../../rom.img"
+
+#
+# HSE source
+#
+
+choice
+	prompt "HSE clock source"
+	default BOARD_HSE_SOURCE_STLINK
+	help
+		Select the source for the High Speed External (HSE) clock.
+		This choice determines the solder bridge configuration needed
+		on the Nucleo-H753ZI board.
+
+config BOARD_HSE_SOURCE_STLINK
+	bool "ST-LINK MCO 8 MHz (default Nucleo)"
+	help
+		Default configuration for Nucleo-H753ZI.
+		Uses 8 MHz MCO output from ST-LINK.
+		
+		Solder Bridge Configuration:
+		SB45=ON, SB44=OFF, SB46=OFF, SB3=OFF, SB4=OFF.
+		
+		This is the factory default configuration and requires
+		no hardware modifications.
+
+config BOARD_HSE_SOURCE_X3
+	bool "External crystal X3"
+	help
+		Uses external crystal connected to X3 footprint.
+		Supports various crystal frequencies (8-25 MHz).
+		
+		Solder Bridge Configuration:
+		SB3=ON, SB4=ON, SB45=OFF, SB44=OFF, SB46=OFF.
+		
+		You must solder a crystal to the X3 footprint and
+		configure the solder bridges as indicated.
+
+endchoice
+
+config BOARD_HSE_X3_FREQ
+	int "X3 crystal frequency (Hz)"
+	depends on BOARD_HSE_SOURCE_X3
+	default 25000000
+	range 8000000 25000000
+	help
+		Frequency of the external crystal X3.
+		
+		Supported frequencies:
+		- 8000000 (8 MHz)
+		- 12000000 (12 MHz)
+		- 16000000 (16 MHz)
+		- 20000000 (20 MHz)
+		- 24000000 (24 MHz)
+		- 25000000 (25 MHz)
+		
+		The PLL configuration will be automatically adjusted
+		to maintain 400 MHz SYSCLK regardless of the chosen
+		HSE frequency.
+
+#
+# Board-specific GPIO Driver
+#
+
+config NUCLEO_H753ZI_GPIO_DRIVER
+	bool "Enable Nucleo H753ZI board GPIO driver"
+	default n
+	select DEV_GPIO
+	help
+		This option enables the low-level GPIO driver for the Nucleo H753ZI
+		board. Other features like buttons or LEDs will depend on this
+		driver.
+
+#
+# LEDs Configuration
+#
+
+choice
+	prompt "LED Control Mode"
+	default NUCLEO_H753ZI_LEDS_AUTO
+	help
+		Select how the onboard LEDs should be controlled.
+
+config NUCLEO_H753ZI_LEDS_AUTO
+	bool "Automatic LEDs (Kernel controlled)"
+	help
+		LEDs are automatically controlled by the kernel to indicate
+		system status (boot stages, interrupts, panics, etc.).
+		The LEDs will show:
+		- GREEN: System ready, signals
+		- ORANGE: Heap allocation, IRQs
+		- RED: Assertions, panics, idle
+		
+		NOTE: You still need to manually enable:
+		Board Selection -> Board LED Status support
+
+config NUCLEO_H753ZI_LEDS_USER
+	bool "User-controlled LEDs"
+	select USERLED
+	select USERLED_LOWER
+	select BOARD_LATE_INITIALIZE
+	help
+		LEDs are controlled by user applications via /dev/userleds.
+		Applications can turn individual LEDs on/off as needed.
+		Kernel status indication is disabled.
+		
+		NOTE: You must manually disable:
+		Board Selection -> Board LED Status support (to avoid conflicts)
+
+config NUCLEO_H753ZI_LEDS_DISABLED
+	bool "LEDs disabled"
+	help
+		LED functionality is completely disabled to save resources.
+		
+		NOTE: You should manually disable:
+		Board Selection -> Board LED Status support
+
+endchoice
+
+#
+# Button Configuration
+#
+
+menu "Button Configuration"
+
+config NUCLEO_H753ZI_BUTTON_SUPPORT
+	bool "Enable button support"
+	default n
+	select ARCH_BUTTONS
+	help
+		Enable GPIO button support for the Nucleo-H753ZI board.
+
+config NUCLEO_H753ZI_BUTTON_COUNT
+	int "Number of buttons"
+	depends on NUCLEO_H753ZI_BUTTON_SUPPORT
+	default 1
+	range 1 32
+	help
+		Total number of buttons to configure (1-32).
+		
+		The STM32H7 button driver supports up to 32 buttons using
+		a 32-bit bitmask for button states.
+
+config NUCLEO_H753ZI_BUTTON_BUILTIN
+	bool "Include built-in user button (PC13)"
+	depends on NUCLEO_H753ZI_BUTTON_SUPPORT
+	default y
+	help
+		Include the built-in blue user button connected to PC13.
+		This button will always be assigned as button index 0.
+		
+		If enabled, you need (BUTTON_COUNT - 1) additional pins.
+		If disabled, you need exactly BUTTON_COUNT pins.
+
+config NUCLEO_H753ZI_BUTTON_PINS
+	string "Button GPIO pin list"
+	depends on NUCLEO_H753ZI_BUTTON_SUPPORT
+	default ""
+	help
+		Comma-separated list of GPIO pins for buttons.
+		
+		Format: PORT+PIN (e.g., "PF15,PG14,PG9,PE0,PA0,PB12")
+		
+		Number of pins required:
+		- With built-in: (BUTTON_COUNT - 1) pins
+		- Without built-in: BUTTON_COUNT pins
+		
+		Example for 5 buttons with built-in enabled:
+		"PF15,PG14,PG9,PE0"
+		
+		Common Nucleo-H753ZI pins:
+		Arduino Headers: PF15(D2), PG14(D1), PG9(D0), PE0(D34)
+		Morpho Headers: PA0-PA15, PB0-PB15, PC0-PC15, PD0-PD15,
+		                PE0-PE15, PF0-PF15, PG0-PG15, PH0-PH1
+		
+		Note: All buttons assume pull-down resistor configuration.
+
+config NUCLEO_H753ZI_BUTTON_VALIDATION
+	bool "Validate pin configuration at compile time"
+	depends on NUCLEO_H753ZI_BUTTON_SUPPORT
+	default y
+	help
+		Perform compile-time validation of GPIO pin assignments.
+
+endmenu
+
+menu "SPI Configuration"
+	depends on STM32H7_SPI
+
+comment "SPI interfaces now use per-sensor CS registration system"
+comment "No CS pins configured at SPI level - sensors register their own CS pins"
+
+if STM32H7_SPI1
+
+menu "SPI1 Configuration"
+
+config NUCLEO_H753ZI_SPI1_ENABLE
+	bool "Enable SPI1"
+	default n
+	help
+		Enable SPI1 with configurable pins.
+		CS pins are now registered per-sensor.
+
+choice
+	prompt "SPI1 Pin Set"
+	depends on NUCLEO_H753ZI_SPI1_ENABLE
+	default NUCLEO_H753ZI_SPI1_PINSET_1
+	help
+		Select which set of pins to use for SPI1.
+		Choose based on availability and board layout.
+
+config NUCLEO_H753ZI_SPI1_PINSET_1
+	bool "Pin Set 1: PA5(SCK), PA6(MISO), PA7(MOSI)"
+	help
+		SPI1 Pin Set 1 (Arduino SPI connector compatible):
+		- SCK: PA5 (D13 - Arduino SCK)
+		- MISO: PA6 (D12 - Arduino MISO)
+		- MOSI: PA7 (D11 - Arduino MOSI)
+		This is the standard Arduino SPI pinout.
+
+config NUCLEO_H753ZI_SPI1_PINSET_2
+	bool "Pin Set 2: PB3(SCK), PB4(MISO), PB5(MOSI)"
+	help
+		SPI1 Pin Set 2:
+		- SCK: PB3
+		- MISO: PB4
+		- MOSI: PB5
+
+config NUCLEO_H753ZI_SPI1_PINSET_3
+	bool "Pin Set 3: PG11(SCK), PG9(MISO), PD7(MOSI)"
+	help
+		SPI1 Pin Set 3:
+		- SCK: PG11
+		- MISO: PG9
+		- MOSI: PD7
+
+endchoice
+
+endmenu
+
+endif
+
+if STM32H7_SPI2
+
+menu "SPI2 Configuration"
+
+config NUCLEO_H753ZI_SPI2_ENABLE
+	bool "Enable SPI2"
+	default n
+	help
+		Enable SPI2 with configurable pins.
+		CS pins are now registered per-sensor.
+
+choice
+	prompt "SPI2 Pin Set"
+	depends on NUCLEO_H753ZI_SPI2_ENABLE
+	default NUCLEO_H753ZI_SPI2_PINSET_1
+	help
+		Select which set of pins to use for SPI2.
+
+config NUCLEO_H753ZI_SPI2_PINSET_1
+	bool "Pin Set 1: PB13(SCK), PB14(MISO), PB15(MOSI)"
+	help
+		SPI2 Pin Set 1:
+		- SCK: PB13
+		- MISO: PB14
+		- MOSI: PB15
+
+config NUCLEO_H753ZI_SPI2_PINSET_2
+	bool "Pin Set 2: PA12(SCK), PC2(MISO), PC1(MOSI)"
+	help
+		SPI2 Pin Set 2:
+		- SCK: PA12
+		- MISO: PC2
+		- MOSI: PC1
+
+config NUCLEO_H753ZI_SPI2_PINSET_3
+	bool "Pin Set 3: PD3(SCK), PC2(MISO), PC3(MOSI)"
+	help
+		SPI2 Pin Set 3:
+		- SCK: PD3
+		- MISO: PC2
+		- MOSI: PC3
+
+config NUCLEO_H753ZI_SPI2_PINSET_4
+	bool "Pin Set 4: PI1(SCK), PI2(MISO), PI3(MOSI)"
+	help
+		SPI2 Pin Set 4:
+		- SCK: PI1
+		- MISO: PI2
+		- MOSI: PI3
+
+endchoice
+
+endmenu
+
+endif
+
+if STM32H7_SPI3
+
+menu "SPI3 Configuration"
+
+config NUCLEO_H753ZI_SPI3_ENABLE
+	bool "Enable SPI3"
+	default n
+	help
+		Enable SPI3 with configurable pins.
+		CS pins are now registered per-sensor.
+
+choice
+	prompt "SPI3 Pin Set"
+	depends on NUCLEO_H753ZI_SPI3_ENABLE
+	default NUCLEO_H753ZI_SPI3_PINSET_1
+	help
+		Select which set of pins to use for SPI3.
+
+config NUCLEO_H753ZI_SPI3_PINSET_1
+	bool "Pin Set 1: PB3(SCK), PB4(MISO), PB2(MOSI)"
+	help
+		SPI3 Pin Set 1:
+		- SCK: PB3
+		- MISO: PB4
+		- MOSI: PB2
+
+config NUCLEO_H753ZI_SPI3_PINSET_2
+	bool "Pin Set 2: PC10(SCK), PC11(MISO), PC12(MOSI)"
+	help
+		SPI3 Pin Set 2:
+		- SCK: PC10
+		- MISO: PC11
+		- MOSI: PC12
+
+config NUCLEO_H753ZI_SPI3_PINSET_3
+	bool "Pin Set 3: PB3(SCK), PB4(MISO), PB5(MOSI)"
+	help
+		SPI3 Pin Set 3:
+		- SCK: PB3
+		- MISO: PB4
+		- MOSI: PB5
+
+endchoice
+
+endmenu
+
+endif
+
+if STM32H7_SPI4
+
+menu "SPI4 Configuration"
+
+config NUCLEO_H753ZI_SPI4_ENABLE
+	bool "Enable SPI4"
+	default n
+	help
+		Enable SPI4 with configurable pins.
+		CS pins are now registered per-sensor.
+
+choice
+	prompt "SPI4 Pin Set"
+	depends on NUCLEO_H753ZI_SPI4_ENABLE
+	default NUCLEO_H753ZI_SPI4_PINSET_1
+	help
+		Select which set of pins to use for SPI4.
+
+config NUCLEO_H753ZI_SPI4_PINSET_1
+	bool "Pin Set 1: PE12(SCK), PE13(MISO), PE14(MOSI)"
+	help
+		SPI4 Pin Set 1:
+		- SCK: PE12
+		- MISO: PE13
+		- MOSI: PE14
+
+config NUCLEO_H753ZI_SPI4_PINSET_2
+	bool "Pin Set 2: PE2(SCK), PE5(MISO), PE6(MOSI)"
+	help
+		SPI4 Pin Set 2:
+		- SCK: PE2
+		- MISO: PE5
+		- MOSI: PE6
+
+endchoice
+
+endmenu
+
+endif
+
+if STM32H7_SPI5
+
+menu "SPI5 Configuration"
+
+config NUCLEO_H753ZI_SPI5_ENABLE
+	bool "Enable SPI5"
+	default n
+	help
+		Enable SPI5 with configurable pins.
+		CS pins are now registered per-sensor.
+
+choice
+	prompt "SPI5 Pin Set"
+	depends on NUCLEO_H753ZI_SPI5_ENABLE
+	default NUCLEO_H753ZI_SPI5_PINSET_1
+	help
+		Select which set of pins to use for SPI5.
+
+config NUCLEO_H753ZI_SPI5_PINSET_1
+	bool "Pin Set 1: PF7(SCK), PF8(MISO), PF11(MOSI)"
+	help
+		SPI5 Pin Set 1:
+		- SCK: PF7
+		- MISO: PF8
+		- MOSI: PF11
+
+config NUCLEO_H753ZI_SPI5_PINSET_2
+	bool "Pin Set 2: PF7(SCK), PF8(MISO), PF9(MOSI)"
+	help
+		SPI5 Pin Set 2:
+		- SCK: PF7
+		- MISO: PF8
+		- MOSI: PF9
+
+config NUCLEO_H753ZI_SPI5_PINSET_3
+	bool "Pin Set 3: PH6(SCK), PH7(MISO), PF11(MOSI)"
+	help
+		SPI5 Pin Set 3:
+		- SCK: PH6
+		- MISO: PH7
+		- MOSI: PF11
+
+config NUCLEO_H753ZI_SPI5_PINSET_4
+	bool "Pin Set 4: PK0(SCK), PJ11(MISO), PJ10(MOSI)"
+	help
+		SPI5 Pin Set 4:
+		- SCK: PK0
+		- MISO: PJ11
+		- MOSI: PJ10
+
+endchoice
+
+endmenu
+
+endif
+
+if STM32H7_SPI6
+
+menu "SPI6 Configuration"
+
+config NUCLEO_H753ZI_SPI6_ENABLE
+	bool "Enable SPI6"
+	default n
+	help
+		Enable SPI6 with configurable pins.
+		CS pins are now registered per-sensor.
+
+choice
+	prompt "SPI6 Pin Set"
+	depends on NUCLEO_H753ZI_SPI6_ENABLE
+	default NUCLEO_H753ZI_SPI6_PINSET_1
+	help
+		Select which set of pins to use for SPI6.
+
+config NUCLEO_H753ZI_SPI6_PINSET_1
+	bool "Pin Set 1: PG13(SCK), PG12(MISO), PG14(MOSI)"
+	help
+		SPI6 Pin Set 1:
+		- SCK: PG13
+		- MISO: PG12
+		- MOSI: PG14
+
+config NUCLEO_H753ZI_SPI6_PINSET_2
+	bool "Pin Set 2: PA5(SCK), PA6(MISO), PA7(MOSI)"
+	help
+		SPI6 Pin Set 2 (conflicts with SPI1 Pin Set 1):
+		- SCK: PA5
+		- MISO: PA6
+		- MOSI: PA7
+		WARNING: Do not use with SPI1 Pin Set 1!
+
+config NUCLEO_H753ZI_SPI6_PINSET_3
+	bool "Pin Set 3: PB3(SCK), PB4(MISO), PB5(MOSI)"
+	help
+		SPI6 Pin Set 3 (conflicts with SPI1 Pin Set 2):
+		- SCK: PB3
+		- MISO: PB4
+		- MOSI: PB5
+		WARNING: Do not use with SPI1 Pin Set 2!
+
+endchoice
+
+endmenu
+endif
+endmenu
+
+#
+# Sensors Configuration
+#
+
+menu "Sensors Configuration"
+
+menu "MFRC522 RFID Reader Configuration"
+    depends on CL_MFRC522
+
+config NUCLEO_H753ZI_MFRC522_ENABLE
+    bool "Enable MFRC522 RFID Reader"
+    default n
+    help
+        Enable MFRC522 RFID reader support with configurable
+        SPI bus, CS pin, and interrupt pin.
+
+choice
+    prompt "MFRC522 SPI Bus"
+    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+    help
+        Select which SPI bus the MFRC522 is connected to.
+    
+config NUCLEO_H753ZI_MFRC522_SPI1
+    bool "Use SPI1"
+    depends on NUCLEO_H753ZI_SPI1_ENABLE
+    
+config NUCLEO_H753ZI_MFRC522_SPI2  
+    bool "Use SPI2"
+    depends on NUCLEO_H753ZI_SPI2_ENABLE
+    
+config NUCLEO_H753ZI_MFRC522_SPI3
+    bool "Use SPI3"
+    depends on NUCLEO_H753ZI_SPI3_ENABLE
+    
+config NUCLEO_H753ZI_MFRC522_SPI4
+    bool "Use SPI4"
+    depends on NUCLEO_H753ZI_SPI4_ENABLE
+    
+config NUCLEO_H753ZI_MFRC522_SPI5
+    bool "Use SPI5"
+    depends on NUCLEO_H753ZI_SPI5_ENABLE
+    
+config NUCLEO_H753ZI_MFRC522_SPI6
+    bool "Use SPI6"
+    depends on NUCLEO_H753ZI_SPI6_ENABLE
+endchoice
+
+# Hidden config to derive SPI bus number
+config NUCLEO_H753ZI_MFRC522_SPI_BUS
+    int
+    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+    default 1 if NUCLEO_H753ZI_MFRC522_SPI1
+    default 2 if NUCLEO_H753ZI_MFRC522_SPI2
+    default 3 if NUCLEO_H753ZI_MFRC522_SPI3
+    default 4 if NUCLEO_H753ZI_MFRC522_SPI4
+    default 5 if NUCLEO_H753ZI_MFRC522_SPI5
+    default 6 if NUCLEO_H753ZI_MFRC522_SPI6
+
+config NUCLEO_H753ZI_MFRC522_DEVID
+    int "MFRC522 Device ID"
+    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+    range 0 15
+    default 0
+    help
+        Device ID for MFRC522 within the selected SPI bus.
+        Range: 0-15 for each SPI bus.
+        This ID will be used to register the CS pin.
+
+menu "MFRC522 CS Pin Configuration"
+    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+
+config NUCLEO_H753ZI_MFRC522_CS_PIN
+    string "CS GPIO Pin"
+    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+    default "PF1"
+    help
+        GPIO pin for MFRC522 Chip Select.
+        Format: PORT+PIN (e.g., "PF1", "PE0", "PA4")
+        
+        Common available pins:
+        - Arduino Headers: PF15(D2), PG14(D1), PG9(D0), PE0(D34)
+        - Morpho Headers: PA0-PA15, PB0-PB15, PC0-PC15, PD0-PD15,
+                          PE0-PE15, PF0-PF15, PG0-PG15, PH0-PH1
+        
+        Avoid pins already used by selected SPI MISO/MOSI/SCK.
+
+choice
+    prompt "CS Pin Active Level"
+    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+    default NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
+    help
+        Select whether the CS pin is active low or active high.
+
+config NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
+    bool "Active Low (most common)"
+    help
+        CS pin is active low (0V = selected, 3.3V = deselected).
+        This is the standard for most SPI devices including MFRC522.
+
+config NUCLEO_H753ZI_MFRC522_CS_ACTIVE_HIGH
+    bool "Active High"  
+    help
+        CS pin is active high (3.3V = selected, 0V = deselected).
+        Less common, use only if your hardware requires it.
+
+endchoice
+
+# Hidden config for CS active level
+config NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
+    bool
+    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+    default y if NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
+    default n if NUCLEO_H753ZI_MFRC522_CS_ACTIVE_HIGH
+
+endmenu
+
+menu "MFRC522 Interrupt Pin Configuration"
+    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+
+config NUCLEO_H753ZI_MFRC522_IRQ_ENABLE
+    bool "Enable IRQ pin"
+    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+    default n
+    help
+        Enable interrupt pin support for MFRC522.
+        This allows for event-driven operation instead of polling.
+
+config NUCLEO_H753ZI_MFRC522_IRQ_PIN
+    string "IRQ GPIO Pin"
+    depends on NUCLEO_H753ZI_MFRC522_IRQ_ENABLE
+    default "PF2"
+    help
+        GPIO pin for MFRC522 interrupt signal.
+        Format: PORT+PIN (e.g., "PF2", "PE1", "PA3")
+        
+        This pin should be connected to the MFRC522's IRQ output.
+        Choose a pin that supports external interrupts.
+        
+        Common interrupt-capable pins:
+        - Arduino Headers: PF15(D2), PG14(D1), PG9(D0)
+        - Morpho Headers: Most PA/PB/PC/PD/PE/PF/PG pins
+        
+        Avoid pins already used by SPI or CS.
+
+choice
+    prompt "IRQ Trigger Type"
+    depends on NUCLEO_H753ZI_MFRC522_IRQ_ENABLE
+    default NUCLEO_H753ZI_MFRC522_IRQ_FALLING_EDGE
+    help
+        Select the interrupt trigger type for MFRC522.
+
+config NUCLEO_H753ZI_MFRC522_IRQ_FALLING_EDGE
+    bool "Falling Edge"
+    help
+        Trigger interrupt on falling edge (3.3V to 0V transition).
+        This is the default for MFRC522.
+
+config NUCLEO_H753ZI_MFRC522_IRQ_RISING_EDGE
+    bool "Rising Edge"
+    help
+        Trigger interrupt on rising edge (0V to 3.3V transition).
+
+config NUCLEO_H753ZI_MFRC522_IRQ_BOTH_EDGES
+    bool "Both Edges"
+    help
+        Trigger interrupt on both rising and falling edges.
+
+endchoice
+
+endmenu
+
+endmenu
+
+# Add more sensor configurations here following the same pattern
+# menu "Other Sensor Configuration"
+#     depends on OTHER_SENSOR_DRIVER
+#     ...
+# endmenu
+
+endmenu
+
+endif # ARCH_BOARD_NUCLEO_H753ZI
