@@ -114,6 +114,7 @@
 #define BUTTONS_DRIVER_PATH  "/dev/buttons"
 #define RTC_DRIVER_PATH      "/dev/rtc0"
 #define MFRC522_DEVPATH      "/dev/rfid0"
+#define OLED_DRIVER_PATH     "/dev/lcd0" 
 
 #ifdef CONFIG_FS_PROCFS
 #  ifdef CONFIG_NSH_PROC_MOUNTPOINT
@@ -230,7 +231,7 @@
 
 /* OLED Display Configuration */
 
-#define OLED_I2C_PORT        2
+#define OLED_I2C_PORT        1
 
 /* PWM Timer Configuration */
 
@@ -264,6 +265,15 @@ int stm32_bringup(void);
  * This section centralizes all function prototypes for driver initializations.
  */
 
+#ifdef CONFIG_LCD_SSD1306
+int stm32_ssd1306_initialize(void);
+#endif
+
+#ifdef CONFIG_LCD_SSD1306
+int board_lcd_initialize(void);
+struct lcd_dev_s *board_lcd_getdev(int devno);
+void board_lcd_uninitialize(void);
+#endif
 
 #ifdef CONFIG_ADC
 int stm32_adc_setup(void);

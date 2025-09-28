@@ -24,21 +24,39 @@
  * Included Files
  ****************************************************************************/
 
+/* System includes */
 #include <nuttx/config.h>
 #include <arch/board/board.h>
-#include <nuttx/spi/spi.h>
-
-#include <nuttx/fs/fs.h>
-
 #include <sys/types.h>
 #include <syslog.h>
 #include <errno.h>
 
+/* Filesystem includes */
+#include <nuttx/fs/fs.h>
+
+/* Communication protocol includes */
+#ifdef CONFIG_I2C
+#  include <nuttx/i2c/i2c_master.h>
+#endif
+
+#ifdef CONFIG_SPI
+#  include <nuttx/spi/spi.h>
+#endif
+
+/* STM32-specific includes */
 #include "stm32_gpio.h"
+
+#ifdef CONFIG_I2C
+#  include "stm32_i2c.h"
+#endif
+
+#ifdef CONFIG_STM32H7_SPI
+#  include "stm32_spi.h" 
+#endif
+
 #include "nucleo-h753zi.h"
 
-/* Driver-specific includes */
-
+/* USB-related includes */
 #ifdef CONFIG_USBMONITOR
 #  include <nuttx/usb/usbmonitor.h>
 #endif
@@ -47,21 +65,24 @@
 #  include "stm32_usbhost.h"
 #endif
 
+#ifdef CONFIG_RNDIS
+#  include <nuttx/usb/rndis.h>
+#endif
+
+/* Input device includes */
 #ifdef CONFIG_INPUT_BUTTONS
 #  include <nuttx/input/buttons.h>
 #endif
 
+/* LED includes */
 #ifdef CONFIG_USERLED
 #  include <nuttx/leds/userled.h>
 #endif
 
+/* Timer-related includes */
 #ifdef HAVE_RTC_DRIVER
 #  include <nuttx/timers/rtc.h>
 #  include "stm32_rtc.h"
-#endif
-
-#ifdef CONFIG_STM32_ROMFS
-#  include "drivers/driver_middleware/stm32_romfs.h"
 #endif
 
 #ifdef CONFIG_CAPTURE
@@ -73,21 +94,23 @@
 #  include "stm32_wdg.h"
 #endif
 
-#ifdef CONFIG_RNDIS
-#  include <nuttx/usb/rndis.h>
+/* Storage includes */
+#ifdef CONFIG_STM32_ROMFS
+#  include "drivers/driver_middleware/stm32_romfs.h"
 #endif
 
-#ifdef CONFIG_STM32H7_SPI
-#  include <nuttx/spi/spi.h>
-#include "stm32_spi.h" 
+#ifdef CONFIG_VIDEO_FB
+#  include <nuttx/video/fb.h>
 #endif
 
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
-/* Initialization functions organized by category */
+/* Initialization functions organized by name length (longest to shortest) */
 
+static int nucleo_automotive_initialize(void);
+static int nucleo_communication_initialize(void);
 static int nucleo_connectivity_initialize(void);
 static int nucleo_filesystem_initialize(void);
 static int nucleo_watchdog_initialize(void);
@@ -97,8 +120,8 @@ static int nucleo_timers_initialize(void);
 static int nucleo_input_initialize(void);
 static int nucleo_gpio_initialize(void);
 static int nucleo_led_initialize(void);
-static int nucleo_rtc_initialize(void);
 static int nucleo_usb_initialize(void);
+static int nucleo_rtc_initialize(void);
 static int nucleo_adc_initialize(void);
 
 #if defined(CONFIG_I2C) && defined(CONFIG_SYSTEM_I2CTOOL)
@@ -118,6 +141,9 @@ static int nucleo_adc_initialize(void);
  *
  * Description:
  * Initialize LED subsystem based on configuration
+ * Priority: HIGH (provides early visual feedback)
+ *
+ * Dependencies: None
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -135,24 +161,24 @@ static int nucleo_led_initialize(void)
   ret = userled_lower_initialize("/dev/userleds");
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: userled_lower_initialize() failed: %d\n", ret);
+      syslog(LOG_ERR, "[ERROR: BRINGUP] - userled_lower_initialize() failed: %d\n", ret);
     }
   else
     {
-      syslog(LOG_INFO, "User LEDs initialized at /dev/userleds\n");
+      syslog(LOG_INFO, "[INFO: BRINGUP] - User LEDs initialized at /dev/userleds\n");
     }
 
 #elif defined(CONFIG_NUCLEO_H753ZI_LEDS_AUTO)
 
   /* Automatic LEDs - initialized by kernel via board_autoled_initialize() */
 
-  syslog(LOG_INFO, "Auto LEDs enabled for system status indication\n");
+  syslog(LOG_INFO, "[INFO: BRINGUP] - Auto LEDs enabled for system status indication\n");
 
 #elif defined(CONFIG_NUCLEO_H753ZI_LEDS_DISABLED)
 
   /* LEDs completely disabled */
 
-  syslog(LOG_INFO, "LEDs disabled by configuration\n");
+  syslog(LOG_INFO, "[INFO: BRINGUP] - LEDs disabled by configuration\n");
 
 #endif
 
@@ -164,6 +190,9 @@ static int nucleo_led_initialize(void)
  *
  * Description:
  * Initialize filesystem support (PROCFS, ROMFS)
+ * Priority: HIGH (required for logging and configuration)
+ *
+ * Dependencies: None
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -222,6 +251,9 @@ static int nucleo_filesystem_initialize(void)
  *
  * Description:
  * Initialize Real-Time Clock driver
+ * Priority: HIGH (time services for other subsystems)
+ *
+ * Dependencies: None
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -260,10 +292,155 @@ static int nucleo_rtc_initialize(void)
 }
 
 /****************************************************************************
+ * Name: nucleo_gpio_initialize
+ *
+ * Description:
+ * Initialize GPIO driver for user applications
+ * Priority: HIGH (required by many other drivers)
+ *
+ * Dependencies: None
+ *
+ * Returned Value:
+ * Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int nucleo_gpio_initialize(void)
+{
+  int ret = OK;
+
+#ifdef CONFIG_DEV_GPIO
+  /* Register the GPIO driver */
+  ret = stm32_gpio_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize GPIO driver: %d\n", ret);
+    }
+  else
+    {
+      syslog(LOG_INFO, "GPIO driver initialized\n");
+    }
+#endif
+
+  return ret;
+}
+
+/****************************************************************************
+ * Name: nucleo_automotive_initialize
+ *
+ * Description:
+ * Initialize automotive/industrial communication protocols (CAN, LIN, etc.)
+ * Priority: MEDIUM
+ *
+ * Dependencies: GPIO, Clock configuration
+ *
+ * Returned Value:
+ * Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int nucleo_automotive_initialize(void)
+{
+  int ret = OK;
+
+/* Initialize CAN subsystem */
+
+/*
+#ifdef CONFIG_STM32H7_CAN
+  ret = stm32_can_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_can_initialize failed: %d\n", ret);
+    }
+  else
+    {
+      syslog(LOG_INFO, "CAN bus initialized\n");
+    }
+#endif
+*/
+
+  /* Future: Add LIN, FlexRay, or other automotive protocols here */
+
+  return ret;
+}
+
+/****************************************************************************
+ * Name: nucleo_communication_initialize
+ *
+ * Description:
+ * Initialize general-purpose communication bus drivers (SPI, I2C)
+ * Priority: HIGH (required by sensors and other peripherals)
+ *
+ * Dependencies: GPIO
+ *
+ * Returned Value:
+ * Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int nucleo_communication_initialize(void)
+{
+  int ret = OK;
+  int local_ret;
+
+  /* ========================================================================
+   * SPI Bus Initialization  
+   * ======================================================================== */
+#ifdef CONFIG_STM32H7_SPI
+  local_ret = stm32_spi_initialize();
+  if (local_ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_spi_initialize failed: %d\n", local_ret);
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
+    }
+  else
+    {
+      syslog(LOG_INFO, "SPI buses initialized\n");
+    }
+#endif
+
+/* Register SPI devices */
+#ifdef CONFIG_SPI_DRIVER
+  local_ret = stm32_spidev_register_all();
+  if (local_ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_spidev_register_all failed: %d\n", 
+             local_ret);
+      /* Don't update ret - this is not critical */
+    }
+  else
+    {
+      syslog(LOG_INFO, "SPI devices registered\n");
+    }
+#endif
+
+  /* ========================================================================
+   * I2C Tools Initialization (for debugging)
+   * ======================================================================== */
+#if defined(CONFIG_I2C) && defined(CONFIG_SYSTEM_I2CTOOL)
+  local_ret = nucleo_i2c_tools_initialize();
+  if (local_ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: I2C tools initialization failed: %d\n", 
+             local_ret);
+      /* Don't update ret - this is not critical */
+    }
+#endif
+
+  return ret;
+}
+
+/****************************************************************************
  * Name: nucleo_input_initialize
  *
  * Description:
  * Initialize input devices (buttons, etc.)
+ * Priority: MEDIUM
+ *
+ * Dependencies: GPIO
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -296,6 +473,9 @@ static int nucleo_input_initialize(void)
  *
  * Description:
  * Initialize USB subsystem (host, device, monitoring)
+ * Priority: MEDIUM
+ *
+ * Dependencies: None
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -392,6 +572,9 @@ static int nucleo_usb_initialize(void)
  *
  * Description:
  * Initialize Analog-to-Digital Converter
+ * Priority: MEDIUM
+ *
+ * Dependencies: GPIO
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -419,41 +602,13 @@ static int nucleo_adc_initialize(void)
 }
 
 /****************************************************************************
- * Name: nucleo_gpio_initialize
- *
- * Description:
- * Initialize GPIO driver for user applications
- *
- * Returned Value:
- * Zero (OK) on success; a negated errno value on failure.
- *
- ****************************************************************************/
-
-static int nucleo_gpio_initialize(void)
-{
-  int ret = OK;
-
-#ifdef CONFIG_DEV_GPIO
-  /* Register the GPIO driver */
-  ret = stm32_gpio_initialize();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: Failed to initialize GPIO driver: %d\n", ret);
-    }
-  else
-    {
-      syslog(LOG_INFO, "GPIO driver initialized\n");
-    }
-#endif
-
-  return ret;
-}
-
-/****************************************************************************
  * Name: nucleo_sensors_initialize
  *
  * Description:
- * Initialize sensor drivers (IMU, magnetometer, etc.)
+ * Initialize sensor drivers (IMU, magnetometer, RFID, etc.)
+ * Priority: LOW (application-specific)
+ *
+ * Dependencies: I2C, SPI, GPIO
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -463,10 +618,9 @@ static int nucleo_gpio_initialize(void)
 static int nucleo_sensors_initialize(void)
 {
   int ret = OK;
-  int local_ret;  /* Add local variable for subsystem results */
 
 #ifdef CONFIG_SENSORS_LSM6DSL
-  local_ret = stm32_lsm6dsl_initialize("/dev/lsm6dsl0");
+  int local_ret = stm32_lsm6dsl_initialize("/dev/lsm6dsl0");
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize LSM6DSL driver: %d\n",
@@ -483,7 +637,7 @@ static int nucleo_sensors_initialize(void)
 #endif /* CONFIG_SENSORS_LSM6DSL */
 
 #ifdef CONFIG_SENSORS_LSM9DS1
-  local_ret = stm32_lsm9ds1_initialize();
+  int local_ret = stm32_lsm9ds1_initialize();
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize LSM9DS1 driver: %d\n",
@@ -500,7 +654,7 @@ static int nucleo_sensors_initialize(void)
 #endif /* CONFIG_SENSORS_LSM9DS1 */
 
 #ifdef CONFIG_SENSORS_LSM303AGR
-  local_ret = stm32_lsm303agr_initialize("/dev/lsm303mag0");
+  int local_ret = stm32_lsm303agr_initialize("/dev/lsm303mag0");
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize LSM303AGR driver: %d\n",
@@ -518,7 +672,7 @@ static int nucleo_sensors_initialize(void)
 
 #ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
   /* Initialize MFRC522 RFID reader using the path defined in header */
-  local_ret = stm32_mfrc522initialize(MFRC522_DEVPATH);
+  int local_ret = stm32_mfrc522initialize(MFRC522_DEVPATH);
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: stm32_mfrc522initialize() failed: %d\n", 
@@ -543,7 +697,10 @@ static int nucleo_sensors_initialize(void)
  * Name: nucleo_connectivity_initialize
  *
  * Description:
- * Initialize connectivity modules (Wi-Fi, Bluetooth, etc.)
+ * Initialize wireless connectivity modules (Wi-Fi, Bluetooth, etc.)
+ * Priority: LOW (application-specific)
+ *
+ * Dependencies: SPI, I2C, GPIO
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -579,6 +736,31 @@ static int nucleo_connectivity_initialize(void)
     }
 #endif /* CONFIG_WL_NRF24L01 */
 
+#if defined(CONFIG_LCD_SSD1306) && defined(CONFIG_LCD_CHARACTER_DEVICE)
+  /* Initialize SSD1306 OLED display using board driver */
+  int local_ret = board_lcd_initialize();
+  if (local_ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: board_lcd_initialize failed: %d\n", local_ret);
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
+    }
+  else
+    {
+      struct lcd_dev_s *lcd = board_lcd_getdev(0);
+      if (lcd != NULL)
+        {
+          syslog(LOG_INFO, "SSD1306 OLED initialized successfully");
+        }
+      else
+        {
+          syslog(LOG_ERR, "ERROR: Failed to get SSD1306 LCD device\n");
+        }
+    }
+#endif
+
   return ret;
 }
 
@@ -587,6 +769,9 @@ static int nucleo_connectivity_initialize(void)
  *
  * Description:
  * Initialize storage devices (SD card, flash, etc.)
+ * Priority: MEDIUM
+ *
+ * Dependencies: SPI (for SD cards), filesystem
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -634,6 +819,9 @@ static int nucleo_storage_initialize(void)
  *
  * Description:
  * Initialize timer-related drivers (PWM, capture, etc.)
+ * Priority: LOW
+ *
+ * Dependencies: GPIO
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -681,11 +869,51 @@ static int nucleo_timers_initialize(void)
   return ret;
 }
 
+
 /****************************************************************************
  * Name: nucleo_watchdog_initialize
  *
  * Description:
  * Initialize watchdog timer
+ * Priority: LOW (should be last - for system monitoring)
+ *
+ * Dependencies: None (intentionally independent)
+ *
+ * Returned Value:
+ * Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int nucleo_streaming_initialize(void)
+{
+  int ret = OK;
+
+#ifdef CONFIG_VIDEO_FB
+  /* Initialize and register the framebuffer driver */
+
+  ret = fb_register(0, 0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: fb_register() failed: %d\n", ret);
+    }
+    
+   else
+    {
+      syslog(LOG_INFO, "FB initialized as /dev/fb0\n");
+    }
+#endif
+
+  return ret;
+}
+
+/****************************************************************************
+ * Name: nucleo_watchdog_initialize
+ *
+ * Description:
+ * Initialize watchdog timer
+ * Priority: LOW (should be last - for system monitoring)
+ *
+ * Dependencies: None (intentionally independent)
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -717,6 +945,9 @@ static int nucleo_watchdog_initialize(void)
  *
  * Description:
  * Initialize I2C tools for debugging and development
+ * Priority: LOW (development/debugging only)
+ *
+ * Dependencies: I2C
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -774,6 +1005,9 @@ static int nucleo_i2c_tools_initialize(void)
  *
  * Description:
  * Initialize and register capture drivers
+ * Priority: LOW
+ *
+ * Dependencies: Timer peripherals
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -863,13 +1097,25 @@ static int nucleo_capture_initialize(void)
  * Name: stm32_bringup
  *
  * Description:
- * Perform architecture-specific initialization in organized fashion
+ * Perform architecture-specific initialization with dependency-aware ordering
  *
  * This function initializes all board-specific drivers and subsystems
- * in a controlled manner, ensuring that failures in one subsystem do
- * not prevent initialization of others.
+ * in a controlled manner, ensuring that dependencies between subsystems
+ * are respected and failures in one subsystem do not prevent 
+ * initialization of others.
  *
- * The core logic is to handle errors gracefully:
+ * INITIALIZATION PHASES WITH DEPENDENCY MANAGEMENT:
+ *
+ * Phase 1 - Basic System & Visual Feedback: Essential services and early feedback
+ * Phase 2 - Hardware Interfaces & Communication Protocols: GPIO, buses (SPI/I2C/CAN)
+ * Phase 3 - User Interface & USB Services: Input devices and USB connectivity 
+ * Phase 4 - Analog Measurement (ADC): Analog-to-digital conversion capabilities
+ * Phase 5 - Sensors & Wireless Connectivity: Application sensors and wireless modules
+ * Phase 6 - Storage Devices (SD Card, Flash): File systems and storage hardware
+ * Phase 7 - Timers, PWM & Signal Processing: Timer-based features and signal generation
+ * Phase 8 - System Monitoring (Watchdog): Final watchdog initialization for monitoring
+ *
+ * ERROR HANDLING STRATEGY:
  * 1. Individual subsystem failures are logged via syslog.
  * 2. The function continues to initialize other subsystems even if one fails.
  * 3. A single return value (ret) tracks the status of the *first* failure encountered.
@@ -899,11 +1145,14 @@ int stm32_bringup(void)
   int ret = OK;
   int subsys_ret;
 
-  syslog(LOG_INFO, "Starting Nucleo-H753ZI board initialization...\n");
+  syslog(LOG_INFO, "\n[INFO: BRINGUP]Nucleo-H753ZI initialization...\n");
 
   /* ========================================================================
-   * PHASE 1: Basic System Services
+   * PHASE 1: BASIC SYSTEM & VISUAL FEEDBACK
+   * Essential services that provide fundamental functionality and early feedback
    * ======================================================================== */
+
+  syslog(LOG_INFO, "[INFO: BRINGUP]Phase 1: Initializing basic system & visual feedback\n");
 
   /* Initialize LED subsystem first for visual feedback */
   subsys_ret = nucleo_led_initialize();
@@ -919,21 +1168,47 @@ int stm32_bringup(void)
       ret = subsys_ret;
     }
 
-#if defined(CONFIG_I2C) && defined(CONFIG_SYSTEM_I2CTOOL)
-  /* Initialize I2C tools for debugging */
-  nucleo_i2c_tools_initialize();
-#endif
-
-  /* ========================================================================
-   * PHASE 2: Time and Input Services
-   * ======================================================================== */
-
-  /* Initialize RTC for timekeeping */
+  /* Initialize RTC for timekeeping services */
   subsys_ret = nucleo_rtc_initialize();
   if (subsys_ret != OK && ret == OK)
     {
       ret = subsys_ret;
     }
+
+  /* ========================================================================
+   * PHASE 2: HARDWARE INTERFACES & COMMUNICATION PROTOCOLS
+   * GPIO and all communication buses required by many other drivers
+   * ======================================================================== */
+
+  syslog(LOG_INFO, "[INFO: BRINGUP]Phase 2: Initializing hardware interfaces & communication protocols\n");
+
+  /* Initialize GPIO driver - many other drivers depend on this */
+  subsys_ret = nucleo_gpio_initialize();
+  if (subsys_ret != OK && ret == OK)
+    {
+      ret = subsys_ret;
+    }
+
+  /* Initialize communication buses (SPI, I2C) - required by sensors */
+  subsys_ret = nucleo_communication_initialize();
+  if (subsys_ret != OK && ret == OK)
+    {
+      ret = subsys_ret;
+    }
+
+  /* Initialize automotive protocols (CAN, etc.) */
+  subsys_ret = nucleo_automotive_initialize();
+  if (subsys_ret != OK && ret == OK)
+    {
+      ret = subsys_ret;
+    }
+
+  /* ========================================================================
+   * PHASE 3: USER INTERFACE & USB SERVICES
+   * Input devices and USB connectivity services
+   * ======================================================================== */
+
+  syslog(LOG_INFO, "[INFO: BRINGUP]Phase 3: Initializing user interface & USB services\n");
 
   /* Initialize input devices */
   subsys_ret = nucleo_input_initialize();
@@ -942,10 +1217,6 @@ int stm32_bringup(void)
       ret = subsys_ret;
     }
 
-  /* ========================================================================
-   * PHASE 3: Communication and Connectivity
-   * ======================================================================== */
-
   /* Initialize USB subsystem */
   subsys_ret = nucleo_usb_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -953,84 +1224,49 @@ int stm32_bringup(void)
       ret = subsys_ret;
     }
 
-  /* Initialize connectivity modules */
-  subsys_ret = nucleo_connectivity_initialize();
-  if (subsys_ret != OK && ret == OK)
-    {
-      ret = subsys_ret;
-    }
-
-
   /* ========================================================================
-   * PHASE 3.5: SPI Bus Initialization  
-   * ======================================================================== */
-#ifdef CONFIG_STM32H7_SPI
-  subsys_ret = stm32_spi_initialize();
-  if (subsys_ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: stm32_spi_initialize failed: %d\n",
-             subsys_ret);
-    }
-#endif
-
-/* Register SPI devices */
-#ifdef CONFIG_SPI_DRIVER
-  subsys_ret = stm32_spidev_register_all();
-  if (subsys_ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: stm32_spidev_register_all failed: %d\n",
-             subsys_ret);
-    }
-#endif
-
-
-
-/* Initialize CAN subsystem */
-
-/*
-#ifdef CONFIG_STM32H7_CAN
-  subsys_ret = stm32_can_initialize();
-  if (subsys_ret != OK && ret == OK)
-    {
-      ret = subsys_ret;
-    }
-#endif
-*/
-
-  /* ========================================================================
-   * PHASE 4: Analog and GPIO Services
+   * PHASE 4: ANALOG MEASUREMENT (ADC)
+   * Analog measurement capabilities
    * ======================================================================== */
 
-  /* Initialize ADC */
+  syslog(LOG_INFO, "[INFO: BRINGUP]Phase 4: Initializing analog measurement (ADC)\n");
+
+  /* Initialize ADC for analog measurements */
   subsys_ret = nucleo_adc_initialize();
   if (subsys_ret != OK && ret == OK)
     {
       ret = subsys_ret;
     }
 
-  /* Initialize GPIO driver */
-  subsys_ret = nucleo_gpio_initialize();
-  if (subsys_ret != OK && ret == OK)
-    {
-      ret = subsys_ret;
-    }
-
-/* ========================================================================
-   * PHASE 5: Sensors and Measurement
+  /* ========================================================================
+   * PHASE 5: SENSORS & WIRELESS CONNECTIVITY
+   * Application-specific sensors and wireless communication modules
    * ======================================================================== */
 
-  /* Initialize sensor drivers */
+  syslog(LOG_INFO, "[INFO: BRINGUP]Phase 5: Initializing sensors & wireless connectivity\n");
+
+  /* Initialize sensor drivers (depends on I2C/SPI buses) */
   subsys_ret = nucleo_sensors_initialize();
   if (subsys_ret != OK && ret == OK)
     {
       ret = subsys_ret;
     }
 
+  /* Initialize connectivity modules (depends on SPI/I2C buses) */
+  subsys_ret = nucleo_connectivity_initialize();
+  if (subsys_ret != OK && ret == OK)
+    {
+      ret = subsys_ret;
+    }
+
   /* ========================================================================
-   * PHASE 6: Storage and Memory
+   * PHASE 6: STORAGE DEVICES (SD CARD, FLASH)
+   * File systems and storage devices
    * ======================================================================== */
 
-  /* Initialize storage devices */
+  syslog(LOG_INFO, "[INFO: BRINGUP]Phase 6: Initializing storage devices (SD card, flash)\n");
+
+  /* Initialize storage devices (depends on SPI for SD cards) */
   subsys_ret = nucleo_storage_initialize();
   if (subsys_ret != OK && ret == OK)
     {
@@ -1038,8 +1274,11 @@ int stm32_bringup(void)
     }
 
   /* ========================================================================
-   * PHASE 7: Timers and PWM
+   * PHASE 7: TIMERS, PWM & SIGNAL PROCESSING
+   * Timer-based drivers and signal generation/processing
    * ======================================================================== */
+
+  syslog(LOG_INFO, "[INFO: BRINGUP]Phase 7: Initializing timers, PWM & signal processing\n");
 
   /* Initialize timer-related drivers */
   subsys_ret = nucleo_timers_initialize();
@@ -1049,10 +1288,27 @@ int stm32_bringup(void)
     }
 
   /* ========================================================================
-   * PHASE 8: Watchdog (Last - for system monitoring)
+   * PHASE 8: STREAMING
+   * Timer-based drivers and signal generation/processing
    * ======================================================================== */
 
-  /* Initialize watchdog last */
+  syslog(LOG_INFO, "[INFO: BRINGUP]Phase 8: Initializing audio and video features\n");
+
+  /* Initialize timer-related drivers */
+  subsys_ret = nucleo_streaming_initialize();
+  if (subsys_ret != OK && ret == OK)
+    {
+      ret = subsys_ret;
+    }
+
+  /* ========================================================================
+   * PHASE 9: SYSTEM MONITORING (WATCHDOG)
+   * Watchdog should be initialized last for proper system monitoring
+   * ======================================================================== */
+
+  syslog(LOG_INFO, "[INFO: BRINGUP]Phase 9: Initializing system monitoring (watchdog)\n");
+
+  /* Initialize watchdog last for system monitoring */
   subsys_ret = nucleo_watchdog_initialize();
   if (subsys_ret != OK && ret == OK)
     {
@@ -1066,15 +1322,15 @@ int stm32_bringup(void)
   if (ret == OK)
     {
       syslog(LOG_INFO,
-             "Nucleo-H753ZI board initialization completed successfully\n");
+             "[INFO: BRINGUP] - Nucleo-H753ZI board initialization completed successfully\n");
     }
   else
     {
       syslog(LOG_WARNING,
-             "Nucleo-H753ZI board initialization completed with errors: %d\n",
+             "[WARNING: BRINGUP] - Nucleo-H753ZI board initialization completed with errors: %d\n",
              ret);
       syslog(LOG_INFO,
-             "System is functional, but some drivers may be unavailable\n");
+             "[INFO: BRINGUP] - System is functional, but some drivers may be unavailable\n");
     }
 
   return ret;
