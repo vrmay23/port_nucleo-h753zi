@@ -2634,7 +2634,6 @@ assert.o: misc/assert.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/memoryregion.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/init.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/signal.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/board/board.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/panic_notifier.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/notifier.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/debug.h \

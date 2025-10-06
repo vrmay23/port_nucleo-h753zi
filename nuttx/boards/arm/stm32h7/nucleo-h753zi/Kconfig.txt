@@ -309,14 +309,6 @@ config NUCLEO_H753ZI_SPI2_PINSET_3
 		- MISO: PC2
 		- MOSI: PC3
 
-config NUCLEO_H753ZI_SPI2_PINSET_4
-	bool "Pin Set 4: PI1(SCK), PI2(MISO), PI3(MOSI)"
-	help
-		SPI2 Pin Set 4:
-		- SCK: PI1
-		- MISO: PI2
-		- MOSI: PI3
-
 endchoice
 
 endmenu
@@ -564,7 +556,6 @@ config NUCLEO_H753ZI_MFRC522_SPI6
     depends on NUCLEO_H753ZI_SPI6_ENABLE
 endchoice
 
-# Hidden config to derive SPI bus number
 config NUCLEO_H753ZI_MFRC522_SPI_BUS
     int
     depends on NUCLEO_H753ZI_MFRC522_ENABLE
@@ -623,13 +614,6 @@ config NUCLEO_H753ZI_MFRC522_CS_ACTIVE_HIGH
         Less common, use only if your hardware requires it.
 
 endchoice
-
-# Hidden config for CS active level
-config NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
-    bool
-    depends on NUCLEO_H753ZI_MFRC522_ENABLE
-    default y if NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
-    default n if NUCLEO_H753ZI_MFRC522_CS_ACTIVE_HIGH
 
 endmenu
 
@@ -690,11 +674,273 @@ endmenu
 
 endmenu
 
-# Add more sensor configurations here following the same pattern
-# menu "Other Sensor Configuration"
-#     depends on OTHER_SENSOR_DRIVER
-#     ...
-# endmenu
+#
+# ST7796 LCD Display Configuration
+#
+
+menu "ST7796 LCD Display Configuration"
+    depends on LCD_ST7796
+
+config NUCLEO_H753ZI_ST7796_ENABLE
+    bool "Enable ST7796 LCD Display"
+    default n
+    help
+        Enable ST7796 3.5" IPS LCD display (320x480) with configurable
+        SPI bus, CS pin, DC pin, RESET pin, and LED backlight pin.
+
+if NUCLEO_H753ZI_ST7796_ENABLE
+
+choice
+    prompt "ST7796 SPI Bus"
+    help
+        Select which SPI bus the ST7796 is connected to.
+    
+config NUCLEO_H753ZI_ST7796_SPI1
+    bool "Use SPI1"
+    depends on NUCLEO_H753ZI_SPI1_ENABLE
+    
+config NUCLEO_H753ZI_ST7796_SPI2  
+    bool "Use SPI2"
+    depends on NUCLEO_H753ZI_SPI2_ENABLE
+    
+config NUCLEO_H753ZI_ST7796_SPI3
+    bool "Use SPI3"
+    depends on NUCLEO_H753ZI_SPI3_ENABLE
+    
+config NUCLEO_H753ZI_ST7796_SPI4
+    bool "Use SPI4"
+    depends on NUCLEO_H753ZI_SPI4_ENABLE
+    
+config NUCLEO_H753ZI_ST7796_SPI5
+    bool "Use SPI5"
+    depends on NUCLEO_H753ZI_SPI5_ENABLE
+    
+config NUCLEO_H753ZI_ST7796_SPI6
+    bool "Use SPI6"
+    depends on NUCLEO_H753ZI_SPI6_ENABLE
+endchoice
+
+config NUCLEO_H753ZI_ST7796_SPI_BUS
+    int
+    default 1 if NUCLEO_H753ZI_ST7796_SPI1
+    default 2 if NUCLEO_H753ZI_ST7796_SPI2
+    default 3 if NUCLEO_H753ZI_ST7796_SPI3
+    default 4 if NUCLEO_H753ZI_ST7796_SPI4
+    default 5 if NUCLEO_H753ZI_ST7796_SPI5
+    default 6 if NUCLEO_H753ZI_ST7796_SPI6
+
+config NUCLEO_H753ZI_ST7796_DEVID
+    int "ST7796 Device ID"
+    range 0 15
+    default 0
+    help
+        Device ID for ST7796 within the selected SPI bus.
+        Range: 0-15 for each SPI bus.
+        This ID will be used to register the CS pin.
+
+menu "ST7796 Pin Configuration"
+
+config NUCLEO_H753ZI_ST7796_CS_PIN
+    string "CS (Chip Select) GPIO Pin"
+    default "PA4"
+    help
+        GPIO pin for ST7796 Chip Select.
+        Format: PORT+PIN (e.g., "PA4", "PB0", "PC5")
+        
+        Common available pins:
+        - Arduino Headers: PF15(D2), PG14(D1), PG9(D0), PE0(D34)
+        - Morpho Headers: PA0-PA15, PB0-PB15, PC0-PC15, PD0-PD15,
+                          PE0-PE15, PF0-PF15, PG0-PG15, PH0-PH1
+        
+        Avoid pins already used by selected SPI MISO/MOSI/SCK.
+
+choice
+    prompt "CS Pin Active Level"
+    default NUCLEO_H753ZI_ST7796_CS_ACTIVE_LOW
+    help
+        Select whether the CS pin is active low or active high.
+
+config NUCLEO_H753ZI_ST7796_CS_ACTIVE_LOW
+    bool "Active Low (most common)"
+    help
+        CS pin is active low (0V = selected, 3.3V = deselected).
+        This is the standard for most SPI displays including ST7796.
+
+config NUCLEO_H753ZI_ST7796_CS_ACTIVE_HIGH
+    bool "Active High"  
+    help
+        CS pin is active high (3.3V = selected, 0V = deselected).
+        Less common, use only if your hardware requires it.
+
+endchoice
+
+config NUCLEO_H753ZI_ST7796_DC_PIN
+    string "DC (Data/Command) GPIO Pin"
+    default "PA3"
+    help
+        GPIO pin for ST7796 Data/Command selection.
+        Format: PORT+PIN (e.g., "PA3", "PB1", "PC4")
+        
+        This pin controls whether data sent to the display is
+        interpreted as commands or display data.
+        
+        DC=0: Command
+        DC=1: Data
+        
+        Choose a pin not used by SPI or CS.
+
+config NUCLEO_H753ZI_ST7796_RESET_PIN
+    string "RESET GPIO Pin"
+    default "PA2"
+    help
+        GPIO pin for ST7796 hardware reset.
+        Format: PORT+PIN (e.g., "PA2", "PB2", "PC3")
+        
+        This pin is used to perform a hardware reset of the display.
+        Active low reset (pull low to reset, high for normal operation).
+        
+        Choose a pin not used by SPI, CS, or DC.
+
+config NUCLEO_H753ZI_ST7796_LED_PIN
+    string "LED (Backlight) GPIO Pin"
+    default "PA1"
+    help
+        GPIO pin for ST7796 backlight control.
+        Format: PORT+PIN (e.g., "PA1", "PB3", "PC2")
+        
+        This pin controls the LCD backlight LED.
+        High = backlight on, Low = backlight off.
+        
+        Note: Currently configured for direct 3.3V connection without PWM.
+        For PWM brightness control, additional configuration will be needed.
+        
+        Choose a pin not used by SPI, CS, DC, or RESET.
+
+endmenu
+
+menu "ST7796 Display Settings"
+
+choice
+    prompt "Color Depth"
+    default NUCLEO_H753ZI_ST7796_RGB565
+    help
+        Select the color depth for the ST7796 display.
+
+config NUCLEO_H753ZI_ST7796_RGB444
+    bool "12-bit RGB444"
+    help
+        12-bit color depth (4096 colors).
+        Lower memory usage but reduced color quality.
+
+config NUCLEO_H753ZI_ST7796_RGB565
+    bool "16-bit RGB565 (recommended)"
+    help
+        16-bit color depth (65536 colors).
+        Good balance between color quality and memory usage.
+        This is the most common configuration.
+
+config NUCLEO_H753ZI_ST7796_RGB666
+    bool "18-bit RGB666"
+    help
+        18-bit color depth (262144 colors).
+        Higher color quality but increased memory usage and
+        slower SPI transfers.
+
+endchoice
+
+choice
+    prompt "Display Orientation"
+    default NUCLEO_H753ZI_ST7796_PORTRAIT
+    help
+        Select the display orientation.
+
+config NUCLEO_H753ZI_ST7796_PORTRAIT
+    bool "Portrait (320x480)"
+    help
+        Portrait orientation: 320 pixels wide, 480 pixels tall.
+        This is the natural orientation of the display.
+
+config NUCLEO_H753ZI_ST7796_LANDSCAPE
+    bool "Landscape (480x320)"
+    help
+        Landscape orientation: 480 pixels wide, 320 pixels tall.
+        90 degree rotation from portrait.
+
+config NUCLEO_H753ZI_ST7796_RPORTRAIT
+    bool "Reverse Portrait (320x480)"
+    help
+        Reverse portrait orientation: 320 pixels wide, 480 pixels tall.
+        180 degree rotation from portrait.
+
+config NUCLEO_H753ZI_ST7796_RLANDSCAPE
+    bool "Reverse Landscape (480x320)"
+    help
+        Reverse landscape orientation: 480 pixels wide, 320 pixels tall.
+        270 degree rotation from portrait (or 90 degrees from landscape).
+
+endchoice
+
+config NUCLEO_H753ZI_ST7796_BGR
+    bool "Use BGR color order instead of RGB"
+    default n
+    help
+        Enable this if your display shows colors incorrectly
+        (e.g., red appears as blue and vice versa).
+        
+        Most ST7796 displays use RGB order, but some use BGR.
+
+config NUCLEO_H753ZI_ST7796_FREQUENCY
+    int "SPI Frequency (Hz)"
+    default 40000000
+    range 1000000 80000000
+    help
+        SPI bus frequency for ST7796 communication.
+        
+        Recommended values:
+        - 40000000 (40 MHz): Safe default, works with most displays
+        - 60000000 (60 MHz): Faster, may work depending on wiring
+        - 80000000 (80 MHz): Maximum, requires good signal integrity
+        
+        Lower frequencies (10-20 MHz) can be used if you experience
+        display issues or have long/poor quality connections.
+
+endmenu
+
+menu "ST7796 Framebuffer Configuration"
+
+config NUCLEO_H753ZI_ST7796_FB_SUPPORT
+    bool "Enable framebuffer support"
+    default y
+    depends on VIDEO_FB
+    help
+        Enable framebuffer support for ST7796.
+        This allows the display to be used with LVGL and other
+        graphics libraries that use the framebuffer interface.
+
+if NUCLEO_H753ZI_ST7796_FB_SUPPORT
+
+config NUCLEO_H753ZI_ST7796_FB_SIZE
+    int "Framebuffer size (in KB)"
+    default 300
+    range 150 600
+    help
+        Size of the framebuffer in kilobytes.
+        
+        Full resolution requirements:
+        - RGB444 (12-bit): 300 KB (320x480x1.5 bytes)
+        - RGB565 (16-bit): 300 KB (320x480x2 bytes)
+        - RGB666 (18-bit): 450 KB (320x480x3 bytes)
+        
+        For memory-constrained systems, you can reduce this
+        and implement partial screen updates.
+
+endif # NUCLEO_H753ZI_ST7796_FB_SUPPORT
+
+endmenu
+
+endif # NUCLEO_H753ZI_ST7796_ENABLE
+
+endmenu
 
 endmenu
 

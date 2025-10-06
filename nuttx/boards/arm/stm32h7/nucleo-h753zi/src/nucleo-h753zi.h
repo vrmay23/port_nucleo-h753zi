@@ -30,6 +30,7 @@
 #include <nuttx/config.h>
 #include <nuttx/compiler.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -114,7 +115,8 @@
 #define BUTTONS_DRIVER_PATH  "/dev/buttons"
 #define RTC_DRIVER_PATH      "/dev/rtc0"
 #define MFRC522_DEVPATH      "/dev/rfid0"
-#define OLED_DRIVER_PATH     "/dev/lcd0" 
+#define OLED_DRIVER_PATH     "/dev/lcd0"
+#define ST7796_FB_PATH       "/dev/fb0"
 
 #ifdef CONFIG_FS_PROCFS
 #  ifdef CONFIG_NSH_PROC_MOUNTPOINT
@@ -152,8 +154,6 @@
 
 /* Button GPIO Definitions */
 
-/* Button GPIO Definitions */
-
 #if defined(CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT) || \
     defined(CONFIG_NUCLEO_H753ZI_GPIO_DRIVER)
 #  define GPIO_BTN_BUILT_IN    (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
@@ -182,7 +182,7 @@
 #define BOARD_NGPIOOUT       3
 #define BOARD_NGPIOINT       1
 
-/* pplace holder - example for in, out and interrupt */
+/* Placeholder - example for in, out and interrupt */
 
 #define GPIO_IN1             (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | GPIO_PIN2)
 
@@ -231,6 +231,8 @@
 
 /* OLED Display Configuration */
 
+/* SSD1306 - I2C */
+
 #define OLED_I2C_PORT        1
 
 /* PWM Timer Configuration */
@@ -259,17 +261,130 @@
 int stm32_bringup(void);
 
 /* ==========================================================================
- * DRIVER PROTOTYPES
+ * DISPLAY DRIVER PROTOTYPES
  * ==========================================================================
- *
- * This section centralizes all function prototypes for driver initializations.
  */
+
+#if defined(CONFIG_LCD_ST7796) && defined(CONFIG_NUCLEO_H753ZI_ST7796_ENABLE)
+
+/****************************************************************************
+ * Name: stm32_st7796initialize
+ *
+ * Description:
+ *   Initialize and register the ST7796 LCD framebuffer driver.
+ *
+ * Input Parameters:
+ *   devno - Device number (0 for /dev/fb0)
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int stm32_st7796initialize(int devno);
+
+/****************************************************************************
+ * Name: stm32_st7796_backlight
+ *
+ * Description:
+ *   Control the ST7796 backlight LED.
+ *
+ * Input Parameters:
+ *   on - true to turn on, false to turn off
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void stm32_st7796_backlight(bool on);
+
+/****************************************************************************
+ * Name: stm32_st7796_reset
+ *
+ * Description:
+ *   Perform hardware reset of the ST7796 display.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void stm32_st7796_reset(void);
+
+/****************************************************************************
+ * Name: stm32_st7796_cleanup
+ *
+ * Description:
+ *   Cleanup ST7796 resources.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_st7796_cleanup(void);
+
+#endif /* CONFIG_LCD_ST7796 && CONFIG_NUCLEO_H753ZI_ST7796_ENABLE */
+
+/* ==========================================================================
+ * DISPLAY CONFIGURATION VALUES
+ * ========================================================================== */
+
+/* ST7796 Configuration derived from Kconfig */
+
+#ifdef CONFIG_NUCLEO_H753ZI_ST7796_ENABLE
+
+/* Validate required configurations */
+
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_SPI_BUS
+#    error "ST7796 enabled but SPI bus not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_DEVID
+#    error "ST7796 enabled but device ID not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN
+#    error "ST7796 enabled but CS pin not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN
+#    error "ST7796 enabled but DC pin not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN
+#    error "ST7796 enabled but RESET pin not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN
+#    error "ST7796 enabled but LED pin not configured"
+#  endif
+
+/* Define configuration macros */
+
+#  define ST7796_SPI_BUS           CONFIG_NUCLEO_H753ZI_ST7796_SPI_BUS
+#  define ST7796_DEVICE_ID         CONFIG_NUCLEO_H753ZI_ST7796_DEVID
+#  define ST7796_CS_PIN            CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN
+#  define ST7796_DC_PIN            CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN
+#  define ST7796_RESET_PIN         CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN
+#  define ST7796_LED_PIN           CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN
+
+/* CS Active Level - CORRECTED LOGIC */
+
+#  if defined(CONFIG_NUCLEO_H753ZI_ST7796_CS_ACTIVE_LOW)
+#    define ST7796_CS_ACTIVE_LOW   true
+#  elif defined(CONFIG_NUCLEO_H753ZI_ST7796_CS_ACTIVE_HIGH)
+#    define ST7796_CS_ACTIVE_LOW   false
+#  else
+     /* Default to active low if neither is explicitly set */
+#    define ST7796_CS_ACTIVE_LOW   true
+#  endif
+
+#endif /* CONFIG_NUCLEO_H753ZI_ST7796_ENABLE */
 
 #ifdef CONFIG_LCD_SSD1306
 int stm32_ssd1306_initialize(void);
-#endif
-
-#ifdef CONFIG_LCD_SSD1306
 int board_lcd_initialize(void);
 struct lcd_dev_s *board_lcd_getdev(int devno);
 void board_lcd_uninitialize(void);
@@ -306,6 +421,7 @@ int stm32_gpio_initialize(void);
 int stm32_spi_initialize(void);
 
 /* SPI CS device registration functions */
+
 int stm32_spi_register_cs_device(int spi_bus, uint32_t devid, 
                                   const char *cs_pin, bool active_low);
 int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid);
@@ -337,7 +453,7 @@ void weak_function stm32_usbinitialize(void);
 int stm32_usbhost_initialize(void);
 #endif
 
-/*****************************************************************************
+/****************************************************************************
  * Sensors - driver registration
  ****************************************************************************/
 
@@ -387,18 +503,52 @@ int stm32_mmcsd_initialize(int minor);
  */
 
 /* MFRC522 Configuration derived from Kconfig */
+
 #ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
+
+/* Validate required configurations */
+
+#  ifndef CONFIG_NUCLEO_H753ZI_MFRC522_SPI_BUS
+#    error "MFRC522 enabled but SPI bus not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_MFRC522_DEVID
+#    error "MFRC522 enabled but device ID not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_MFRC522_CS_PIN
+#    error "MFRC522 enabled but CS pin not configured"
+#  endif
+
+/* Define configuration macros */
+
 #  define MFRC522_SPI_BUS            CONFIG_NUCLEO_H753ZI_MFRC522_SPI_BUS
 #  define MFRC522_DEVICE_ID          CONFIG_NUCLEO_H753ZI_MFRC522_DEVID  
 #  define MFRC522_CS_PIN             CONFIG_NUCLEO_H753ZI_MFRC522_CS_PIN
-#  define MFRC522_CS_ACTIVE_LOW      CONFIG_NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
+
+/* CS Active Level - CORRECTED LOGIC (same as ST7796) */
+
+#  if defined(CONFIG_NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW)
+#    define MFRC522_CS_ACTIVE_LOW    true
+#  elif defined(CONFIG_NUCLEO_H753ZI_MFRC522_CS_ACTIVE_HIGH)
+#    define MFRC522_CS_ACTIVE_LOW    false
+#  else
+     /* Default to active low if neither is explicitly set */
+#    define MFRC522_CS_ACTIVE_LOW    true
+#  endif
+
+/* IRQ Configuration */
 
 #  ifdef CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_ENABLE
+#    ifndef CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_PIN
+#      error "MFRC522 IRQ enabled but IRQ pin not configured"
+#    endif
 #    define MFRC522_IRQ_PIN          CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_PIN
 #    define MFRC522_IRQ_ENABLED      true
 #  else
 #    define MFRC522_IRQ_ENABLED      false
 #  endif
+
 #endif /* CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE */
 
 #endif /* __BOARDS_ARM_STM32H7_NUCLEO_H753ZI_SRC_NUCLEO_H753ZI_H */

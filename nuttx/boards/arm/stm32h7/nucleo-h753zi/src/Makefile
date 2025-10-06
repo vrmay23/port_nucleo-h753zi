@@ -60,6 +60,10 @@ ifeq ($(CONFIG_LCD_SSD1306),y)
   CSRCS += drivers/driver_modules/stm32_ssd1306.c
 endif
 
+ifeq ($(CONFIG_LCD_ST7796),y)
+  CSRCS += drivers/driver_modules/stm32_st7796.c
+endif
+
 ifeq ($(CONFIG_STM32H7_PROGMEM),y)
   CSRCS += drivers/driver_middleware/stm32_progmem.c
 endif

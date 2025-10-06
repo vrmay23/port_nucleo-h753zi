@@ -121,49 +121,7 @@ drivers_initialize.o: drivers_initialize.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/drivers/optee.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/usb/usbhost.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/usb/usbhost_devaddr.h
-i2c_read.o: i2c/i2c_read.c \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/assert.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/compiler.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdint.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/inttypes.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/i2c/i2c_master.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/ioctl.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdbool.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/serial/tioctl.h
-i2c_write.o: i2c/i2c_write.c \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/assert.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/compiler.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdint.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/inttypes.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/i2c/i2c_master.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/ioctl.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdbool.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/serial/tioctl.h
-i2c_writeread.o: i2c/i2c_writeread.c \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/assert.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/compiler.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdint.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/inttypes.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/i2c/i2c_master.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/ioctl.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdbool.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/serial/tioctl.h
-i2c_driver.o: i2c/i2c_driver.c \
+gpio.o: ioexpander/gpio.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/compiler.h \
@@ -172,12 +130,12 @@ i2c_driver.o: i2c/i2c_driver.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/inttypes.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/limits.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdbool.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/stdio.h \
  /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/time.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/fs.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/ioctl.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/stdbool.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/serial/tioctl.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/uio.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/uio.h \
@@ -223,7 +181,23 @@ i2c_driver.o: i2c/i2c_driver.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/debug.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/streams.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/syslog.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/i2c/i2c_master.h
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/poll.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/poll.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spinlock.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/arch.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/arch.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/pgalloc.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/cache.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/sched.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/addrenv.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/wqueue.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/list.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/wdog.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/net/net.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/tls.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/atexit.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/ioexpander/gpio.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/signal.h
 lcd_framebuffer.o: lcd/lcd_framebuffer.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/stdint.h \
@@ -287,7 +261,7 @@ lcd_framebuffer.o: lcd/lcd_framebuffer.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/board.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lcd/lcd.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/video/fb.h
-ssd1306_base.o: lcd/ssd1306_base.c \
+st7796.o: lcd/st7796.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/types.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/compiler.h \
@@ -359,90 +333,10 @@ ssd1306_base.o: lcd/ssd1306_base.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/net/net.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/tls.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/atexit.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/i2c/i2c_master.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spi/spi.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lcd/lcd.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/video/fb.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lcd/ssd1306.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/signal.h \
- lcd/ssd1306.h
-ssd1306_i2c.o: lcd/ssd1306_i2c.c \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/unistd.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/compiler.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdint.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/inttypes.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/errno.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/debug.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/streams.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/time.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/fs.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/ioctl.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdbool.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/serial/tioctl.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/uio.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/uio.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/dirent.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mutex.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/assert.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/semaphore.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/semaphore.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/queue.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/clock.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lib/math32.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/inttypes.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stddef.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/strings.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/string.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/alloca.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mm/map.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mm/gran.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spawn.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/spawn.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sched.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/signal.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/syscall.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/chip/irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/stm32h7/stm32h7x3xx_irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/armv7-m/irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/armv7-m/nvicpri.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/chip/chip.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spinlock_type.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lib/lib.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/kmalloc.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdlib.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mm/mm.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/userspace.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/pthread.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/malloc.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/syslog.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/i2c/i2c_master.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lcd/ssd1306.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/arch.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/arch.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/pgalloc.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/cache.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/sched.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/addrenv.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/wqueue.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/list.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/wdog.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/net/net.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/tls.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/atexit.h \
- lcd/ssd1306.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lcd/lcd.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/video/fb.h
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lcd/st7796.h
 losetup.o: loop/losetup.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/types.h \
@@ -1164,6 +1058,68 @@ spi_transfer.o: spi/spi_transfer.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/atexit.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spi/spi.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spi/spi_transfer.h
+spi_driver.o: spi/spi_driver.c \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/types.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/compiler.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/stdint.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/types.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/inttypes.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/limits.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/limits.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/stdbool.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/stdio.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/time.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/fs.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/ioctl.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/serial/tioctl.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/uio.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/uio.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/dirent.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/atomic.h \
+ /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mutex.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/assert.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/semaphore.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/errno.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/semaphore.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/queue.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/clock.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lib/math32.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/inttypes.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/stddef.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/strings.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/string.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/alloca.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mm/map.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mm/gran.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spawn.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/spawn.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/sched.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/signal.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/irq.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/irq.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/syscall.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/chip/irq.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/stm32h7/stm32h7x3xx_irq.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/armv7-m/irq.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/armv7-m/nvicpri.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/chip/chip.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spinlock_type.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lib/lib.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/kmalloc.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/stdlib.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mm/mm.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/userspace.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/pthread.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/unistd.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/malloc.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/debug.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/streams.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/syslog.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spi/spi_transfer.h \
+ /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spi/spi.h
 vsyslog.o: syslog/vsyslog.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/stdio.h \
@@ -1580,81 +1536,3 @@ fb.o: video/fb.c \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/tls.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/cache.h \
  /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/atexit.h
-mfrc522.o: contactless/mfrc522.c \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/config.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdlib.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/compiler.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdint.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/types.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/inttypes.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/limits.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/unistd.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/string.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stddef.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/alloca.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdio.h \
- /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdarg.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/time.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/fs.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/ioctl.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/stdbool.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/serial/tioctl.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/fs/uio.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/uio.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/dirent.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/atomic.h \
- /usr/lib/gcc/arm-none-eabi/14.2.1/include/stdatomic.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mutex.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/assert.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/semaphore.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/errno.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/semaphore.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/queue.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/clock.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lib/math32.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/inttypes.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/strings.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mm/map.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mm/gran.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spawn.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/spawn.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sched.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/signal.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/syscall.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/chip/irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/stm32h7/stm32h7x3xx_irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/armv7-m/irq.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/armv7-m/nvicpri.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/chip/chip.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spinlock_type.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/lib/lib.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/kmalloc.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/mm/mm.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/userspace.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/pthread.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/malloc.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/debug.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/streams.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/syslog.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/signal.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/wqueue.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/list.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/wdog.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/sched.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/addrenv.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/arch/arch.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/pgalloc.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/net/net.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/tls.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/cache.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/atexit.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/power/pm.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/contactless/mfrc522.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/sys/ioctl.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/spi/spi.h \
- /home/vinicius/Desktop/nuttxspace/nuttx/include/nuttx/contactless/ioctl.h \
- contactless/mfrc522.h
