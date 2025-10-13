@@ -882,7 +882,7 @@ endchoice
 
 config NUCLEO_H753ZI_ST7796_BGR
     bool "Use BGR color order instead of RGB"
-    default n
+    default y  # ← Mudou de 'n' para 'y'
     help
         Enable this if your display shows colors incorrectly
         (e.g., red appears as blue and vice versa).

@@ -1,12 +1,27 @@
 /****************************************************************************
- * drivers/lcd/st7796.c - VERSÃO CORRIGIDA
- * 
- * Principais correções:
- * 1. SPI MODE 0 forçado (compatível com ST7796)
- * 2. Timing DC melhorado (15us ao invés de 2us)
- * 3. Sequência de inicialização ajustada conforme fabricante
- * 4. Delay de 120ms após SLPOUT adicionado
- * 5. Valores MADCTL corrigidos
+ * drivers/lcd/st7796.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
@@ -17,6 +32,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
+
 #include <nuttx/arch.h>
 #include <nuttx/spi/spi.h>
 #include <nuttx/video/fb.h>
@@ -31,33 +47,38 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* CORREÇÃO 1: Forçar SPI MODE 0 (CPOL=0, CPHA=0) */
+/* Force SPI MODE 0 (CPOL=0, CPHA=0) - Standard for ST7796 */
+
 #define CONFIG_LCD_ST7796_SPIMODE SPIDEV_MODE0
 
-/* CORREÇÃO 2: Reduzir frequência para 20MHz (mais estável) */
+/* Use configured frequency or default to 40MHz */
+
 #ifndef CONFIG_LCD_ST7796_FREQUENCY
-#  define CONFIG_LCD_ST7796_FREQUENCY 20000000
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY
+#    define CONFIG_LCD_ST7796_FREQUENCY CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY
+#  else
+#    define CONFIG_LCD_ST7796_FREQUENCY 40000000
+#  endif
 #endif
 
-/* CORREÇÃO 3: Aumentar timing DC setup/hold */
-#define ST7796_DC_SETUP_US    15  /* 15us setup time para DC */
-#define ST7796_DC_HOLD_US     15  /* 15us hold time após DC */
-#define ST7796_CS_SETUP_US    10  /* 10us CS setup time */
+/* Display dimensions */
 
 #define ST7796_XRES_RAW    320
 #define ST7796_YRES_RAW    480
 
+/* Determine orientation based on configuration */
+
 #if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE) || \
-    defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE)
-#  define ST7796_XRES       ST7796_YRES_RAW
-#  define ST7796_YRES       ST7796_XRES_RAW
-#elif defined(CONFIG_LCD_LANDSCAPE) || defined(CONFIG_LCD_RLANDSCAPE)
+    defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE) || \
+    defined(CONFIG_LCD_LANDSCAPE) || defined(CONFIG_LCD_RLANDSCAPE)
 #  define ST7796_XRES       ST7796_YRES_RAW
 #  define ST7796_YRES       ST7796_XRES_RAW
 #else
 #  define ST7796_XRES       ST7796_XRES_RAW
 #  define ST7796_YRES       ST7796_YRES_RAW
 #endif
+
+/* Color format configuration */
 
 #ifdef CONFIG_LCD_ST7796_BPP
 #  if (CONFIG_LCD_ST7796_BPP == 16)
@@ -81,6 +102,12 @@
 
 #define ST7796_FBSIZE  (ST7796_XRES * ST7796_YRES * ST7796_BYTESPP)
 
+/* DMA threshold - if transfer is larger, consider using DMA */
+
+#ifndef CONFIG_LCD_ST7796_DMA_THRESHOLD
+#  define CONFIG_LCD_ST7796_DMA_THRESHOLD 64
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -91,7 +118,6 @@ struct st7796_dev_s
   FAR struct spi_dev_s *spi;
   FAR uint8_t *fbmem;
   bool power;
-  CODE void (*set_dc)(bool data);
 };
 
 /****************************************************************************
@@ -122,172 +148,188 @@ static void st7796_setarea(FAR struct st7796_dev_s *dev,
 
 static struct st7796_dev_s g_st7796dev;
 
-/* CORREÇÃO 4: MADCTL valores corrigidos conforme datasheet */
-static const uint8_t st7796_madctl_data[] = 
-{
-#if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE)
-  0x28  /* Landscape: MV=1, BGR=1 */
-#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RPORTRAIT)
-  0x88  /* Reverse Portrait: MY=1, BGR=1 */
-#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE)
-  0xE8  /* Reverse Landscape: MY=1, MX=1, MV=1, BGR=1 */
-#else
-  0x48  /* Portrait: MX=1, BGR=1 (padrão do fabricante) */
-#endif
-};
+/* Determine MADCTL value based on orientation and color order */
 
-/* CORREÇÃO 5: Sequência conforme código do fabricante */
+#if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE) || \
+    defined(CONFIG_LCD_LANDSCAPE)
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+#    define ST7796_MADCTL_VALUE 0x28  /* Landscape: MV=1, BGR=1 */
+#  else
+#    define ST7796_MADCTL_VALUE 0x20  /* Landscape: MV=1, RGB=1 */
+#  endif
+#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RPORTRAIT) || \
+      defined(CONFIG_LCD_RPORTRAIT)
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+#    define ST7796_MADCTL_VALUE 0x88  /* Reverse Portrait: MY=1, BGR=1 */
+#  else
+#    define ST7796_MADCTL_VALUE 0x80  /* Reverse Portrait: MY=1, RGB=1 */
+#  endif
+#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE) || \
+      defined(CONFIG_LCD_RLANDSCAPE)
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+#    define ST7796_MADCTL_VALUE 0xE8  /* Reverse Landscape: MY=1, MX=1, MV=1, BGR=1 */
+#  else
+#    define ST7796_MADCTL_VALUE 0xE0  /* Reverse Landscape: MY=1, MX=1, MV=1, RGB=1 */
+#  endif
+#else
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+#    define ST7796_MADCTL_VALUE 0x48  /* Portrait: MX=1, BGR=1 */
+#  else
+#    define ST7796_MADCTL_VALUE 0x40  /* Portrait: MX=1, RGB=1 */
+#  endif
+#endif
+
+/* Initialization sequence optimized for stability */
+
 static const struct st7796_cmd_s st7796_init_sequence[] =
 {
-  /* Sleep Out - CRÍTICO: precisa de 120ms delay */
-  {0x11, NULL, 0, 120},
-  
-  /* Command Set Control (CSCON) Enable - sequência exata do fabricante */
-  {0xF0, (const uint8_t[]){0xC3}, 1, 0},
-  {0xF0, (const uint8_t[]){0x96}, 1, 0},
-  
-  /* Memory Access Control */
-  {0x36, st7796_madctl_data, 1, 0},
-  
-  /* Interface Pixel Format: 16-bit/pixel (RGB565) */
-  {0x3A, (const uint8_t[]){0x55}, 1, 0},
-  
+  /* Software Reset */
+  {ST7796_SWRESET, NULL, 0, 150},
+
+  /* Sleep Out */
+  {ST7796_SLPOUT, NULL, 0, 150},
+
+  /* Command Set Control - Enable extended commands */
+  {ST7796_CSCON, (const uint8_t[]){0xC3}, 1, 0},
+  {ST7796_CSCON, (const uint8_t[]){0x96}, 1, 0},
+
+  /* Memory Access Control - Set orientation and color order */
+  {ST7796_MADCTL, (const uint8_t[]){ST7796_MADCTL_VALUE}, 1, 0},
+
+  /* Pixel Format - 16-bit RGB565 */
+  {ST7796_PIXFMT, (const uint8_t[]){0x55}, 1, 0},
+
   /* Display Inversion Control */
-  {0xB4, (const uint8_t[]){0x01}, 1, 0},
-  
+  {ST7796_INVCTR, (const uint8_t[]){0x01}, 1, 0},
+
   /* Display Function Control */
-  {0xB7, (const uint8_t[]){0xC6}, 1, 0},
-  
-  /* Display Output Ctrl Adjust */
+  {ST7796_DFC, (const uint8_t[]){0x80, 0x02, 0x3B}, 3, 0},
+
+  /* Display Output Ctrl - DPI, RGB */
   {0xE8, (const uint8_t[]){0x40, 0x8A, 0x00, 0x00, 
                            0x29, 0x19, 0xA5, 0x33}, 8, 0},
-  
+
   /* Power Control 2 */
-  {0xC1, (const uint8_t[]){0x06}, 1, 0},
-  
+  {ST7796_PWCTRL2, (const uint8_t[]){0x06}, 1, 0},
+
   /* Power Control 3 */
-  {0xC2, (const uint8_t[]){0xA7}, 1, 0},
-  
+  {ST7796_PWCTRL3, (const uint8_t[]){0xA7}, 1, 0},
+
   /* VCOM Control */
-  {0xC5, (const uint8_t[]){0x18}, 1, 0},
-  
+  {ST7796_VCOM, (const uint8_t[]){0x18}, 1, 0},
+
   /* Positive Gamma Correction */
-  {0xE0, (const uint8_t[]){0xF0, 0x09, 0x0B, 0x06, 0x04, 0x15, 0x2F,
-                           0x54, 0x42, 0x3C, 0x17, 0x14, 0x18, 0x1B}, 14, 0},
-  
+  {ST7796_GAMMAPOS, (const uint8_t[]){0xF0, 0x09, 0x0B, 0x06, 0x04, 0x15,
+                                      0x2F, 0x54, 0x42, 0x3C, 0x17, 0x14,
+                                      0x18, 0x1B}, 14, 0},
+
   /* Negative Gamma Correction */
-  {0xE1, (const uint8_t[]){0xF0, 0x09, 0x0B, 0x06, 0x04, 0x03, 0x2D,
-                           0x43, 0x42, 0x3B, 0x16, 0x14, 0x17, 0x1B}, 14, 0},
-  
-  /* Command Set Control Disable */
-  {0xF0, (const uint8_t[]){0x3C}, 1, 0},
-  {0xF0, (const uint8_t[]){0x69}, 1, 0},
-  
-  /* Display Inversion On */
-  {0x21, NULL, 0, 0},
-  
-  /* Display On - CRÍTICO: precisa de 120ms delay */
-  {0x29, NULL, 0, 120},
+  {ST7796_GAMMANEG, (const uint8_t[]){0xF0, 0x09, 0x0B, 0x06, 0x04, 0x03,
+                                      0x2D, 0x43, 0x42, 0x3B, 0x16, 0x14,
+                                      0x17, 0x1B}, 14, 0},
+
+  /* Command Set Control - Lock extended commands */
+  {ST7796_CSCON, (const uint8_t[]){0x3C}, 1, 0},
+  {ST7796_CSCON, (const uint8_t[]){0x69}, 1, 0},
+
+  /* Inversion On (recommended for better color) */
+  {ST7796_INVON, NULL, 0, 10},
+
+  /* Normal Display Mode On */
+  {ST7796_NORON, NULL, 0, 10},
+
+  /* Display On */
+  {ST7796_DISPON, NULL, 0, 120},
 };
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: st7796_select
+ *
+ * Description:
+ *   Select SPI device and configure for ST7796.
+ *
+ ****************************************************************************/
+
 static void st7796_select(FAR struct spi_dev_s *spi)
 {
   SPI_LOCK(spi, true);
-  
-  /* CORREÇÃO 6: Garantir que MODE0 está configurado */
-  SPI_SETMODE(spi, SPIDEV_MODE0);
+  SPI_SETMODE(spi, CONFIG_LCD_ST7796_SPIMODE);
   SPI_SETBITS(spi, 8);
   SPI_SETFREQUENCY(spi, CONFIG_LCD_ST7796_FREQUENCY);
-  
-  /* CS setup time */
-  up_udelay(ST7796_CS_SETUP_US);
-  
   SPI_SELECT(spi, SPIDEV_DISPLAY(0), true);
-  
-  /* Aguardar estabilização CS */
-  up_udelay(ST7796_CS_SETUP_US);
 }
+
+/****************************************************************************
+ * Name: st7796_deselect
+ *
+ * Description:
+ *   Deselect SPI device.
+ *
+ ****************************************************************************/
 
 static void st7796_deselect(FAR struct spi_dev_s *spi)
 {
-  /* CS hold time antes de desativar */
-  up_udelay(ST7796_CS_SETUP_US);
-  
   SPI_SELECT(spi, SPIDEV_DISPLAY(0), false);
   SPI_LOCK(spi, false);
 }
 
-/* CORREÇÃO 7: Timing DC melhorado */
+/****************************************************************************
+ * Name: st7796_sendcmd
+ *
+ * Description:
+ *   Send command byte to ST7796.
+ *
+ ****************************************************************************/
+
 static void st7796_sendcmd(FAR struct st7796_dev_s *dev, uint8_t cmd)
 {
-  if (dev->set_dc)
-    {
-      dev->set_dc(false);  /* DC = 0 para comando */
-    }
+#ifdef CONFIG_SPI_CMDDATA
+  /* Use hardware CMD/DATA support */
 
-  /* CRÍTICO: Aumentar DC setup time de 2us para 15us */
-  up_udelay(ST7796_DC_SETUP_US);
-  
+  SPI_CMDDATA(dev->spi, SPIDEV_DISPLAY(0), true);
   SPI_SEND(dev->spi, cmd);
-  
-  /* CRÍTICO: Aguardar comando ser processado antes de mudar DC */
-  up_udelay(ST7796_DC_HOLD_US);
+#else
+  /* This path should not be used with current configuration */
+
+  #error "CONFIG_SPI_CMDDATA must be enabled for ST7796"
+#endif
 }
 
-/* Teste de diagnóstico: enviar comando e ler resposta */
-static uint8_t st7796_read_register(FAR struct st7796_dev_s *dev, uint8_t reg)
-{
-  uint8_t result = 0;
-  
-  st7796_select(dev->spi);
-  st7796_sendcmd(dev, reg);
-  
-  if (dev->set_dc)
-    {
-      dev->set_dc(true);
-    }
-  up_udelay(ST7796_DC_SETUP_US);
-  
-  SPI_RECVBLOCK(dev->spi, &result, 1);
-  st7796_deselect(dev->spi);
-  
-  return result;
-}
+/****************************************************************************
+ * Name: st7796_senddata
+ *
+ * Description:
+ *   Send data bytes to ST7796.
+ *
+ ****************************************************************************/
 
 static void st7796_senddata(FAR struct st7796_dev_s *dev,
                             FAR const uint8_t *data, size_t len)
 {
   if (len > 0 && data != NULL)
     {
-      if (dev->set_dc)
-        {
-          dev->set_dc(true);  /* DC = 1 para dados */
-        }
+#ifdef CONFIG_SPI_CMDDATA
+      /* Use hardware CMD/DATA support - DC pin controlled automatically */
 
-      /* CRÍTICO: DC setup time */
-      up_udelay(ST7796_DC_SETUP_US);
-      
+      SPI_CMDDATA(dev->spi, SPIDEV_DISPLAY(0), false);
       SPI_SNDBLOCK(dev->spi, data, len);
-      
-      /* CRÍTICO: DC hold time */
-      up_udelay(ST7796_DC_HOLD_US);
+#else
+      #error "CONFIG_SPI_CMDDATA must be enabled for ST7796"
+#endif
     }
 }
 
 /****************************************************************************
- * CORREÇÃO CRÍTICA DE TIMING
- * 
- * Problema: Display intermitente (às vezes backlight, às vezes zebrado)
- * Causa: Timing entre comandos muito apertado + sem DMA
- * 
- * Solução: Adicionar delays entre TODOS os comandos
+ * Name: st7796_send_sequence
+ *
+ * Description:
+ *   Send initialization sequence to ST7796.
+ *
  ****************************************************************************/
-
-/* Substitua a função st7796_send_sequence por esta versão: */
 
 static void st7796_send_sequence(FAR struct st7796_dev_s *dev,
                                   FAR const struct st7796_cmd_s *seq,
@@ -295,60 +337,32 @@ static void st7796_send_sequence(FAR struct st7796_dev_s *dev,
 {
   size_t i;
 
-  syslog(LOG_INFO, "ST7796: Iniciando sequência de %zu comandos\n", count);
-  syslog(LOG_INFO, "ST7796: SPI MODE=%d, Freq=%d Hz\n", 
-         SPIDEV_MODE0, CONFIG_LCD_ST7796_FREQUENCY);
+  lcdinfo("ST7796: Sending initialization sequence (%zu commands)\n", count);
 
   for (i = 0; i < count; i++)
     {
-      syslog(LOG_INFO, "ST7796: CMD[%zu]=0x%02X len=%zu delay=%ums\n",
-             i, seq[i].cmd, seq[i].len, seq[i].delay_ms);
-
-      /* CRÍTICO: Select CS */
-      st7796_select(dev->spi);
-      
-      /* CRÍTICO: Delay adicional antes de enviar comando */
-      up_udelay(50);  /* 50us de estabilização */
-      
-      /* Enviar comando */
       st7796_sendcmd(dev, seq[i].cmd);
       
-      /* CRÍTICO: Delay entre comando e dados */
       if (seq[i].data != NULL && seq[i].len > 0)
         {
-          up_udelay(50);  /* 50us entre comando e dados */
           st7796_senddata(dev, seq[i].data, seq[i].len);
         }
       
-      /* CRÍTICO: Delay antes de desativar CS */
-      up_udelay(50);
-      
-      /* Deselect CS */
-      st7796_deselect(dev->spi);
-      
-      /* CRÍTICO: Delay MÍNIMO entre comandos diferentes */
-      up_udelay(100);  /* 100us entre comandos */
-      
-      /* Delay programado do comando */
       if (seq[i].delay_ms > 0)
         {
-          syslog(LOG_INFO, "ST7796: Aguardando %ums...\n", seq[i].delay_ms);
           nxsig_usleep(seq[i].delay_ms * 1000);
         }
     }
 
-  syslog(LOG_INFO, "ST7796: Inicialização concluída com sucesso\n");
+  lcdinfo("ST7796: Initialization sequence complete\n");
 }
 
 /****************************************************************************
- * EXPLICAÇÃO DOS DELAYS ADICIONADOS
- * 
- * 1. 50us antes do comando: Garante CS estável
- * 2. 50us entre CMD e DATA: Display precisa processar comando
- * 3. 50us antes de desativar CS: Garante última transmissão completa
- * 4. 100us entre comandos: Display processa e fica pronto para próximo
- * 
- * Com SPI a 20MHz sem DMA, esses delays são CRÍTICOS para confiabilidade.
+ * Name: st7796_setarea
+ *
+ * Description:
+ *   Set drawing area window.
+ *
  ****************************************************************************/
 
 static void st7796_setarea(FAR struct st7796_dev_s *dev,
@@ -358,7 +372,8 @@ static void st7796_setarea(FAR struct st7796_dev_s *dev,
   uint8_t data[4];
 
   /* Column Address Set */
-  st7796_sendcmd(dev, 0x2A);
+
+  st7796_sendcmd(dev, ST7796_CASET);
   data[0] = (x0 >> 8) & 0xFF;
   data[1] = x0 & 0xFF;
   data[2] = (x1 >> 8) & 0xFF;
@@ -366,7 +381,8 @@ static void st7796_setarea(FAR struct st7796_dev_s *dev,
   st7796_senddata(dev, data, 4);
 
   /* Row Address Set */
-  st7796_sendcmd(dev, 0x2B);
+
+  st7796_sendcmd(dev, ST7796_RASET);
   data[0] = (y0 >> 8) & 0xFF;
   data[1] = y0 & 0xFF;
   data[2] = (y1 >> 8) & 0xFF;
@@ -374,10 +390,20 @@ static void st7796_setarea(FAR struct st7796_dev_s *dev,
   st7796_senddata(dev, data, 4);
 }
 
+/****************************************************************************
+ * Name: st7796_getvideoinfo
+ *
+ * Description:
+ *   Get video information.
+ *
+ ****************************************************************************/
+
 static int st7796_getvideoinfo(FAR struct fb_vtable_s *vtable,
                                 FAR struct fb_videoinfo_s *vinfo)
 {
   DEBUGASSERT(vtable && vinfo);
+
+  lcdinfo("ST7796: getvideoinfo\n");
 
   vinfo->fmt     = ST7796_COLORFMT;
   vinfo->xres    = ST7796_XRES;
@@ -387,12 +413,22 @@ static int st7796_getvideoinfo(FAR struct fb_vtable_s *vtable,
   return OK;
 }
 
+/****************************************************************************
+ * Name: st7796_getplaneinfo
+ *
+ * Description:
+ *   Get plane information.
+ *
+ ****************************************************************************/
+
 static int st7796_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
                                 FAR struct fb_planeinfo_s *pinfo)
 {
   FAR struct st7796_dev_s *priv = (FAR struct st7796_dev_s *)vtable;
 
   DEBUGASSERT(vtable && pinfo && planeno == 0);
+
+  lcdinfo("ST7796: getplaneinfo - plane %d\n", planeno);
 
   pinfo->fbmem   = priv->fbmem;
   pinfo->fblen   = ST7796_FBSIZE;
@@ -406,39 +442,93 @@ static int st7796_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
   return OK;
 }
 
+/****************************************************************************
+ * Name: st7796_updatearea
+ *
+ * Description:
+ *   Update display area from framebuffer.
+ *
+ ****************************************************************************/
+
 static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
                               FAR const struct fb_area_s *area)
 {
   FAR struct st7796_dev_s *priv = (FAR struct st7796_dev_s *)vtable;
-  FAR uint8_t *fbptr;
-  size_t row_size;
+  FAR uint16_t *src_fbptr; 
+  size_t row_size_bytes;
+  size_t row_size_pixels;
   int row;
+  FAR uint16_t *swap_buffer;
+  int i;
+
+  DEBUGASSERT(priv && area);
+
+  lcdinfo("ST7796: updatearea - x=%d y=%d w=%d h=%d\n",
+          area->x, area->y, area->w, area->h);
 
   st7796_select(priv->spi);
+
+  /* Set drawing window */
 
   st7796_setarea(priv, area->x, area->y,
                  area->x + area->w - 1,
                  area->y + area->h - 1);
 
-  st7796_sendcmd(priv, 0x2C);  /* Memory Write */
+  /* Memory Write command */
 
-  if (priv->set_dc)
+  st7796_sendcmd(priv, ST7796_RAMWR);
+
+  /* Switch to data mode */
+
+#ifdef CONFIG_SPI_CMDDATA
+  SPI_CMDDATA(priv->spi, SPIDEV_DISPLAY(0), false);
+#endif
+
+  row_size_pixels = area->w;
+  row_size_bytes = row_size_pixels * ST7796_BYTESPP;
+  
+  /* Calculate framebuffer start position */
+
+  src_fbptr = (FAR uint16_t *)
+              (priv->fbmem + (area->y * ST7796_XRES + area->x) *
+               ST7796_BYTESPP);
+
+  /* Allocate buffer for byte-swapped data */
+
+  swap_buffer = (FAR uint16_t *)kmm_malloc(row_size_bytes);
+  if (!swap_buffer)
     {
-      priv->set_dc(true);
+      lcderr("ERROR: Failed to allocate swap buffer\n");
+      st7796_deselect(priv->spi);
+      return -ENOMEM;
     }
 
-  up_udelay(ST7796_DC_SETUP_US);
-
-  row_size = area->w * ST7796_BYTESPP;
-  fbptr = priv->fbmem + (area->y * ST7796_XRES + area->x) * ST7796_BYTESPP;
+  /* Transfer framebuffer data row by row with byte swapping */
 
   for (row = 0; row < area->h; row++)
     {
-      SPI_SNDBLOCK(priv->spi, fbptr, row_size);
-      fbptr += ST7796_XRES * ST7796_BYTESPP;
-    }
+      /* Byte swap: ST7796 expects MSB first in RGB565 */
 
+      for (i = 0; i < row_size_pixels; i++)
+        {
+          uint16_t pixel = src_fbptr[i];
+          swap_buffer[i] = (pixel << 8) | (pixel >> 8); 
+        }
+      
+      /* Send row data */
+
+      SPI_SNDBLOCK(priv->spi, (FAR const uint8_t *)swap_buffer,
+                   row_size_bytes);
+      
+      /* Move to next row in framebuffer */
+
+      src_fbptr += ST7796_XRES;
+    }
+    
+  kmm_free(swap_buffer);
   st7796_deselect(priv->spi);
+
+  lcdinfo("ST7796: updatearea complete\n");
 
   return OK;
 }
@@ -447,221 +537,61 @@ static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
  * Public Functions
  ****************************************************************************/
 
-FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi,
-                                            CODE void (*set_dc)(bool))
+/****************************************************************************
+ * Name: st7796_fbinitialize
+ *
+ * Description:
+ *   Initialize ST7796 LCD as framebuffer device.
+ *
+ * Input Parameters:
+ *   spi - SPI device instance
+ *
+ * Returned Value:
+ *   Pointer to framebuffer vtable on success; NULL on failure.
+ *
+ ****************************************************************************/
+
+FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi)
 {
   FAR struct st7796_dev_s *priv = &g_st7796dev;
 
-  syslog(LOG_INFO, "ST7796: Inicializando driver framebuffer\n");
-  syslog(LOG_INFO, "ST7796: Resolução: %dx%d @ %d bpp\n",
-         ST7796_XRES, ST7796_YRES, ST7796_BPP);
-  syslog(LOG_INFO, "ST7796: Tamanho FB: %d KB\n", ST7796_FBSIZE / 1024);
+  lcdinfo("ST7796: Initializing framebuffer driver\n");
+  lcdinfo("ST7796: Resolution: %dx%d @ %d bpp\n",
+          ST7796_XRES, ST7796_YRES, ST7796_BPP);
+  lcdinfo("ST7796: Framebuffer size: %d bytes (%d KB)\n",
+          ST7796_FBSIZE, ST7796_FBSIZE / 1024);
+  lcdinfo("ST7796: SPI Frequency: %d Hz\n", CONFIG_LCD_ST7796_FREQUENCY);
 
-  /* Alocar framebuffer */
+  /* Allocate framebuffer memory */
+
   priv->fbmem = (FAR uint8_t *)kmm_zalloc(ST7796_FBSIZE);
   if (!priv->fbmem)
     {
-      syslog(LOG_ERR, "ERRO: Falha ao alocar framebuffer\n");
+      lcderr("ERROR: Failed to allocate framebuffer (%d bytes)\n",
+             ST7796_FBSIZE);
       return NULL;
     }
 
-  syslog(LOG_INFO, "ST7796: Framebuffer alocado com sucesso\n");
+  lcdinfo("ST7796: Framebuffer allocated at %p\n", priv->fbmem);
 
-  /* Inicializar estrutura */
+  /* Initialize driver structure */
+
   priv->vtable.getvideoinfo  = st7796_getvideoinfo;
   priv->vtable.getplaneinfo  = st7796_getplaneinfo;
   priv->vtable.updatearea    = st7796_updatearea;
   priv->spi                  = spi;
   priv->power                = false;
-  priv->set_dc               = set_dc;
 
-  /* Executar sequência de inicialização */
+  /* Send initialization sequence */
+
+  st7796_select(priv->spi);
   st7796_send_sequence(priv, st7796_init_sequence,
                        sizeof(st7796_init_sequence) /
                        sizeof(struct st7796_cmd_s));
+  st7796_deselect(priv->spi);
 
   priv->power = true;
-
-  syslog(LOG_INFO, "ST7796: Display pronto para uso\n");
-
-  /* TESTE DIAGNÓSTICO APRIMORADO: Ler ID do display */
-  uint8_t dummy, id1, id2, id3;
-  uint8_t test_byte;
-  
-  syslog(LOG_INFO, "ST7796: === TESTE DE COMUNICAÇÃO SPI ===\n");
-  
-  /* Teste 1: Verificar se consegue ler algo */
-  st7796_select(priv->spi);
-  test_byte = SPI_SEND(priv->spi, 0xFF);
-  st7796_deselect(priv->spi);
-  syslog(LOG_INFO, "ST7796: Teste loopback: enviou 0xFF, recebeu 0x%02X\n", test_byte);
-  
-  /* Teste 2: Tentar ler ID com mais dummy bytes */
-  st7796_select(priv->spi);
-  st7796_sendcmd(priv, 0x04);  /* Read Display ID */
-  
-  if (priv->set_dc)
-    {
-      priv->set_dc(true);
-    }
-  up_udelay(50);  /* Aumentar delay para 50us */
-  
-  /* Alguns ST7796 precisam de 2+ dummy bytes */
-  SPI_RECVBLOCK(priv->spi, &dummy, 1);  /* Dummy 1 */
-  syslog(LOG_INFO, "ST7796: Dummy byte 1 = 0x%02X\n", dummy);
-  
-  SPI_RECVBLOCK(priv->spi, &dummy, 1);  /* Dummy 2 */
-  syslog(LOG_INFO, "ST7796: Dummy byte 2 = 0x%02X\n", dummy);
-  
-  SPI_RECVBLOCK(priv->spi, &id1, 1);  /* ID1 */
-  SPI_RECVBLOCK(priv->spi, &id2, 1);  /* ID2 */
-  SPI_RECVBLOCK(priv->spi, &id3, 1);  /* ID3 */
-  st7796_deselect(priv->spi);
-  
-  syslog(LOG_INFO, "ST7796: Display ID = 0x%02X 0x%02X 0x%02X\n", id1, id2, id3);
-  syslog(LOG_INFO, "ST7796: Esperado: 0x00 0x77 0x96 (ST7796)\n");
-  
-  if (id1 == 0x00 && id2 == 0x00 && id3 == 0x00)
-    {
-      syslog(LOG_WARNING, "ST7796: AVISO - ID retornou zeros!\n");
-      syslog(LOG_WARNING, "ST7796: Possíveis causas:\n");
-      syslog(LOG_WARNING, "ST7796:   1. MISO não conectado ou com mau contato\n");
-      syslog(LOG_WARNING, "ST7796:   2. Display em modo de proteção\n");
-      syslog(LOG_WARNING, "ST7796:   3. Comando de leitura não suportado neste lote\n");
-      syslog(LOG_WARNING, "ST7796: Tentando continuar mesmo assim...\n");
-    }
-  else if (id1 == 0xFF && id2 == 0xFF && id3 == 0xFF)
-    {
-      syslog(LOG_ERR, "ST7796: ERRO - ID retornou 0xFF (bus flutuante)!\n");
-      syslog(LOG_ERR, "ST7796: Display provavelmente não está respondendo.\n");
-    }
-  else if (id2 == 0x77 && id3 == 0x96)
-    {
-      syslog(LOG_INFO, "ST7796: ID correto detectado!\n");
-    }
-  
-  syslog(LOG_INFO, "ST7796: === FIM DO TESTE ===\n");
-  
-  /* TESTE ADICIONAL: Tentar escrever pixels diretamente */
-  syslog(LOG_INFO, "ST7796: Iniciando teste de escrita de pixels...\n");
-  
-  st7796_select(priv->spi);
-  st7796_setarea(priv, 0, 0, 99, 0);  /* Linha de 100 pixels */
-  st7796_sendcmd(priv, 0x2C);  /* Memory Write */
-  
-  if (priv->set_dc)
-    {
-      priv->set_dc(true);
-    }
-  up_udelay(ST7796_DC_SETUP_US);
-  
-  /* Enviar 100 pixels vermelhos (RGB565 = 0xF800) */
-  uint8_t red_pixel[2] = {0xF8, 0x00};
-  for (int i = 0; i < 100; i++)
-    {
-      SPI_SNDBLOCK(priv->spi, red_pixel, 2);
-    }
-  
-  st7796_deselect(priv->spi);
-  
-  syslog(LOG_INFO, "ST7796: Teste de pixels concluído (100 pixels vermelhos no topo)\n");
-  syslog(LOG_INFO, "ST7796: Se ver pixels vermelhos = escrita SPI OK\n");
-  syslog(LOG_INFO, "ST7796: Se continuar zebrado = problema na inicialização\n");
-  
-  /* TESTE DE CORES COMPLETO */
-  syslog(LOG_INFO, "ST7796: === INICIANDO TESTE DE CORES ===\n");
-  
-  /* Aguardar estabilização */
-  nxsig_usleep(500000);  /* 500ms */
-  
-  /* RED - Tela inteira vermelha */
-  syslog(LOG_INFO, "ST7796: Preenchendo tela com VERMELHO...\n");
-  st7796_select(priv->spi);
-  st7796_setarea(priv, 0, 0, ST7796_XRES - 1, ST7796_YRES - 1);
-  st7796_sendcmd(priv, 0x2C);
-  if (priv->set_dc) priv->set_dc(true);
-  up_udelay(ST7796_DC_SETUP_US);
-  
-  uint8_t red[2] = {0xF8, 0x00};  /* RGB565: 11111 000000 00000 */
-  for (uint32_t i = 0; i < (ST7796_XRES * ST7796_YRES); i++)
-    {
-      SPI_SNDBLOCK(priv->spi, red, 2);
-    }
-  st7796_deselect(priv->spi);
-  syslog(LOG_INFO, "ST7796: VERMELHO completo\n");
-  nxsig_usleep(2000000);  /* 2 segundos */
-  
-  /* GREEN - Tela inteira verde */
-  syslog(LOG_INFO, "ST7796: Preenchendo tela com VERDE...\n");
-  st7796_select(priv->spi);
-  st7796_setarea(priv, 0, 0, ST7796_XRES - 1, ST7796_YRES - 1);
-  st7796_sendcmd(priv, 0x2C);
-  if (priv->set_dc) priv->set_dc(true);
-  up_udelay(ST7796_DC_SETUP_US);
-  
-  uint8_t green[2] = {0x07, 0xE0};  /* RGB565: 00000 111111 00000 */
-  for (uint32_t i = 0; i < (ST7796_XRES * ST7796_YRES); i++)
-    {
-      SPI_SNDBLOCK(priv->spi, green, 2);
-    }
-  st7796_deselect(priv->spi);
-  syslog(LOG_INFO, "ST7796: VERDE completo\n");
-  nxsig_usleep(2000000);
-  
-  /* BLUE - Tela inteira azul */
-  syslog(LOG_INFO, "ST7796: Preenchendo tela com AZUL...\n");
-  st7796_select(priv->spi);
-  st7796_setarea(priv, 0, 0, ST7796_XRES - 1, ST7796_YRES - 1);
-  st7796_sendcmd(priv, 0x2C);
-  if (priv->set_dc) priv->set_dc(true);
-  up_udelay(ST7796_DC_SETUP_US);
-  
-  uint8_t blue[2] = {0x00, 0x1F};  /* RGB565: 00000 000000 11111 */
-  for (uint32_t i = 0; i < (ST7796_XRES * ST7796_YRES); i++)
-    {
-      SPI_SNDBLOCK(priv->spi, blue, 2);
-    }
-  st7796_deselect(priv->spi);
-  syslog(LOG_INFO, "ST7796: AZUL completo\n");
-  nxsig_usleep(2000000);
-  
-  /* WHITE - Tela inteira branca */
-  syslog(LOG_INFO, "ST7796: Preenchendo tela com BRANCO...\n");
-  st7796_select(priv->spi);
-  st7796_setarea(priv, 0, 0, ST7796_XRES - 1, ST7796_YRES - 1);
-  st7796_sendcmd(priv, 0x2C);
-  if (priv->set_dc) priv->set_dc(true);
-  up_udelay(ST7796_DC_SETUP_US);
-  
-  uint8_t white[2] = {0xFF, 0xFF};  /* RGB565: 11111 111111 11111 */
-  for (uint32_t i = 0; i < (ST7796_XRES * ST7796_YRES); i++)
-    {
-      SPI_SNDBLOCK(priv->spi, white, 2);
-    }
-  st7796_deselect(priv->spi);
-  syslog(LOG_INFO, "ST7796: BRANCO completo\n");
-  nxsig_usleep(2000000);
-  
-  /* BLACK - Tela inteira preta */
-  syslog(LOG_INFO, "ST7796: Preenchendo tela com PRETO...\n");
-  st7796_select(priv->spi);
-  st7796_setarea(priv, 0, 0, ST7796_XRES - 1, ST7796_YRES - 1);
-  st7796_sendcmd(priv, 0x2C);
-  if (priv->set_dc) priv->set_dc(true);
-  up_udelay(ST7796_DC_SETUP_US);
-  
-  uint8_t black[2] = {0x00, 0x00};  /* RGB565: 00000 000000 00000 */
-  for (uint32_t i = 0; i < (ST7796_XRES * ST7796_YRES); i++)
-    {
-      SPI_SNDBLOCK(priv->spi, black, 2);
-    }
-  st7796_deselect(priv->spi);
-  syslog(LOG_INFO, "ST7796: PRETO completo\n");
-  
-  syslog(LOG_INFO, "ST7796: === TESTE DE CORES CONCLUÍDO ===\n");
-  syslog(LOG_INFO, "ST7796: Verifique se viu: VERMELHO -> VERDE -> AZUL -> BRANCO -> PRETO\n");
-  syslog(LOG_INFO, "ST7796: Se cores apareceram = display funcionando!\n");
-  syslog(LOG_INFO, "ST7796: Se ficou zebrado = problema na inicialização\n");
+  lcdinfo("ST7796: Display ready\n");
 
   return &priv->vtable;
 }

@@ -64,24 +64,37 @@
 #define ST7796_PIXFMT           0x3A  /* Pixel Format Set */
 #define ST7796_WRDISPBRIGHT     0x51  /* Write Display Brightness */
 #define ST7796_RDDISPBRIGHT     0x52  /* Read Display Brightness */
-#define ST7796_WRCTRLD        0x53  /* Write Control Display */
-#define ST7796_RDCTRLD        0x54  /* Read Control Display */
+#define ST7796_WRCTRLD          0x53  /* Write Control Display */
+#define ST7796_RDCTRLD          0x54  /* Read Control Display */
 #define ST7796_WRCABC           0x55  /* Write Content Adaptive Brightness Control */
 #define ST7796_RDCABC           0x56  /* Read Content Adaptive Brightness Control */
 #define ST7796_WRCABCMIN        0x5E  /* Write CABC Minimum Brightness */
 #define ST7796_RDCABCMIN        0x5F  /* Read CABC Minimum Brightness */
 
-/* ST7796 Commands - Missing Register Definitions (0xB4-0xC6) */
+/* ST7796 Commands - Extended */
 
-#define ST7796_INVCTR           0xB4  /* Display Inversion Control (INVCTR) */
-#define ST7796_DFC              0xB6  /* Display Function Control (DFC) */
+#define ST7796_INVCTR           0xB4  /* Display Inversion Control */
+#define ST7796_DFC              0xB6  /* Display Function Control */
+#define ST7796_PWCTRL1          0xC0  /* Power Control 1 */
+#define ST7796_PWCTRL2          0xC1  /* Power Control 2 */
+#define ST7796_PWCTRL3          0xC2  /* Power Control 3 */
 #define ST7796_PWCTRL4          0xC3  /* Power Control 4 */
 #define ST7796_PWCTRL5          0xC4  /* Power Control 5 */
-#define ST7796_VCOM             0xC5  /* VCOM Control (VCOM) */
+#define ST7796_VCOM             0xC5  /* VCOM Control */
 #define ST7796_PWCTRL6          0xC6  /* Power Control 6 */
 #define ST7796_GAMMAPOS         0xE0  /* Positive Gamma Correction */
 #define ST7796_GAMMANEG         0xE1  /* Negative Gamma Correction */
 #define ST7796_DOCA             0xE9  /* Set DDB Write Address */
+#define ST7796_CSCON            0xF0  /* Command Set Control */
+
+/* ST7796 MADCTL bits */
+
+#define ST7796_MADCTL_MY        0x80  /* Row Address Order */
+#define ST7796_MADCTL_MX        0x40  /* Column Address Order */
+#define ST7796_MADCTL_MV        0x20  /* Row/Column Exchange */
+#define ST7796_MADCTL_ML        0x10  /* Vertical Refresh Order */
+#define ST7796_MADCTL_BGR       0x08  /* BGR color filter panel */
+#define ST7796_MADCTL_MH        0x04  /* Horizontal Refresh Order */
 
 /* ST7796 Initialization sequence structure */
 
@@ -108,19 +121,27 @@ extern "C"
  * Name: st7796_fbinitialize
  *
  * Description:
- * Initialize the ST7796 LCD driver as a framebuffer device.
+ *   Initialize the ST7796 LCD driver as a framebuffer device.
+ *
+ *   This function initializes the ST7796 display controller and registers
+ *   it as a framebuffer device. The driver uses CONFIG_SPI_CMDDATA to
+ *   control the DC (Data/Command) pin automatically via the SPI driver.
  *
  * Input Parameters:
- * spi    - SPI device instance
- * set_dc - Function pointer to control DC pin (true=data, false=command)
+ *   spi - SPI device instance configured for the ST7796
  *
  * Returned Value:
- * Pointer to framebuffer vtable on success; NULL on failure.
+ *   Pointer to framebuffer vtable on success; NULL on failure.
+ *
+ * Assumptions:
+ *   - CONFIG_SPI_CMDDATA is enabled
+ *   - DC pin has been registered via stm32_spi_register_dc_pin()
+ *   - CS pin has been registered via stm32_spi_register_cs_device()
+ *   - RESET and LED pins have been configured by board support code
  *
  ****************************************************************************/
 
-FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi,
-                                            CODE void (*set_dc)(bool));
+FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi);
 
 #ifdef __cplusplus
 }

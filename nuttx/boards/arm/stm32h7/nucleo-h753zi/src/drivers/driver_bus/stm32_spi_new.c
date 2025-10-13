@@ -50,16 +50,46 @@
  ****************************************************************************/
 
 /* CS pin registration structure */
-
 struct spi_cs_device_s
 {
   uint32_t gpio_config;    /* GPIO configuration for CS pin */
   bool active_low;         /* true = active low, false = active high */
-  bool in_use;             /* true = slot occupied */
+  bool in_use;            /* true = slot occupied */
 };
 
-/* DC pin registration structure */
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+ 
+/* DC pin callback registration structure */
+#ifdef CONFIG_SPI_CMDDATA
+struct spi_dc_device_s
+{
+  uint32_t gpio_config;  /* GPIO configuration for DC pin */
+  bool in_use;           /* true = slot occupied */
+};
+#endif
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define MAX_CS_DEVICES_PER_SPI 16
+#define INVALID_CS_PIN 0
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+/* CS pin registration structure */
+struct spi_cs_device_s
+{
+  uint32_t gpio_config;
+  bool active_low;
+  bool in_use;
+};
+
+/* NOVO: DC pin callback registration structure */
 #ifdef CONFIG_SPI_CMDDATA
 struct spi_dc_device_s
 {
@@ -73,7 +103,6 @@ struct spi_dc_device_s
  ****************************************************************************/
 
 /* CS device registrations for each SPI bus */
-
 #ifdef CONFIG_STM32H7_SPI1
 static struct spi_cs_device_s g_spi1_cs_devices[MAX_CS_DEVICES_PER_SPI];
 #ifdef CONFIG_SPI_CMDDATA
@@ -81,7 +110,7 @@ static struct spi_dc_device_s g_spi1_dc_devices[MAX_CS_DEVICES_PER_SPI];
 #endif
 #endif
 
-#ifdef CONFIG_STM32H7_SPI2  
+#ifdef CONFIG_STM32H7_SPI2
 static struct spi_cs_device_s g_spi2_cs_devices[MAX_CS_DEVICES_PER_SPI];
 #ifdef CONFIG_SPI_CMDDATA
 static struct spi_dc_device_s g_spi2_dc_devices[MAX_CS_DEVICES_PER_SPI];
@@ -124,14 +153,14 @@ static struct spi_dc_device_s g_spi6_dc_devices[MAX_CS_DEVICES_PER_SPI];
  * Name: parse_gpio_pin
  *
  * Description:
- *   Parse GPIO pin string like "PA0" into STM32 GPIO configuration.
+ * Parse GPIO pin string like "PA0" into STM32 GPIO configuration.
  *
  * Input Parameters:
- *   pin_str - GPIO pin string (e.g., "PA0", "PF15", "PC13")
- *   error   - Pointer to error code storage
+ * pin_str - GPIO pin string (e.g., "PA0", "PF15", "PC13")
+ * error   - Pointer to error code storage
  *
  * Returned Value:
- *   STM32 GPIO configuration value on success, 0 on error
+ * STM32 GPIO configuration value on success, 0 on error
  *
  ****************************************************************************/
 
@@ -154,7 +183,6 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
     }
 
   /* Remove leading/trailing spaces */
-
   while (*pin_str == ' ' || *pin_str == '\t')
     {
       pin_str++;
@@ -174,7 +202,7 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
     }
 
   port = pin_str[1];
-  if (port < 'A' || port > 'H')
+  if (port < 'A' || port > 'H') /* STM32H753ZI only has ports A-H */
     {
       *error = -EINVAL;
       return 0;
@@ -189,7 +217,6 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
     }
 
   /* Map port letter to STM32 port base */
-
   switch (port)
     {
       case 'A': port_base = GPIO_PORTA; break;
@@ -206,7 +233,6 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
     }
 
   /* Use correct STM32 GPIO pin macros */
-
   switch (pin_num)
     {
       case 0:  gpio_pin = GPIO_PIN0;  break;
@@ -230,21 +256,20 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
         return 0;
     }
 
-  return (GPIO_OUTPUT | GPIO_OUTPUT_SET | GPIO_SPEED_50MHz | GPIO_FLOAT |
-          port_base | gpio_pin);
+  return (GPIO_OUTPUT | GPIO_OUTPUT_SET | GPIO_SPEED_50MHz | port_base | gpio_pin);
 }
 
 /****************************************************************************
  * Name: get_cs_devices_array
  *
  * Description:
- *   Get CS devices array for a specific SPI bus.
+ * Get CS devices array for a specific SPI bus.
  *
  * Input Parameters:
- *   spi_bus - SPI bus number (1-6)
+ * spi_bus - SPI bus number (1-6)
  *
  * Returned Value:
- *   Pointer to CS devices array, NULL if invalid bus
+ * Pointer to CS devices array, NULL if invalid bus
  *
  ****************************************************************************/
 
@@ -276,58 +301,16 @@ static struct spi_cs_device_s *get_cs_devices_array(int spi_bus)
 }
 
 /****************************************************************************
- * Name: get_dc_devices_array
- *
- * Description:
- *   Get DC devices array for a specific SPI bus.
- *
- * Input Parameters:
- *   spi_bus - SPI bus number (1-6)
- *
- * Returned Value:
- *   Pointer to DC devices array, NULL if invalid bus
- *
- ****************************************************************************/
-
-#ifdef CONFIG_SPI_CMDDATA
-static struct spi_dc_device_s *get_dc_devices_array(int spi_bus)
-{
-  switch (spi_bus)
-    {
-#ifdef CONFIG_STM32H7_SPI1
-      case 1: return g_spi1_dc_devices;
-#endif
-#ifdef CONFIG_STM32H7_SPI2
-      case 2: return g_spi2_dc_devices;
-#endif
-#ifdef CONFIG_STM32H7_SPI3
-      case 3: return g_spi3_dc_devices;
-#endif
-#ifdef CONFIG_STM32H7_SPI4
-      case 4: return g_spi4_dc_devices;
-#endif
-#ifdef CONFIG_STM32H7_SPI5
-      case 5: return g_spi5_dc_devices;
-#endif
-#ifdef CONFIG_STM32H7_SPI6
-      case 6: return g_spi6_dc_devices;
-#endif
-      default:
-        return NULL;
-    }
-}
-#endif
-
-/****************************************************************************
  * Name: spi_cs_control
  *
  * Description:
- *   Control SPI chip select pin based on registered device.
+ * Control SPI chip select pin based on registered device.
+ * Now includes fallback for invalid device IDs.
  *
  * Input Parameters:
- *   spi_bus  - SPI bus number (1-6)
- *   devid    - Device ID within the bus
- *   selected - Select (true) or deselect (false)
+ * spi_bus  - SPI bus number (1-6)
+ * devid    - Device ID within the bus
+ * selected - Select (true) or deselect (false)
  *
  ****************************************************************************/
 
@@ -345,21 +328,26 @@ static void spi_cs_control(int spi_bus, uint32_t devid, bool selected)
       return;
     }
 
-  /* Handle SPIDEV_* types */
-
+  /* FIX: Compatibility with NuttX SPIDEV_* types (e.g., SPIDEV_CONTACTLESS).
+   * These types use the upper 16 bits for device classification and the lower
+   * 16 bits for the device index. This fix extracts the real device ID from
+   * the lower 16 bits to make it compatible with the board's CS registration
+   * system (which expects IDs from 0-15). This prevents the system from
+   * always falling back to device ID 0 for these drivers.
+   */
   if ((devid & 0xFFFF0000) != 0)
     {
       actual_devid = (devid & 0x0000FFFF);
       spiinfo("Detected SPIDEV type 0x%04lX, using index %lu for SPI%d\n",
-              (unsigned long)(devid >> 16), (unsigned long)actual_devid,
-              spi_bus);
+              (unsigned long)(devid >> 16), (unsigned long)actual_devid, spi_bus);
     }
+  /* FALLBACK: If device ID is invalid, try to use device ID 0 as fallback */
   else if (devid >= MAX_CS_DEVICES_PER_SPI)
     {
-      spiwarn("WARNING: Device ID %lu >= maximum %d for SPI%d, "
-              "trying fallback to ID 0\n",
-              (unsigned long)devid, MAX_CS_DEVICES_PER_SPI, spi_bus);
+      spiwarn("WARNING: Device ID %lu >= maximum %d for SPI%d, trying fallback to ID 0\n",
+             (unsigned long)devid, MAX_CS_DEVICES_PER_SPI, spi_bus);
       
+      /* Check if device ID 0 is registered */
       if (cs_devices[0].in_use)
         {
           actual_devid = 0;
@@ -368,8 +356,7 @@ static void spi_cs_control(int spi_bus, uint32_t devid, bool selected)
         }
       else
         {
-          spierr("ERROR: Device ID %lu >= maximum %d and no fallback "
-                 "available for SPI%d\n",
+          spierr("ERROR: Device ID %lu >= maximum %d and no fallback available for SPI%d\n",
                  (unsigned long)devid, MAX_CS_DEVICES_PER_SPI, spi_bus);
           return;
         }
@@ -383,15 +370,14 @@ static void spi_cs_control(int spi_bus, uint32_t devid, bool selected)
       return;
     }
 
-  /* Calculate pin state */
-
+  /* Calculate pin state based on active level and selection */
   if (device->active_low)
     {
-      pin_state = !selected;
+      pin_state = !selected;  /* Active low: select=low, deselect=high */
     }
   else
     {
-      pin_state = selected;
+      pin_state = selected;   /* Active high: select=high, deselect=low */
     }
 
   stm32_gpiowrite(device->gpio_config, pin_state);
@@ -403,73 +389,6 @@ static void spi_cs_control(int spi_bus, uint32_t devid, bool selected)
 }
 
 /****************************************************************************
- * Name: spi_dc_control
- *
- * Description:
- *   Control SPI DC (Data/Command) pin for registered device.
- *
- * Input Parameters:
- *   spi_bus - SPI bus number (1-6)
- *   devid   - Device ID within the bus
- *   cmd     - true = command mode, false = data mode
- *
- ****************************************************************************/
-
-#ifdef CONFIG_SPI_CMDDATA
-static void spi_dc_control(int spi_bus, uint32_t devid, bool cmd)
-{
-  struct spi_dc_device_s *dc_devices;
-  struct spi_dc_device_s *device;
-  uint32_t actual_devid = devid;
-
-  dc_devices = get_dc_devices_array(spi_bus);
-  if (dc_devices == NULL)
-    {
-      spierr("ERROR: Invalid SPI bus %d for DC control\n", spi_bus);
-      return;
-    }
-
-  /* Handle SPIDEV_* types */
-
-  if ((devid & 0xFFFF0000) != 0)
-    {
-      actual_devid = (devid & 0x0000FFFF);
-    }
-  else if (devid >= MAX_CS_DEVICES_PER_SPI)
-    {
-      spierr("ERROR: Device ID %lu >= maximum %d for DC control on SPI%d\n",
-             (unsigned long)devid, MAX_CS_DEVICES_PER_SPI, spi_bus);
-      return;
-    }
-
-  device = &dc_devices[actual_devid];
-  if (!device->in_use)
-    {
-      spierr("ERROR: DC pin not registered for SPI%d device %lu\n",
-             spi_bus, (unsigned long)actual_devid);
-      return;
-    }
-
-  /* Set DC pin: LOW for command, HIGH for data
-   * This is the standard convention for SPI displays
-   */
-
-  stm32_gpiowrite(device->gpio_config, !cmd);
-
-  spiinfo("SPI%d DC%lu: %s (pin %s)\n",
-          spi_bus, (unsigned long)actual_devid,
-          cmd ? "COMMAND" : "DATA",
-          cmd ? "LOW" : "HIGH");
-          
-  syslog(LOG_INFO, "SPI%d DC%lu: %s (pin %s) [GPIO=0x%08lx]\n",  // ← ADICIONE ESTA LINHA
-          spi_bus, (unsigned long)actual_devid,
-          cmd ? "COMMAND" : "DATA",
-          cmd ? "LOW" : "HIGH",
-          (unsigned long)device->gpio_config);  // ← Ver o GPIO config
-}
-#endif
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -477,16 +396,30 @@ static void spi_dc_control(int spi_bus, uint32_t devid, bool cmd)
  * Name: stm32_spi_initialize
  *
  * Description:
- *   Initialize SPI interfaces.
+ * Initialize SPI interfaces. CS pins are now managed per-sensor.
  *
  * Returned Value:
- *   OK on success, negative errno on error
+ * OK on success, negative errno on error
+ * 
+ * memset ---> do the same as: fill_out_with_zeroes(MAX_CS_DEVICES_PER_SPI)
+ * 
+ * 
+ * fill_out_with_zeroes(MAX_CS_DEVICES_PER_SPI){
+ *    for (int i = 0; i < MAX_CS_DEVICES_PER_SPI; i++)
+ *    {
+ *     g_spi1_cs_devices[i].gpio_config = 0;
+ *     g_spi1_cs_devices[i].active_low = false;
+ *     g_spi1_cs_devices[i].in_use = false;
+ *    }
+ * }
  *
  ****************************************************************************/
 
 int stm32_spi_initialize(void)
 {
   spiinfo("stm32_spi_initialize: Initializing SPI interfaces\n");
+
+  /* Initialize CS device arrays to empty/unused state */
 
 #ifdef CONFIG_STM32H7_SPI1
   memset(g_spi1_cs_devices, 0, sizeof(g_spi1_cs_devices));
@@ -544,7 +477,16 @@ int stm32_spi_initialize(void)
  * Name: stm32_spi_register_cs_device
  *
  * Description:
- *   Register a CS device for a specific SPI bus and device ID.
+ * Register a CS device for a specific SPI bus and device ID.
+ *
+ * Input Parameters:
+ * spi_bus     - SPI bus number (1-6)
+ * devid       - Device ID (0 to MAX_CS_DEVICES_PER_SPI-1)
+ * cs_pin      - CS pin string (e.g., "PF1")
+ * active_low  - true if CS is active low, false if active high
+ *
+ * Returned Value:
+ * OK on success, negative errno on error
  *
  ****************************************************************************/
 
@@ -557,6 +499,7 @@ int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
   int error;
   int ret;
 
+  /* Validate parameters */
   cs_devices = get_cs_devices_array(spi_bus);
   if (cs_devices == NULL)
     {
@@ -579,6 +522,7 @@ int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
       return -EBUSY;
     }
 
+  /* Parse CS pin */
   gpio_config = parse_gpio_pin(cs_pin, &error);
   if (error != 0)
     {
@@ -586,6 +530,7 @@ int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
       return error;
     }
 
+  /* Configure GPIO pin */
   ret = stm32_configgpio(gpio_config);
   if (ret < 0)
     {
@@ -593,8 +538,10 @@ int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
       return ret;
     }
 
+  /* Initialize CS pin to deselected state */
   stm32_gpiowrite(gpio_config, active_low ? true : false);
 
+  /* Register device */
   device->gpio_config = gpio_config;
   device->active_low = active_low;
   device->in_use = true;
@@ -611,6 +558,15 @@ int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
  *
  * Description:
  *   Register a DC (Data/Command) pin for a specific SPI device.
+ *   This enables SPI_CMDDATA functionality for displays like ST7796.
+ *
+ * Input Parameters:
+ *   spi_bus - SPI bus number (1-6)
+ *   devid   - Device ID (0 to MAX_CS_DEVICES_PER_SPI-1)
+ *   dc_pin  - DC pin string (e.g., "PA3")
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
  *
  ****************************************************************************/
 
@@ -623,6 +579,8 @@ int stm32_spi_register_dc_pin(int spi_bus, uint32_t devid,
   uint32_t gpio_config;
   int error;
   int ret;
+
+  /* Validate parameters */
 
   dc_devices = get_dc_devices_array(spi_bus);
   if (dc_devices == NULL)
@@ -642,9 +600,11 @@ int stm32_spi_register_dc_pin(int spi_bus, uint32_t devid,
   if (device->in_use)
     {
       spierr("ERROR: DC pin already registered for SPI%d device %lu\n",
-             spi_bus, (unsigned long)devid);
+             (unsigned long)devid, spi_bus);
       return -EBUSY;
     }
+
+  /* Parse DC pin */
 
   gpio_config = parse_gpio_pin(dc_pin, &error);
   if (error != 0)
@@ -653,6 +613,8 @@ int stm32_spi_register_dc_pin(int spi_bus, uint32_t devid,
       return error;
     }
 
+  /* Configure GPIO pin as output */
+
   ret = stm32_configgpio(gpio_config);
   if (ret < 0)
     {
@@ -660,9 +622,11 @@ int stm32_spi_register_dc_pin(int spi_bus, uint32_t devid,
       return ret;
     }
 
-  /* Initialize DC pin to data mode (HIGH) */
+  /* Initialize DC pin to data mode (LOW) */
 
-  stm32_gpiowrite(gpio_config, true);
+  stm32_gpiowrite(gpio_config, false);
+
+  /* Register device */
 
   device->gpio_config = gpio_config;
   device->in_use = true;
@@ -672,13 +636,20 @@ int stm32_spi_register_dc_pin(int spi_bus, uint32_t devid,
 
   return OK;
 }
-#endif
+#endif /* CONFIG_SPI_CMDDATA */
 
 /****************************************************************************
  * Name: stm32_spi_unregister_cs_device
  *
  * Description:
- *   Unregister a CS device.
+ * Unregister a CS device.
+ *
+ * Input Parameters:
+ * spi_bus - SPI bus number (1-6)
+ * devid   - Device ID
+ *
+ * Returned Value:
+ * OK on success, negative errno on error
  *
  ****************************************************************************/
 
@@ -704,12 +675,12 @@ int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid)
       return -ENOENT;
     }
 
+  /* Clear device registration */
   device->gpio_config = INVALID_CS_PIN;
   device->active_low = false;
   device->in_use = false;
 
-  spiinfo("Unregistered SPI%d device %lu\n", spi_bus,
-          (unsigned long)devid);
+  spiinfo("Unregistered SPI%d device %lu\n", spi_bus, (unsigned long)devid);
   return OK;
 }
 
@@ -717,7 +688,7 @@ int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid)
  * Name: stm32_spidev_register_all
  *
  * Description:
- *   Register SPI devices for user access.
+ * Register SPI devices for user access via /dev/spiN.
  *
  ****************************************************************************/
 
@@ -839,10 +810,110 @@ int stm32_spidev_register_all(void)
 #endif
 
 /****************************************************************************
+ * Name: get_dc_devices_array
+ *
+ * Description:
+ *   Get DC devices array for a specific SPI bus.
+ *
+ * Input Parameters:
+ *   spi_bus - SPI bus number (1-6)
+ *
+ * Returned Value:
+ *   Pointer to DC devices array, NULL if invalid bus
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SPI_CMDDATA
+static struct spi_dc_device_s *get_dc_devices_array(int spi_bus)
+{
+  switch (spi_bus)
+    {
+#ifdef CONFIG_STM32H7_SPI1
+      case 1: return g_spi1_dc_devices;
+#endif
+#ifdef CONFIG_STM32H7_SPI2
+      case 2: return g_spi2_dc_devices;
+#endif
+#ifdef CONFIG_STM32H7_SPI3
+      case 3: return g_spi3_dc_devices;
+#endif
+#ifdef CONFIG_STM32H7_SPI4
+      case 4: return g_spi4_dc_devices;
+#endif
+#ifdef CONFIG_STM32H7_SPI5
+      case 5: return g_spi5_dc_devices;
+#endif
+#ifdef CONFIG_STM32H7_SPI6
+      case 6: return g_spi6_dc_devices;
+#endif
+      default:
+        return NULL;
+    }
+}
+
+/****************************************************************************
+ * Name: spi_dc_control
+ *
+ * Description:
+ *   Control SPI DC (Data/Command) pin for registered device.
+ *
+ * Input Parameters:
+ *   spi_bus - SPI bus number (1-6)
+ *   devid   - Device ID within the bus
+ *   cmd     - true = command mode, false = data mode
+ *
+ ****************************************************************************/
+
+static void spi_dc_control(int spi_bus, uint32_t devid, bool cmd)
+{
+  struct spi_dc_device_s *dc_devices;
+  struct spi_dc_device_s *device;
+  uint32_t actual_devid = devid;
+
+  dc_devices = get_dc_devices_array(spi_bus);
+  if (dc_devices == NULL)
+    {
+      spierr("ERROR: Invalid SPI bus %d for DC control\n", spi_bus);
+      return;
+    }
+
+  /* Handle SPIDEV_* types (extract device ID from lower 16 bits) */
+
+  if ((devid & 0xFFFF0000) != 0)
+    {
+      actual_devid = (devid & 0x0000FFFF);
+    }
+  else if (devid >= MAX_CS_DEVICES_PER_SPI)
+    {
+      spierr("ERROR: Device ID %lu >= maximum %d for DC control on SPI%d\n",
+             (unsigned long)devid, MAX_CS_DEVICES_PER_SPI, spi_bus);
+      return;
+    }
+
+  device = &dc_devices[actual_devid];
+  if (!device->in_use)
+    {
+      spierr("ERROR: DC pin not registered for SPI%d device %lu\n",
+             spi_bus, (unsigned long)actual_devid);
+      return;
+    }
+
+  /* Set DC pin: HIGH for command, LOW for data */
+
+  stm32_gpiowrite(device->gpio_config, cmd);
+
+  spiinfo("SPI%d DC%lu: %s (pin %s)\n",
+          spi_bus, (unsigned long)actual_devid,
+          cmd ? "COMMAND" : "DATA",
+          cmd ? "HIGH" : "LOW");
+}
+#endif /* CONFIG_SPI_CMDDATA */
+
+/****************************************************************************
  * Name: stm32_spi1/2/3/4/5/6_select
  *
  * Description:
- *   SPI select functions - called by STM32 SPI driver
+ * SPI select functions for each interface - now uses registration system.
  *
  ****************************************************************************/
 
@@ -861,15 +932,13 @@ uint8_t stm32_spi1status(FAR struct spi_dev_s *dev, uint32_t devid)
 }
 
 #ifdef CONFIG_SPI_CMDDATA
-int stm32_spi1cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+void stm32_spi1cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
 {
-  spiinfo("SPI1 CMDDATA: devid=%lu, %s\n",
-          (unsigned long)devid, cmd ? "COMMAND" : "DATA");
   spi_dc_control(1, devid, cmd);
-  return OK;
 }
 #endif
 #endif
+
 
 #ifdef CONFIG_STM32H7_SPI2
 void stm32_spi2select(FAR struct spi_dev_s *dev, uint32_t devid,
@@ -886,12 +955,9 @@ uint8_t stm32_spi2status(FAR struct spi_dev_s *dev, uint32_t devid)
 }
 
 #ifdef CONFIG_SPI_CMDDATA
-int stm32_spi2cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+void stm32_spi2cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
 {
-  spiinfo("SPI2 CMDDATA: devid=%lu, %s\n",
-          (unsigned long)devid, cmd ? "COMMAND" : "DATA");
   spi_dc_control(2, devid, cmd);
-  return OK;
 }
 #endif
 #endif
@@ -911,12 +977,9 @@ uint8_t stm32_spi3status(FAR struct spi_dev_s *dev, uint32_t devid)
 }
 
 #ifdef CONFIG_SPI_CMDDATA
-int stm32_spi3cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+void stm32_spi3cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
 {
-  spiinfo("SPI3 CMDDATA: devid=%lu, %s\n",
-          (unsigned long)devid, cmd ? "COMMAND" : "DATA");
   spi_dc_control(3, devid, cmd);
-  return OK;
 }
 #endif
 #endif
@@ -936,12 +999,9 @@ uint8_t stm32_spi4status(FAR struct spi_dev_s *dev, uint32_t devid)
 }
 
 #ifdef CONFIG_SPI_CMDDATA
-int stm32_spi4cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+void stm32_spi4cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
 {
-  spiinfo("SPI4 CMDDATA: devid=%lu, %s\n",
-          (unsigned long)devid, cmd ? "COMMAND" : "DATA");
   spi_dc_control(4, devid, cmd);
-  return OK;
 }
 #endif
 #endif
@@ -961,12 +1021,9 @@ uint8_t stm32_spi5status(FAR struct spi_dev_s *dev, uint32_t devid)
 }
 
 #ifdef CONFIG_SPI_CMDDATA
-int stm32_spi5cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+void stm32_spi5cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
 {
-  spiinfo("SPI5 CMDDATA: devid=%lu, %s\n",
-          (unsigned long)devid, cmd ? "COMMAND" : "DATA");
   spi_dc_control(5, devid, cmd);
-  return OK;
 }
 #endif
 #endif
@@ -986,12 +1043,9 @@ uint8_t stm32_spi6status(FAR struct spi_dev_s *dev, uint32_t devid)
 }
 
 #ifdef CONFIG_SPI_CMDDATA
-int stm32_spi6cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
+void stm32_spi6cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
 {
-  spiinfo("SPI6 CMDDATA: devid=%lu, %s\n",
-          (unsigned long)devid, cmd ? "COMMAND" : "DATA");
   spi_dc_control(6, devid, cmd);
-  return OK;
 }
 #endif
 #endif

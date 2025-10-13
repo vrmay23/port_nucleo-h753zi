@@ -460,24 +460,10 @@ int stm32_usbhost_initialize(void);
  *   Called to configure CMD/DATA for the Nucleo-H753ZI board.
  *
  ****************************************************************************/
-#ifdef CONFIG_STM32H7_SPI
-
-int stm32_spi_initialize(void);
-int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
-                                  const char *cs_pin, bool active_low);
-
 #ifdef CONFIG_SPI_CMDDATA
 int stm32_spi_register_dc_pin(int spi_bus, uint32_t devid,
                                const char *dc_pin);
 #endif
-
-int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid);
-
-#ifdef CONFIG_SPI_DRIVER
-int stm32_spidev_register_all(void);
-#endif
-
-#endif /* CONFIG_STM32H7_SPI */
 
 /****************************************************************************
  * Sensors - driver registration
