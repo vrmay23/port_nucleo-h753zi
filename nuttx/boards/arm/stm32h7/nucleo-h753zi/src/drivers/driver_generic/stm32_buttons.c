@@ -16,6 +16,8 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  *
+ * CORREÇÃO APLICADA: GPIO_FLOAT → GPIO_PULLDOWN para evitar flutuação
+ *
  ****************************************************************************/
 
 /****************************************************************************
@@ -48,6 +50,8 @@
 #  error "The NuttX Buttons Driver depends on IRQ support to work!"
 #endif
 
+#define MAX_PIN_CONFIG_LEN 512
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -62,6 +66,81 @@ static int g_button_count = 0;
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: get_exti_line
+ *
+ * Description:
+ *   Extract EXTI line number from GPIO configuration.
+ *
+ * Input Parameters:
+ *   gpio_config - STM32 GPIO configuration
+ *
+ * Returned Value:
+ *   EXTI line number (0-15), or -1 on error
+ *
+ ****************************************************************************/
+
+static int get_exti_line(uint32_t gpio_config)
+{
+  /* Extract pin number from GPIO_PIN mask */
+
+  uint32_t pin_mask = gpio_config & GPIO_PIN_MASK;
+  
+  switch (pin_mask)
+    {
+      case GPIO_PIN0:  return 0;
+      case GPIO_PIN1:  return 1;
+      case GPIO_PIN2:  return 2;
+      case GPIO_PIN3:  return 3;
+      case GPIO_PIN4:  return 4;
+      case GPIO_PIN5:  return 5;
+      case GPIO_PIN6:  return 6;
+      case GPIO_PIN7:  return 7;
+      case GPIO_PIN8:  return 8;
+      case GPIO_PIN9:  return 9;
+      case GPIO_PIN10: return 10;
+      case GPIO_PIN11: return 11;
+      case GPIO_PIN12: return 12;
+      case GPIO_PIN13: return 13;
+      case GPIO_PIN14: return 14;
+      case GPIO_PIN15: return 15;
+      default:
+        return -1;
+    }
+}
+
+/****************************************************************************
+ * Name: get_gpio_port_letter
+ *
+ * Description:
+ *   Get port letter from GPIO configuration.
+ *
+ * Input Parameters:
+ *   gpio_config - STM32 GPIO configuration
+ *
+ * Returned Value:
+ *   Port letter ('A'-'H'), or '?' on error
+ *
+ ****************************************************************************/
+
+static char get_gpio_port_letter(uint32_t gpio_config)
+{
+  uint32_t port = gpio_config & GPIO_PORT_MASK;
+  
+  switch (port)
+    {
+      case GPIO_PORTA: return 'A';
+      case GPIO_PORTB: return 'B';
+      case GPIO_PORTC: return 'C';
+      case GPIO_PORTD: return 'D';
+      case GPIO_PORTE: return 'E';
+      case GPIO_PORTF: return 'F';
+      case GPIO_PORTG: return 'G';
+      case GPIO_PORTH: return 'H';
+      default: return '?';
+    }
+}
+
+/****************************************************************************
  * Name: parse_gpio_pin
  *
  * Description:
@@ -73,6 +152,8 @@ static int g_button_count = 0;
  *
  * Returned Value:
  *   STM32 GPIO configuration value on success, 0 on error
+ *
+ * CORREÇÃO: Agora retorna GPIO_PULLDOWN ao invés de GPIO_FLOAT
  *
  ****************************************************************************/
 
@@ -133,35 +214,20 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
 
   switch (port)
     {
-      case 'A':
-        port_base = GPIO_PORTA;
-        break;
-      case 'B':
-        port_base = GPIO_PORTB;
-        break;
-      case 'C':
-        port_base = GPIO_PORTC;
-        break;
-      case 'D':
-        port_base = GPIO_PORTD;
-        break;
-      case 'E':
-        port_base = GPIO_PORTE;
-        break;
-      case 'F':
-        port_base = GPIO_PORTF;
-        break;
-      case 'G':
-        port_base = GPIO_PORTG;
-        break;
-      case 'H':
-        port_base = GPIO_PORTH;
+      case 'A': port_base = GPIO_PORTA; break;
+      case 'B': port_base = GPIO_PORTB; break;
+      case 'C': port_base = GPIO_PORTC; break;
+      case 'D': port_base = GPIO_PORTD; break;
+      case 'E': port_base = GPIO_PORTE; break;
+      case 'F': port_base = GPIO_PORTF; break;
+      case 'G': port_base = GPIO_PORTG; break;
+      case 'H': port_base = GPIO_PORTH; break;
       default:
         *error = -EINVAL;
         return 0;
     }
 
-  /* Use correct STM32 GPIO pin macros instead of bit shifting */
+  /* Use correct STM32 GPIO pin macros */
 
   switch (pin_num)
     {
@@ -186,7 +252,115 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
         return 0;
     }
 
-  return (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | port_base | gpio_pin);
+  /* ==========================================================================
+   * CORREÇÃO CRÍTICA APLICADA AQUI!
+   * ==========================================================================
+   * 
+   * ANTES (causava flutuação em alguns GPIOs):
+   *   return (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | port_base | gpio_pin);
+   * 
+   * DEPOIS (estável com pull-down interno + externo):
+   *   return (GPIO_INPUT | GPIO_PULLDOWN | GPIO_EXTI | port_base | gpio_pin);
+   * 
+   * EXPLICAÇÃO:
+   * - GPIO_FLOAT deixa o pino em alta impedância
+   * - Em alta impedância + leakage current variável, alguns pinos ficam instáveis
+   * - GPIO_PULLDOWN força o pino para LOW quando o botão não está pressionado
+   * - Com pull-down interno + externo, a leitura fica muito mais robusta
+   * ========================================================================== */
+
+  return (GPIO_INPUT | GPIO_PULLDOWN | GPIO_EXTI | port_base | gpio_pin);
+}
+
+/****************************************************************************
+ * Name: print_exti_conflict_error
+ *
+ * Description:
+ *   Print detailed EXTI conflict error message.
+ *
+ * Input Parameters:
+ *   conflicting_button - Index of button that conflicts
+ *   current_button     - Index of button being added
+ *   pin_str            - Pin string being added
+ *   gpio_config        - GPIO config of new pin
+ *   exti_line          - EXTI line that conflicts
+ *
+ ****************************************************************************/
+
+static void print_exti_conflict_error(int conflicting_button,
+                                       int current_button,
+                                       FAR const char *pin_str,
+                                       uint32_t gpio_config,
+                                       int exti_line)
+{
+  char port1 = get_gpio_port_letter(g_buttons[conflicting_button]);
+  char port2 = get_gpio_port_letter(gpio_config);
+  int pin1 = get_exti_line(g_buttons[conflicting_button]);
+  int pin2 = get_exti_line(gpio_config);
+  
+  syslog(LOG_ERR, "\n");
+  syslog(LOG_ERR, "========================================================\n");
+  syslog(LOG_ERR, "  CRITICAL ERROR: EXTI LINE CONFLICT DETECTED!\n");
+  syslog(LOG_ERR, "========================================================\n");
+  syslog(LOG_ERR, "\n");
+  syslog(LOG_ERR, "Button %d (P%c%d) and Button %d (%s = P%c%d) both use EXTI%d\n",
+         conflicting_button, port1, pin1,
+         current_button, pin_str, port2, pin2,
+         exti_line);
+  syslog(LOG_ERR, "\n");
+  syslog(LOG_ERR, "EXPLANATION:\n");
+  syslog(LOG_ERR, "  STM32 EXTI lines are shared across GPIO ports.\n");
+  syslog(LOG_ERR, "  Only ONE pin per number can be used as interrupt source.\n");
+  syslog(LOG_ERR, "  Example: PA3, PB3, PC3, PD3... all share EXTI3.\n");
+  syslog(LOG_ERR, "\n");
+  syslog(LOG_ERR, "WHAT WILL HAPPEN IF YOU IGNORE THIS:\n");
+  syslog(LOG_ERR, "  - The LAST pin (P%c%d) will work\n", port2, pin2);
+  syslog(LOG_ERR, "  - The FIRST pin (P%c%d) will NOT trigger interrupts\n", 
+         port1, pin1);
+  syslog(LOG_ERR, "  - You will see 'ghost' button presses\n");
+  syslog(LOG_ERR, "\n");
+  syslog(LOG_ERR, "SOLUTION:\n");
+  syslog(LOG_ERR, "  Change one of the conflicting pins to a different number.\n");
+  syslog(LOG_ERR, "\n");
+  syslog(LOG_ERR, "  Example fixes:\n");
+  
+  /* Suggest alternative pins */
+  for (int alt = 0; alt < 16; alt++)
+    {
+      if (alt == exti_line) continue;
+      
+      /* Check if this EXTI is already used */
+      bool used = false;
+      for (int i = 0; i < current_button; i++)
+        {
+          if (get_exti_line(g_buttons[i]) == alt)
+            {
+              used = true;
+              break;
+            }
+        }
+      
+      if (!used)
+        {
+          syslog(LOG_ERR, "  - Change P%c%d to P%c%d (EXTI%d is free)\n",
+                 port2, pin2, port2, alt, alt);
+          break;
+        }
+    }
+  
+  syslog(LOG_ERR, "\n");
+  syslog(LOG_ERR, "Current button configuration:\n");
+  for (int j = 0; j < current_button; j++)
+    {
+      int line = get_exti_line(g_buttons[j]);
+      char prt = get_gpio_port_letter(g_buttons[j]);
+      syslog(LOG_ERR, "  Button %d: P%c%d (EXTI%d)%s\n",
+             j, prt, line, line,
+             (j == conflicting_button) ? " <- CONFLICT" : "");
+    }
+  syslog(LOG_ERR, "  Button %d: %s (P%c%d, EXTI%d) <- CONFLICT\n",
+         current_button, pin_str, port2, pin2, exti_line);
+  syslog(LOG_ERR, "\n");
 }
 
 /****************************************************************************
@@ -203,39 +377,57 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
 static int init_button_configs(void)
 {
   int expected_pins;
-  int provided_pins = 0;
   FAR const char *pins_config;
-  char pins_str[512];
-  char count_str[512];
+  char pins_str[MAX_PIN_CONFIG_LEN];
   FAR char *pin;
-  int pin_index;
   int error;
   uint32_t gpio_config;
   int i;
-
+  int exti_line;
+  
+  /* EXTI conflict detection */
+  int exti_usage[16];
+  
   g_button_count = 0;
 
-  syslog(LOG_INFO, "nucleo-h753zi: Initializing button configuration\n");
+  syslog(LOG_INFO, "Button driver: Initializing configuration\n");
+
+  /* Initialize EXTI tracking */
+  for (i = 0; i < 16; i++)
+    {
+      exti_usage[i] = -1;  /* -1 = unused */
+    }
 
   /* Calculate how many external pins we expect */
 
 #ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
-  g_buttons[g_button_count++] = GPIO_BTN_BUILT_IN;
+  g_buttons[g_button_count] = GPIO_BTN_BUILT_IN;
+  
+  /* Register built-in button EXTI */
+  exti_line = get_exti_line(GPIO_BTN_BUILT_IN);
+  if (exti_line >= 0)
+    {
+      exti_usage[exti_line] = g_button_count;
+      syslog(LOG_INFO, "Button %d: PC13 (built-in, EXTI%d)\n", 
+             g_button_count, exti_line);
+    }
+  
+  g_button_count++;
   expected_pins = CONFIG_NUCLEO_H753ZI_BUTTON_COUNT - 1;
-  syslog(LOG_INFO, "nucleo-h753zi: Built-in enabled, expecting %d "
-         "external pins\n", expected_pins);
+  syslog(LOG_INFO, "Built-in enabled, expecting %d external pins\n", 
+         expected_pins);
 #else
   expected_pins = CONFIG_NUCLEO_H753ZI_BUTTON_COUNT;
-  syslog(LOG_INFO, "nucleo-h753zi: Built-in disabled, expecting %d "
-         "total pins\n", expected_pins);
+  syslog(LOG_INFO, "Built-in disabled, expecting %d total pins\n", 
+         expected_pins);
 #endif
 
   /* If no external pins needed, we're done */
 
   if (expected_pins == 0)
     {
-      syslog(LOG_INFO, "nucleo-h753zi: Button configuration complete: "
-             "%d buttons\n", g_button_count);
+      syslog(LOG_INFO, "Button configuration complete: %d buttons\n", 
+             g_button_count);
       return OK;
     }
 
@@ -244,14 +436,19 @@ static int init_button_configs(void)
   pins_config = CONFIG_NUCLEO_H753ZI_BUTTON_PINS;
   if (pins_config == NULL || strlen(pins_config) == 0)
     {
-      syslog(LOG_ERR, "nucleo-h753zi: ERROR: Button configuration "
-             "invalid!\n");
-      syslog(LOG_ERR, "nucleo-h753zi: Expected %d GPIO pins but "
-             "NUCLEO_H753ZI_BUTTON_PINS is empty.\n", expected_pins);
-      syslog(LOG_ERR, "nucleo-h753zi: Please configure GPIO pins in "
-             "menuconfig:\n");
-      syslog(LOG_ERR, "nucleo-h753zi: Board Selection -> Button "
-             "Configuration -> Button GPIO pin list\n");
+      syslog(LOG_ERR, "ERROR: Button pins not configured!\n");
+      syslog(LOG_ERR, "Expected %d GPIO pins but BUTTON_PINS is empty\n", 
+             expected_pins);
+      syslog(LOG_ERR, "Configure in: Board Selection -> Button Configuration\n");
+      return -EINVAL;
+    }
+
+  /* Validate configuration length */
+  size_t config_len = strlen(pins_config);
+  if (config_len >= MAX_PIN_CONFIG_LEN)
+    {
+      syslog(LOG_ERR, "ERROR: Pin configuration too long (%zu bytes, max %d)\n",
+             config_len, MAX_PIN_CONFIG_LEN - 1);
       return -EINVAL;
     }
 
@@ -260,123 +457,72 @@ static int init_button_configs(void)
   strncpy(pins_str, pins_config, sizeof(pins_str) - 1);
   pins_str[sizeof(pins_str) - 1] = '\0';
 
-  /* First pass: count provided pins */
-
-  strcpy(count_str, pins_str);
-  pin = strtok(count_str, ", \t\n\r");
-  while (pin != NULL)
-    {
-      provided_pins++;
-      pin = strtok(NULL, ", \t\n\r");
-    }
-
-  /* Validate pin count */
-
-  if (provided_pins != expected_pins)
-    {
-      syslog(LOG_ERR, "nucleo-h753zi: ERROR: Button pin count mismatch!\n");
-      syslog(LOG_ERR, "nucleo-h753zi: Configuration: "
-             "NUCLEO_H753ZI_BUTTON_COUNT = %d\n",
-             CONFIG_NUCLEO_H753ZI_BUTTON_COUNT);
-#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
-      syslog(LOG_ERR, "nucleo-h753zi: Built-in button: ENABLED (uses "
-             "PC13)\n");
-      syslog(LOG_ERR, "nucleo-h753zi: External pins needed: %d\n",
-             expected_pins);
-#else
-      syslog(LOG_ERR, "nucleo-h753zi: Built-in button: DISABLED\n");
-      syslog(LOG_ERR, "nucleo-h753zi: Total pins needed: %d\n",
-             expected_pins);
-#endif
-      syslog(LOG_ERR, "nucleo-h753zi: Pins provided: %d\n", provided_pins);
-      syslog(LOG_ERR, "nucleo-h753zi: Pin list: \"%s\"\n", pins_config);
-      syslog(LOG_ERR, "nucleo-h753zi: SOLUTION:\n");
-      if (provided_pins < expected_pins)
-        {
-          syslog(LOG_ERR, "nucleo-h753zi: Add %d more GPIO pins to the "
-                 "pin list, OR\n", expected_pins - provided_pins);
-          syslog(LOG_ERR, "nucleo-h753zi: Reduce "
-                 "NUCLEO_H753ZI_BUTTON_COUNT to %d\n",
-                 provided_pins +
-                 (CONFIG_NUCLEO_H753ZI_BUTTON_COUNT - expected_pins));
-        }
-      else
-        {
-          syslog(LOG_ERR, "nucleo-h753zi: Remove %d GPIO pins from the "
-                 "pin list, OR\n", provided_pins - expected_pins);
-          syslog(LOG_ERR, "nucleo-h753zi: Increase "
-                 "NUCLEO_H753ZI_BUTTON_COUNT to %d\n",
-                 provided_pins +
-                 (CONFIG_NUCLEO_H753ZI_BUTTON_COUNT - expected_pins));
-        }
-
-      return -EINVAL;
-    }
-
-  /* Second pass: parse and validate each pin */
+  /* Parse and validate each pin */
 
   pin = strtok(pins_str, ", \t\n\r");
-  pin_index = 0;
   while (pin != NULL && g_button_count < CONFIG_NUCLEO_H753ZI_BUTTON_COUNT)
     {
+      /* Parse GPIO pin */
       gpio_config = parse_gpio_pin(pin, &error);
       if (error != 0)
         {
-          syslog(LOG_ERR, "nucleo-h753zi: ERROR: Invalid GPIO pin at "
-                 "position %d\n", pin_index + 1);
-          syslog(LOG_ERR, "nucleo-h753zi: Pin string: \"%s\"\n", pin);
-          syslog(LOG_ERR, "nucleo-h753zi: Full config: \"%s\"\n",
-                 pins_config);
-          syslog(LOG_ERR, "nucleo-h753zi: SOLUTION:\n");
-          syslog(LOG_ERR, "nucleo-h753zi: Use format: PORT+PIN "
-                 "(e.g., \"PA0\", \"PB12\", \"PC13\")\n");
-          syslog(LOG_ERR, "nucleo-h753zi: Valid ports: PA, PB, PC, PD, "
-                 "PE, PF, PG, PH\n");
-          syslog(LOG_ERR, "nucleo-h753zi: Valid pins: 0-15\n");
-          syslog(LOG_ERR, "nucleo-h753zi: Examples: PA0, PF15, PG14, "
-                 "PE0\n");
+          syslog(LOG_ERR, "ERROR: Invalid GPIO pin: \"%s\"\n", pin);
+          syslog(LOG_ERR, "Use format: PORT+PIN (e.g., \"PA0\", \"PF15\")\n");
+          syslog(LOG_ERR, "Valid ports: PA-PH, Valid pins: 0-15\n");
           return -EINVAL;
         }
 
       /* Check for duplicate pins */
-
       for (i = 0; i < g_button_count; i++)
         {
           if (g_buttons[i] == gpio_config)
             {
-              syslog(LOG_ERR, "nucleo-h753zi: ERROR: Duplicate GPIO pin "
-                     "detected!\n");
-              syslog(LOG_ERR, "nucleo-h753zi: Pin \"%s\" is used "
-                     "multiple times\n", pin);
-              syslog(LOG_ERR, "nucleo-h753zi: Position: %d\n",
-                     pin_index + 1);
-              syslog(LOG_ERR, "nucleo-h753zi: Full config: \"%s\"\n",
-                     pins_config);
-              syslog(LOG_ERR, "nucleo-h753zi: SOLUTION: Remove duplicate "
-                     "pins from the configuration\n");
+              syslog(LOG_ERR, "ERROR: Duplicate GPIO pin: \"%s\"\n", pin);
+              syslog(LOG_ERR, "This pin is already used by Button %d\n", i);
               return -EINVAL;
             }
         }
 
-      g_buttons[g_button_count++] = gpio_config;
-      syslog(LOG_INFO, "nucleo-h753zi: Button %d: %s configured "
-             "successfully\n", g_button_count - 1, pin);
+      /* Check for EXTI line conflicts */
+      exti_line = get_exti_line(gpio_config);
+      if (exti_line < 0)
+        {
+          syslog(LOG_ERR, "ERROR: Failed to determine EXTI line for \"%s\"\n", 
+                 pin);
+          return -EINVAL;
+        }
 
-      pin_index++;
+      if (exti_usage[exti_line] >= 0)
+        {
+          /* EXTI conflict detected! */
+          print_exti_conflict_error(exti_usage[exti_line], g_button_count,
+                                     pin, gpio_config, exti_line);
+          return -EINVAL;
+        }
+
+      /* Register this EXTI line as used */
+      exti_usage[exti_line] = g_button_count;
+
+      /* Add button */
+      g_buttons[g_button_count] = gpio_config;
+      syslog(LOG_INFO, "Button %d: %s (EXTI%d) configured successfully\n",
+             g_button_count, pin, exti_line);
+      g_button_count++;
+
       pin = strtok(NULL, ", \t\n\r");
     }
 
-  syslog(LOG_INFO, "nucleo-h753zi: Button configuration completed "
-         "successfully:\n");
-  syslog(LOG_INFO, "nucleo-h753zi: Total buttons: %d\n", g_button_count);
-#ifdef CONFIG_NUCLEO_H753ZI_BUTTON_BUILTIN
-  syslog(LOG_INFO, "nucleo-h753zi: Built-in (PC13): Button 0\n");
-  syslog(LOG_INFO, "nucleo-h753zi: External buttons: %d\n",
-         g_button_count - 1);
-#else
-  syslog(LOG_INFO, "nucleo-h753zi: All external buttons: %d\n",
-         g_button_count);
-#endif
+  /* Validate final count */
+  if (g_button_count != CONFIG_NUCLEO_H753ZI_BUTTON_COUNT)
+    {
+      syslog(LOG_ERR, "ERROR: Button count mismatch!\n");
+      syslog(LOG_ERR, "Expected: %d, Got: %d\n",
+             CONFIG_NUCLEO_H753ZI_BUTTON_COUNT, g_button_count);
+      return -EINVAL;
+    }
+
+  syslog(LOG_INFO, "Button configuration completed successfully\n");
+  syslog(LOG_INFO, "Total buttons: %d\n", g_button_count);
 
   return OK;
 }
@@ -404,14 +550,13 @@ uint32_t board_button_initialize(void)
   ret = init_button_configs();
   if (ret < 0)
     {
-      syslog(LOG_ERR, "nucleo-h753zi: === BUTTON CONFIGURATION FAILED "
-             "===\n");
-      syslog(LOG_ERR, "nucleo-h753zi: The system cannot start with "
-             "invalid button configuration.\n");
-      syslog(LOG_ERR, "nucleo-h753zi: Please fix the configuration "
-             "errors above and rebuild.\n");
-      syslog(LOG_ERR, "nucleo-h753zi: ============================="
-             "==========\n");
+      syslog(LOG_ERR, "\n");
+      syslog(LOG_ERR, "========================================================\n");
+      syslog(LOG_ERR, "  BUTTON CONFIGURATION FAILED\n");
+      syslog(LOG_ERR, "========================================================\n");
+      syslog(LOG_ERR, "\n");
+      syslog(LOG_ERR, "Please fix the errors above and rebuild.\n");
+      syslog(LOG_ERR, "\n");
       return 0;  /* Return 0 to indicate failure */
     }
 
@@ -422,14 +567,14 @@ uint32_t board_button_initialize(void)
       ret = stm32_configgpio(g_buttons[i]);
       if (ret < 0)
         {
-          syslog(LOG_ERR, "nucleo-h753zi: ERROR: Failed to configure "
-                 "GPIO for button %d (ret=%d)\n", i, ret);
+          syslog(LOG_ERR, "ERROR: Failed to configure GPIO for button %d "
+                 "(ret=%d)\n", i, ret);
           return 0;
         }
     }
 
-  syslog(LOG_INFO, "nucleo-h753zi: Button driver initialized with "
-         "%d buttons\n", g_button_count);
+  syslog(LOG_INFO, "Button driver initialized: %d buttons ready\n", 
+         g_button_count);
 
   return g_button_count;
 }
@@ -451,20 +596,20 @@ uint32_t board_button_initialize(void)
 uint32_t board_buttons(void)
 {
   uint32_t ret = 0;
-  bool released;
+  bool pressed;
   int i;
 
   /* Check the state of each button */
 
   for (i = 0; i < g_button_count; i++)
     {
-      /* A LOW value means button is pressed (pull-down config) */
+      /* With pull-down: HIGH = pressed, LOW = released */
 
-      released = stm32_gpioread(g_buttons[i]);
+      pressed = stm32_gpioread(g_buttons[i]);
 
-      /* Accumulate the set of depressed (released) keys */
+      /* Set bit if button is pressed */
 
-      if (released)
+      if (pressed)
         {
           ret |= (1 << i);
         }
@@ -500,25 +645,26 @@ int board_button_irq(int id, xcpt_t irqhandler, FAR void *arg)
 
   /* Validate button ID */
 
-  if (id >= 0 && id < g_button_count)
+  if (id < 0 || id >= g_button_count)
     {
-      ret = stm32_gpiosetevent(g_buttons[id], true, true, true,
-                               irqhandler, arg);
-      if (ret >= 0)
-        {
-          syslog(LOG_INFO, "nucleo-h753zi: IRQ handler registered for "
-                 "button %d\n", id);
-        }
-      else
-        {
-          syslog(LOG_ERR, "nucleo-h753zi: Failed to register IRQ for "
-                 "button %d (ret=%d)\n", id, ret);
-        }
+      syslog(LOG_ERR, "Invalid button ID %d (valid: 0-%d)\n", 
+             id, g_button_count - 1);
+      return ret;
+    }
+
+  /* Register interrupt for both rising and falling edges */
+
+  ret = stm32_gpiosetevent(g_buttons[id], true, true, true,
+                           irqhandler, arg);
+  
+  if (ret >= 0)
+    {
+      syslog(LOG_INFO, "IRQ handler registered for button %d\n", id);
     }
   else
     {
-      syslog(LOG_ERR, "nucleo-h753zi: Invalid button ID %d "
-             "(valid range: 0-%d)\n", id, g_button_count - 1);
+      syslog(LOG_ERR, "Failed to register IRQ for button %d (ret=%d)\n",
+             id, ret);
     }
 
   return ret;

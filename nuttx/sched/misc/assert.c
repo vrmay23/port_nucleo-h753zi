@@ -296,7 +296,7 @@ static void dump_stacks(FAR struct tcb_s *rtcb, uintptr_t sp)
                      intstack_base,
                      intstack_size,
 #ifdef CONFIG_STACK_COLORATION
-                     up_check_intstack(cpu)
+                     up_check_intstack(cpu, 0)
 #else
                      0
 #endif
@@ -335,7 +335,7 @@ static void dump_stacks(FAR struct tcb_s *rtcb, uintptr_t sp)
                      tcbstack_base,
                      tcbstack_size,
 #ifdef CONFIG_STACK_COLORATION
-                     up_check_tcbstack(rtcb)
+                     up_check_tcbstack(rtcb, rtcb->adj_stack_size)
 #else
                      0
 #endif
@@ -376,7 +376,7 @@ static void dump_task(FAR struct tcb_s *tcb, FAR void *arg)
 #endif
 
 #ifdef CONFIG_STACK_COLORATION
-  stack_used = up_check_tcbstack(tcb);
+  stack_used = up_check_tcbstack(tcb, tcb->adj_stack_size);
   if (tcb->adj_stack_size > 0 && stack_used > 0)
     {
       /* Use fixed-point math with one decimal place */
@@ -431,7 +431,7 @@ static void dump_task(FAR struct tcb_s *tcb, FAR void *arg)
          , tcb->stack_base_ptr
          , tcb->adj_stack_size
 #ifdef CONFIG_STACK_COLORATION
-         , up_check_tcbstack(tcb)
+         , up_check_tcbstack(tcb, tcb->adj_stack_size)
          , stack_filled / 10, stack_filled % 10
          , (stack_filled >= 10 * 80 ? '!' : ' ')
 #endif
@@ -500,7 +500,7 @@ static void dump_tasks(void)
   for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++)
     {
 #  ifdef CONFIG_STACK_COLORATION
-      size_t stack_used = up_check_intstack(cpu);
+      size_t stack_used = up_check_intstack(cpu, 0);
       size_t stack_filled = 0;
 
       if (stack_used > 0)

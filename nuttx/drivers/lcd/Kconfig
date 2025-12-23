@@ -834,6 +834,7 @@ config LCD_ST7796
 	select LCD_FRAMEBUFFER
 	---help---
 		Enable support for ST7796 LCD display driver.
+
 config LCD_GC9A01
 	bool "Galaxycore GC9A01 TFT Controller"
 	default n

@@ -28,7 +28,7 @@ HEAD_CSRC  = esp32s3_start.c
 
 # Required ESP32-S3 files (arch/xtensa/src/esp32s3)
 
-CHIP_CSRCS  = esp32s3_irq.c esp32s3_clockconfig.c esp32s3_region.c
+CHIP_CSRCS  = esp32s3_cache.c esp32s3_irq.c esp32s3_clockconfig.c esp32s3_region.c
 CHIP_CSRCS += esp32s3_systemreset.c esp32s3_user.c esp32s3_allocateheap.c esp32s3_reset_reasons.c
 CHIP_CSRCS += esp32s3_wdt.c esp32s3_gpio.c esp32s3_lowputc.c esp32s3_serial.c
 CHIP_CSRCS += esp32s3_rtc_gpio.c esp32s3_libc_stubs.c esp32s3_spi_timing.c
@@ -45,12 +45,6 @@ endif
 
 ifeq ($(CONFIG_SMP),y)
 CHIP_CSRCS += esp32s3_cpuidlestack.c esp32s3_cpustart.c esp32s3_intercpu_interrupt.c
-endif
-
-ifeq ($(CONFIG_ESP32S3_EFUSE),y)
-CHIP_CSRCS += esp32s3_efuse.c
-CHIP_CSRCS += esp32s3_efuse_table.c
-CHIP_CSRCS += esp32s3_efuse_lowerhalf.c
 endif
 
 ifeq ($(CONFIG_ESP32S3_RNG),y)
@@ -213,7 +207,7 @@ endif
 
 ESP_HAL_3RDPARTY_REPO = esp-hal-3rdparty
 ifndef ESP_HAL_3RDPARTY_VERSION
-	ESP_HAL_3RDPARTY_VERSION = e9a78c811578545e2bc673862d885a15bd6cbf67
+	ESP_HAL_3RDPARTY_VERSION = 6782de1b073f93a54c501edf23d99a42a23d41ac
 endif
 
 ifndef ESP_HAL_3RDPARTY_URL
@@ -277,3 +271,4 @@ endif
 
 distclean::
 	$(call DELDIR,chip/$(ESP_HAL_3RDPARTY_REPO))
+	$(call DELFILE,../../../vefuse.bin)

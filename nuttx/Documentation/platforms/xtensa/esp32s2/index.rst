@@ -714,6 +714,116 @@ Finally, the image is loaded but not confirmed.
 To make sure it won't rollback to the previous image, you must confirm with ``mcuboot_confirm`` and reboot the board.
 The OTA is now complete.
 
+Flash Allocation for MCUBoot
+----------------------------
+
+When MCUBoot is enabled on ESP32-S2, the flash memory is organized as follows
+based on the default KConfig values:
+
+**Flash Layout (MCUBoot Enabled)**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 20 20
+   :align: left
+
+   * - Region
+     - Offset
+     - Size
+   * - Bootloader
+     - 0x001000
+     - 64KB
+   * - E-Fuse Virtual (see Note)
+     - 0x010000
+     - 64KB
+   * - Primary Application Slot (/dev/ota0)
+     - 0x020000
+     - 1MB
+   * - Secondary Application Slot (/dev/ota1)
+     - 0x120000
+     - 1MB
+   * - Scratch Partition (/dev/otascratch)
+     - 0x220000
+     - 256KB
+   * - Storage MTD (optional)
+     - 0x260000
+     - 1MB
+   * - Available Flash
+     - 0x360000+
+     - Remaining
+
+.. raw:: html
+
+   <div style="clear: both"></div>
+
+
+**Note**: The E-Fuse Virtual region is optional and only used when
+``ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH`` is enabled. However, this 64KB
+location is always allocated in the memory layout to prevent accidental
+erasure during board flashing operations, ensuring data preservation if
+virtual E-Fuses are later enabled.
+
+.. code-block:: text
+
+    Memory Map (Addresses in hex):
+
+    0x001000  ┌─────────────────────────────┐
+              │                             │
+              │      MCUBoot Bootloader     │
+              │           (64KB)            │
+              │                             │
+    0x010000  ├─────────────────────────────┤
+              │       E-Fuse Virtual        │
+              │           (64KB)            │
+    0x020000  ├─────────────────────────────┤
+              │                             │
+              │      Primary App Slot       │
+              │            (1MB)            │
+              │          /dev/ota0          │
+              │                             │
+    0x120000  ├─────────────────────────────┤
+              │                             │
+              │     Secondary App Slot      │
+              │            (1MB)            │
+              │          /dev/ota1          │
+              │                             │
+    0x220000  ├─────────────────────────────┤
+              │                             │
+              │      Scratch Partition      │
+              │           (256KB)           │
+              │       /dev/otascratch       │
+              │                             │
+    0x260000  ├─────────────────────────────┤
+              │                             │
+              │   Storage MTD (optional)    │
+              │            (1MB)            │
+              │                             │
+    0x360000  ├─────────────────────────────┤
+              │                             │
+              │       Available Flash       │
+              │         (Remaining)         │
+              │                             │
+              └─────────────────────────────┘
+
+The key KConfig options that control this layout:
+
+- ``ESPRESSIF_OTA_PRIMARY_SLOT_OFFSET`` (default: 0x20000)
+- ``ESPRESSIF_OTA_SECONDARY_SLOT_OFFSET`` (default: 0x120000)
+- ``ESPRESSIF_OTA_SLOT_SIZE`` (default: 0x100000)
+- ``ESPRESSIF_OTA_SCRATCH_OFFSET`` (default: 0x220000)
+- ``ESPRESSIF_OTA_SCRATCH_SIZE`` (default: 0x40000)
+- ``ESPRESSIF_STORAGE_MTD_OFFSET`` (default: 0x260000 when MCUBoot enabled)
+- ``ESPRESSIF_STORAGE_MTD_SIZE`` (default: 0x100000)
+- ``ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH_OFFSET`` (default 0x10000 when MCUBoot enabled)
+
+For MCUBoot operation:
+
+- The **Primary Slot** contains the currently running application
+- The **Secondary Slot** receives OTA updates
+- The **Scratch Partition** is used by MCUBoot for image swapping during updates
+- MCUBoot manages image validation, confirmation, and rollback functionality
+
+
 Secure Boot and Flash Encryption
 --------------------------------
 
@@ -820,6 +930,323 @@ to ``Application image secondary slot``.
    :menuselection:`System Type --> Application Image Configuration --> UART ROM download mode`
    and change usage mode to ``Release`` in `System Type --> Application Image Configuration --> Enable usage mode`.
    **After disabling UART Download Mode you will not be able to flash other images through UART.**
+
+.. _esp32s2_ulp:
+
+ULP RISC-V Coprocessor
+======================
+
+The ULP RISC-V core is a 32-bit coprocessor integrated into the ESP32-S2 SoC.
+It is designed to run independently of the main high-performance (HP) core and is capable of executing lightweight tasks
+such as GPIO polling, simple peripheral control and I/O interactions.
+
+This coprocessor benefits to offload simple tasks from HP core (e.g., GPIO polling , I2C operations, basic control logic) and
+frees the main CPU for higher-level processing
+
+For more information about ULP RISC-V Coprocessor `check here <https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/system/ulp-risc-v.html>`__.
+
+Features of the ULP RISC-V Coprocessor
+--------------------------------------
+
+* Processor Architecture
+   - RV32IMC RISC-V core — Integer (I), Multiplication/Division (M), and Compressed (C) instructions
+   - Runs at 17.5 MHz
+* Memory
+   - Access to 8 KB of RTC slow memory (RTC_SLOW_MEM) memory region, and registers in RTC_CNTL, RTC_IO, and SARADC peripherals
+* Debugging
+   - Logging via bit-banged UART
+   - Shared memory for state inspection
+   - Panic or exception handlers can trigger wake-up or signal to main CPU if main CPU is in sleep
+* Peripheral support
+   - RTC domain peripherals (RTC GPIO, RTC I2C, ADC)
+
+Loading Binary into ULP RISC-V Coprocessor
+------------------------------------------
+
+There are two ways to load a binary into LP-Core:
+  - Using a prebuilt binary
+  - Using NuttX internal build system to build your own (bare-metal) application
+
+When using a prebuilt binary, the already compiled output for the ULP system whether built from NuttX
+or the ESP-IDF environment can be leveraged. However, whenever the ULP code needs to be modified, it must be rebuilt separately,
+and the resulting .bin file has to be integrated into NuttX. This workflow, while compatible, can become tedious.
+
+With NuttX internal build system, the ULP binary code can be built and flashed from a single location. It is more convenient but
+using build system has some dependencies on example side.
+
+Both methods requires ``CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM`` variable to enable ULP RISC-V core.
+These variables can be set using ``make menuconfig`` or ``kconfig-tweak`` commands.
+
+Additionally, a Makefile needs to be provided to specify the ULP application name,
+source path of the ULP application, and either the binary (for prebuilt) or the source files (for internal build).
+This Makefile must include the ULP makefile after the variable set process on ``arch/xtensa/src/common/espressif/esp_ulp.mk`` integration script.
+For more information please refer to :ref:`ulp example Makefile. <ulp_makefile>`
+
+Makefile Variables for ULP RISC-V Core Build:
+---------------------------------------------
+
+- ``ULP_APP_NAME``: Sets name for the ULP RISC-V application. This variable also be used as prefix (e.g. ULP RISC-V application bin variable name)
+- ``ULP_APP_FOLDER``: Specifies the directory containing the ULP RISC-V application's source codes.
+- ``ULP_APP_BIN``: Defines the path of the prebuilt ULP RISC-V binary.
+- ``ULP_APP_C_SRCS``: Lists all C source files (.c) that need to be compiled for the ULP RISC-V application.
+- ``ULP_APP_ASM_SRCS``: Lists all assembly source files (.S or .s) to be assembled.
+- ``ULP_APP_INCLUDES``: Specifies additional include directories for the compiler and assembler.
+
+Here is an Makefile example when using prebuilt binary for ULP RISC-V core:
+
+.. code-block:: console
+
+   ULP_APP_NAME = esp_ulp
+   ULP_APP_FOLDER = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src$(DELIM)$(CHIP_SERIES)
+   ULP_APP_BIN = $(TOPDIR)$(DELIM)Documentation$(DELIM)platforms$(DELIM)$(CONFIG_ARCH)$(DELIM)$(CONFIG_ARCH_CHIP)$(DELIM)boards$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)ulp_riscv_blink.bin
+
+   include $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src$(DELIM)common$(DELIM)espressif$(DELIM)esp_ulp.mk
+
+Here is an example for enabling ULP and using the prebuilt test binary for ULP RISC-V core::
+
+    make distclean
+    ./tools/configure.sh esp32s2-saola-1:nsh
+    kconfig-tweak --set-val CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM 8176
+    kconfig-tweak -e CONFIG_ESPRESSIF_ULP_USE_TEST_BIN
+    make olddefconfig
+    make -j
+
+Creating an ULP RISC-V Coprocessor Application
+----------------------------------------------
+
+To use NuttX's internal build system to compile the bare-metal ULP RISC-V Coprocessor binary, check the following instructions.
+
+First, create a folder for the ULP source and header files into your NuttX example.
+This folder is just for ULP project and it is an independent project. Therefore, the NuttX example guide should not be followed
+for ULP example (folder location is irrelevant. It can be the same of the `nuttx-apps` repository, for instance).
+To include the ULP folder in the build system, don't forget to include the ULP Makefile in the NuttX example Makefile. Lastly, configuration variables
+needed to enable ULP core instructions can be found above.
+
+NuttX's internal functions or POSIX calls are not supported.
+
+Here is an example:
+
+- ULP UART Snippet:
+
+.. code-block:: C
+
+  #include "ulp_riscv.h"
+  #include "ulp_riscv_utils.h"
+  #include "ulp_riscv_print.h"
+  #include "ulp_riscv_uart_ulp_core.h"
+  #include "sdkconfig.h"
+
+  static ulp_riscv_uart_t s_print_uart;
+
+  int main (void)
+  {
+    ulp_riscv_uart_cfg_t cfg = {
+        .tx_pin = 0,
+    };
+    ulp_riscv_uart_init(&s_print_uart, &cfg);
+    ulp_riscv_print_install((putc_fn_t)ulp_riscv_uart_putc, &s_print_uart);
+
+    while(1)
+    {
+      ulp_riscv_print_str("Hello from the LP core!!\r\n");
+      ulp_riscv_delay_cycles(1000 * ULP_RISCV_CYCLES_PER_MS);
+    }
+
+    return 0;
+  }
+
+For more information about ULP RISC-V Coprocessor examples `check here <https://github.com/espressif/esp-idf/tree/master/examples/system/ulp/lp_core>`__.
+After these settings follow the same steps as for any other configuration to build NuttX. Build system checks ULP project path,
+adds every source and header file into project and builds it.
+
+To sum up, here is an example. ``ulp_example/ulp (../ulp_example/ulp)`` folder selected as example
+to create a subfolder for ULP but folder that includes ULP source code can be anywhere. For more information about
+custom apps, please follow NuttX `Custom Apps How-to <https://nuttx.apache.org/docs/latest/guides/customapps.html#custom-apps-how-to>`__ guide,
+this example will demonstrate how to add ULP code into a custom application:
+
+- Tree view:
+
+.. code-block:: text
+
+   nuttxspace/
+   ├── nuttx/
+   └── apps/
+   └── ulp_example/
+       └── Makefile
+       └── Kconfig
+       └── ulp_example.c
+       └── ulp/
+           └── Makefile
+           └── ulp_main.c
+
+- Contents in Makefile:
+
+.. code-block:: console
+
+   include $(APPDIR)/Make.defs
+
+   PROGNAME  = $(CONFIG_EXAMPLES_ULP_EXAMPLE_PROGNAME)
+   PRIORITY  = $(CONFIG_EXAMPLES_ULP_EXAMPLE_PRIORITY)
+   STACKSIZE = $(CONFIG_EXAMPLES_ULP_EXAMPLE_STACKSIZE)
+   MODULE    = $(CONFIG_EXAMPLES_ULP_EXAMPLE)
+
+   MAINSRC = ulp_example.c
+
+   include $(APPDIR)/Application.mk
+
+   include ulp/Makefile
+
+- Contents in Kconfig:
+
+.. code-block:: console
+
+   config EXAMPLES_ULP_EXAMPLE
+     bool "ULP Example"
+     default n
+
+- Contents in ulp_example.c:
+
+.. code-block:: C
+
+   #include <nuttx/config.h>
+   #include <stdio.h>
+   #include <fcntl.h>
+   #include <unistd.h>
+   #include <sys/ioctl.h>
+   #include <inttypes.h>
+   #include <stdint.h>
+   #include <stdbool.h>
+
+   #include "ulp/ulp/ulp_main.h"
+   /* Files that holds ULP binary header */
+
+   #include "ulp/ulp/ulp_code.h"
+
+   int main (void)
+    {
+      int fd;
+      fd = open("/dev/ulp", O_WRONLY);
+      if (fd < 0)
+        {
+          printf("Failed to open ULP: %d\n", errno);
+          return -1;
+        }
+      /* ulp_example is the prefix which can be changed with ULP_APP_NAME makefile
+       * variable to access ULP binary code variable */
+      write(fd, ulp_example_bin, ulp_example_bin_len);
+      return 0;
+    }
+
+.. _ulp_makefile:
+
+- Contents in ulp/Makefile:
+
+.. code-block:: console
+
+  ULP_APP_NAME = ulp_example
+  ULP_APP_FOLDER = $(APPDIR)$(DELIM)ulp_example$(DELIM)ulp
+  ULP_APP_C_SRCS = ulp_main.c
+
+  include $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src$(DELIM)common$(DELIM)espressif$(DELIM)esp_ulp.mk
+
+- Contents in ulp_main.c:
+
+.. code-block:: C
+
+   #include <stdio.h>
+   #include <stdint.h>
+   #include <stdbool.h>
+   #include "ulp_riscv.h"
+   #include "ulp_riscv_utils.h"
+   #include "ulp_riscv_gpio.h"
+
+   #define GPIO_PIN 0
+
+   #define nop() __asm__ __volatile__ ("nop")
+
+   bool gpio_level_previous = true;
+
+   int main (void)
+    {
+       while (1)
+           {
+           ulp_riscv_gpio_output_level(GPIO_PIN, gpio_level_previous);
+           gpio_level_previous = !gpio_level_previous;
+           for (int i = 0; i < 10000; i++)
+             {
+               nop();
+             }
+           }
+
+       return 0;
+    }
+
+- Command to build::
+
+    make distclean
+    ./tools/configure.sh esp32s2-saola-1:nsh
+    kconfig-tweak --set-val CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM 8176
+    kconfig-tweak -e CONFIG_DEV_GPIO
+    kconfig-tweak -e CONFIG_EXAMPLES_ULP_EXAMPLE
+    make olddefconfig
+    make -j
+
+Here is an example of a single ULP application. However, support is not limited to just 
+one application. Multiple ULP applications are also supported.
+By following the same guideline, multiple ULP applications can be created and loaded using ``write`` POSIX call.
+Each NuttX application can build one ULP application. Therefore, to build multiple ULP applications, multiple NuttX
+applications are needed to create each ULP binary. This limitation only applies when using the NuttX build system to
+build multiple ULP applications; it does not affect the ability to load multiple ULP applications built by other means.
+
+ULP binary can be included in NuttX application by adding
+``#include "ulp/ulp/ulp_code.h"`` line. Then, the ULP binary is accessible by using the ULP application
+prefix (defined by the ``ULP_APP_NAME`` variable in the ULP application Makefile) with the ``bin`` keyword to
+access the binary data (e.g., if ``ULP_APP_NAME`` is ``ulp_test``, the binary variable will be ``ulp_test_bin``)
+and ``bin_len`` keyword to access its length (e.g., ``ulp_test_bin_len`` for ``ULP_APP_NAME`` is ``ulp_test``).
+
+Accessing the ULP RISC-V Coprocessor Program Variables
+------------------------------------------------------
+
+Global symbols defined in the ULP application are available to the HP core through a shared memory region. To read or write ULP variables,
+direct reading/writing to such memory positions are not allowed. POSIX calls are needed instead. To access the ULP variable through the HP core,
+consider that its name is defined by the ULP application prefix (defined by the ``ULP_APP_NAME`` variable in the ULP application Makefile) + the ULP application variable.
+For example if HP core tries to access a ULP application variable named ``result`` and ``ULP_APP_NAME`` in the ULP application Makefile set as ``ulp_app``, required name for
+that variable will be ``ulp_app_result``.
+``FIONREAD`` or ``FIONWRITE`` ioctl calls are, then, performed with the address of a ``struct symtab_s`` previously defined with the name of the variable to be read or written.
+
+.. warning::
+  Ensure that the related ULP application is running. Otherwise, another ULP application may interfere by using the same memory space for a different variables.
+
+Here is a snippet for reading and writing to a ULP variable named ``var_test`` (assuming the ``ULP_APP_NAME`` is set to ``ulp``) through the HP core:
+
+.. code-block:: C
+
+   #include <nuttx/config.h>
+   #include <stdio.h>
+   #include <fcntl.h>
+   #include <unistd.h>
+   #include <sys/ioctl.h>
+   #include "nuttx/symtab.h"
+
+   int main (void)
+    {
+      uint32_t ulp_var;
+      int fd;
+      struct symtab_s sym =
+      {
+        .sym_name = "ulp_var_test",
+        .sym_value = &ulp_var,
+      };
+      fd = open("/dev/ulp", O_RDWR);
+      ioctl(fd, FIONREAD, &sym);
+      if (ulp_var != 0)
+        {
+          ulp_var = 0;
+          ioctl(fd, FIONWRITE, &sym);
+        }
+
+      return OK;
+    }
 
 _`Managing esptool on virtual environment`
 ==========================================

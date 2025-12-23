@@ -1,2 +1,0 @@
-# sample rc.sysinit file; you must run tools/genromfs <nuttx dir> from within this
-# location to convert this file to etc_romfs.c for inclusion in the build

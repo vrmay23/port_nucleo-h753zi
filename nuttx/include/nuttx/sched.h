@@ -1215,52 +1215,6 @@ int group_exitinfo(pid_t pid, FAR struct binary_s *bininfo);
 #endif
 
 /****************************************************************************
- * Name: nxsched_resume_scheduler
- *
- * Description:
- *   Called by architecture specific implementations that block task
- *   execution.
- *   This function prepares the scheduler for the thread that is about to be
- *   restarted.
- *
- * Input Parameters:
- *   tcb - The TCB of the thread to be restarted.
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-#if defined(CONFIG_SCHED_RESUMESCHEDULER)
-void nxsched_resume_scheduler(FAR struct tcb_s *tcb);
-#else
-#  define nxsched_resume_scheduler(tcb)
-#endif
-
-/****************************************************************************
- * Name: nxsched_suspend_scheduler
- *
- * Description:
- *   Called by architecture specific implementations to resume task
- *   execution.
- *   This function performs scheduler operations for the thread that is about
- *   to be suspended.
- *
- * Input Parameters:
- *   tcb - The TCB of the thread to be restarted.
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-#ifdef CONFIG_SCHED_SUSPENDSCHEDULER
-void nxsched_suspend_scheduler(FAR struct tcb_s *tcb);
-#else
-#  define nxsched_suspend_scheduler(tcb)
-#endif
-
-/****************************************************************************
  * Name: nxsched_get_param
  *
  * Description:
@@ -1759,6 +1713,82 @@ int nxsched_smp_call_single_async(int cpuid,
 int nxsched_smp_call_async(cpu_set_t cpuset,
                            FAR struct smp_call_data_s *data);
 #endif
+
+/****************************************************************************
+ * Name: nxsched_ticksleep
+ *
+ * Description:
+ *   The nxsched_ticksleep() function will cause the calling thread to be
+ *   suspended from execution for the specified number of system ticks.
+ *
+ *   It can only be resumed through scheduler operations.
+ *
+ * Input Parameters:
+ *   ticks - The number of system ticks to sleep.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void nxsched_ticksleep(unsigned int ticks);
+
+/****************************************************************************
+ * Name: nxsched_usleep
+ *
+ * Description:
+ *   The nxsched_usleep() function will cause the calling thread to be
+ *   suspended from execution for the specified number of microseconds.
+ *
+ *   It can only be resumed through scheduler.
+ *
+ * Input Parameters:
+ *   usec - The number of microseconds to sleep.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void nxsched_usleep(useconds_t usec);
+
+/****************************************************************************
+ * Name: nxsched_msleep
+ *
+ * Description:
+ *   The nxsched_msleep() function will cause the calling thread to be
+ *   suspended from execution for the specified number of milliseconds.
+ *
+ *   It can only be resumed through scheduler.
+ *
+ * Input Parameters:
+ *   msec - The number of milliseconds to sleep.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void nxsched_msleep(unsigned int msec);
+
+/****************************************************************************
+ * Name: nxsched_sleep
+ *
+ * Description:
+ *   The nxsched_sleep() function will cause the calling thread to be
+ *   suspended from execution for the specified number of seconds.
+ *
+ *   It can only be resumed through scheduler.
+ *
+ * Input Parameters:
+ *   sec - The number of seconds to sleep.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void nxsched_sleep(unsigned int sec);
 
 #undef EXTERN
 #if defined(__cplusplus)

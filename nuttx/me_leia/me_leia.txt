@@ -1,4 +1,0 @@
-   nsh> fb /dev/fb0          # Teste básico
-   nsh> lvgldemo widgets     # Teste LVGL
-
-

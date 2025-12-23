@@ -8,7 +8,6 @@ set(SRCS
   stm32_appinitialize.c
 )
 
-# Generic drivers
 if(CONFIG_ADC)
   list(APPEND SRCS drivers/driver_generic/stm32_adc.c)
 endif()

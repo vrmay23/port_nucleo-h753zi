@@ -117,6 +117,7 @@
 #define MFRC522_DEVPATH      "/dev/rfid0"
 #define OLED_DRIVER_PATH     "/dev/lcd0"
 #define ST7796_FB_PATH       "/dev/fb0"
+#define CAN0_DRIVER_PATH     "/dev/can0"
 
 #ifdef CONFIG_FS_PROCFS
 #  ifdef CONFIG_NSH_PROC_MOUNTPOINT
@@ -141,7 +142,7 @@
                           GPIO_OUTPUT_CLEAR | GPIO_PORTB | GPIO_PIN0)
 
 #define GPIO_LD2         (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
-                          GPIO_OUTPUT_CLEAR | GPIO_PORTE | GPIO_PIN1)  
+                          GPIO_OUTPUT_CLEAR | GPIO_PORTE | GPIO_PIN1)
 
 #define GPIO_LD3         (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
                           GPIO_OUTPUT_CLEAR | GPIO_PORTB | GPIO_PIN14)
@@ -156,7 +157,7 @@
 
 #if defined(CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT) || \
     defined(CONFIG_NUCLEO_H753ZI_GPIO_DRIVER)
-#  define GPIO_BTN_BUILT_IN    (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
+#  define GPIO_BTN_BUILT_IN    (GPIO_INPUT | GPIO_PULLDOWN | GPIO_EXTI | \
                                 GPIO_PORTC | GPIO_PIN13)
 #endif
 
@@ -422,7 +423,7 @@ int stm32_spi_initialize(void);
 
 /* SPI CS device registration functions */
 
-int stm32_spi_register_cs_device(int spi_bus, uint32_t devid, 
+int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
                                   const char *cs_pin, bool active_low);
 int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid);
 #endif
@@ -549,7 +550,7 @@ int stm32_mmcsd_initialize(int minor);
 /* Define configuration macros */
 
 #  define MFRC522_SPI_BUS            CONFIG_NUCLEO_H753ZI_MFRC522_SPI_BUS
-#  define MFRC522_DEVICE_ID          CONFIG_NUCLEO_H753ZI_MFRC522_DEVID  
+#  define MFRC522_DEVICE_ID          CONFIG_NUCLEO_H753ZI_MFRC522_DEVID
 #  define MFRC522_CS_PIN             CONFIG_NUCLEO_H753ZI_MFRC522_CS_PIN
 
 /* CS Active Level - CORRECTED LOGIC (same as ST7796) */

@@ -1,6 +1,0 @@
-{
-    "files.associations": {
-        "syslog.h": "c",
-        "nucleo-h753zi.h": "c"
-    }
-}

@@ -94,6 +94,10 @@
 #  include "board_progmem.h"
 #endif
 
+#ifdef CONFIG_NET_OA_TC6
+#  include "board_oa_tc6.h"
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -353,7 +357,7 @@ int sam_bringup(void)
     {
       if (sam_cardinserted(HSMCI0_SLOTNO))
         {
-          nxsig_usleep(1000 * 1000);
+          nxsched_usleep(1000 * 1000);
 
           /* Mount the volume on HSMCI0 */
 
@@ -564,6 +568,14 @@ int sam_bringup(void)
       syslog(LOG_ERR, "ERROR: fb_register() failed: %d\n", ret);
     }
 #  endif
+#endif
+
+#ifdef CONFIG_NET_OA_TC6
+  ret = board_oa_tc6_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: board_oa_tc6_initialize() failed: %d\n", ret);
+    }
 #endif
 
   /* If we got here then perhaps not all initialization was successful, but

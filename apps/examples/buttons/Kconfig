@@ -87,5 +87,101 @@ config EXAMPLES_BUTTONS_NAME7
 	string "Button 7 Name"
 	default "BUTTON7"
 
+config EXAMPLES_BUTTONS_NAME8
+	string "Button 8 Name"
+	default "BUTTON8"
+
+config EXAMPLES_BUTTONS_NAME9
+	string "Button 9 Name"
+	default "BUTTON9"
+
+config EXAMPLES_BUTTONS_NAME10
+	string "Button 10 Name"
+	default "BUTTON10"
+
+config EXAMPLES_BUTTONS_NAME11
+	string "Button 11 Name"
+	default "BUTTON11"
+
+config EXAMPLES_BUTTONS_NAME12
+	string "Button 12 Name"
+	default "BUTTON12"
+
+config EXAMPLES_BUTTONS_NAME13
+	string "Button 13 Name"
+	default "BUTTON13"
+
+config EXAMPLES_BUTTONS_NAME14
+	string "Button 14 Name"
+	default "BUTTON14"
+
+config EXAMPLES_BUTTONS_NAME15
+	string "Button 15 Name"
+	default "BUTTON15"
+	
+config EXAMPLES_BUTTONS_NAME16
+	string "Button 16 Name"
+	default "BUTTON16"
+
+config EXAMPLES_BUTTONS_NAME17
+	string "Button 17 Name"
+	default "BUTTON17"
+
+config EXAMPLES_BUTTONS_NAME18
+	string "Button 18 Name"
+	default "BUTTON18"
+
+config EXAMPLES_BUTTONS_NAME19
+	string "Button 19 Name"
+	default "BUTTON19"
+
+config EXAMPLES_BUTTONS_NAME20
+	string "Button 20 Name"
+	default "BUTTON20"
+
+config EXAMPLES_BUTTONS_NAME21
+	string "Button 21 Name"
+	default "BUTTON21"
+
+config EXAMPLES_BUTTONS_NAME22
+	string "Button22 Name"
+	default "BUTTON22"
+
+config EXAMPLES_BUTTONS_NAME23
+	string "Button 23 Name"
+	default "BUTTON23"
+
+config EXAMPLES_BUTTONS_NAME24
+	string "Button 24 Name"
+	default "BUTTON24"
+
+config EXAMPLES_BUTTONS_NAME25
+	string "Button 25 Name"
+	default "BUTTON25"
+
+config EXAMPLES_BUTTONS_NAME26
+	string "Button 26 Name"
+	default "BUTTON26"
+
+config EXAMPLES_BUTTONS_NAME27
+	string "Button 27 Name"
+	default "BUTTON27"
+
+config EXAMPLES_BUTTONS_NAME28
+	string "Button 28 Name"
+	default "BUTTON28"
+
+config EXAMPLES_BUTTONS_NAME29
+	string "Button 29 Name"
+	default "BUTTON29"
+
+config EXAMPLES_BUTTONS_NAME30
+	string "Button 30 Name"
+	default "BUTTON30"
+	
+config EXAMPLES_BUTTONS_NAME31
+	string "Button 31 Name"
+	default "BUTTON31"
+	
 endif # EXAMPLES_BUTTONS_NAMES
 endif # EXAMPLES_BUTTONS

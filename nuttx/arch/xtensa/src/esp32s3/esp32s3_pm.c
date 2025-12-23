@@ -49,6 +49,7 @@
 #include "hardware/esp32s3_gpio.h"
 
 #include "esp32s3_rtc.h"
+#include "esp32s3_rtc_gpio.h"
 #include "esp32s3_pm.h"
 
 #include "soc/periph_defs.h"
@@ -91,16 +92,23 @@
 #define RTC_VDDSDIO_TIEH_1_8V     0  /* TIEH field value for 1.8V VDDSDIO */
 #define RTC_VDDSDIO_TIEH_3_3V     1  /* TIEH field value for 3.3V VDDSDIO */
 
+#define RTC_EXT0_TRIG_EN          BIT(0)  /* External wakeup source 0 */
+#define RTC_EXT1_TRIG_EN          BIT(1)  /* External wakeup source 1 */
 #define RTC_GPIO_TRIG_EN          BIT(2)  /* GPIO wakeup */
 #define RTC_TIMER_TRIG_EN         BIT(3)  /* Timer wakeup */
 #define RTC_WIFI_TRIG_EN          BIT(5)  /* Wi-Fi wakeup (light sleep only) */
 #define RTC_UART0_TRIG_EN         BIT(6)  /* UART0 wakeup (light sleep only) */
 #define RTC_UART1_TRIG_EN         BIT(7)  /* UART1 wakeup (light sleep only) */
 #define RTC_BT_TRIG_EN            BIT(10) /* BT wakeup (light sleep only) */
+#define RTC_COCPU_TRIG_EN         BIT(11) /* ULP RISC-V Coprocessor wakeup */
 #define RTC_XTAL32K_DEAD_TRIG_EN  BIT(12)
+#define RTC_COCPU_TRAP_TRIG_EN    BIT(13)
 #define RTC_USB_TRIG_EN           BIT(14)
 #define RTC_BROWNOUT_DET_TRIG_EN  BIT(16)
 
+#define ULP_INTR_CLR_FLAGS (RTC_CNTL_RTC_ULP_CP_INT_CLR | \
+                            RTC_CNTL_RTC_COCPU_INT_CLR  | \
+                            RTC_CNTL_RTC_COCPU_TRAP_INT_CLR)
 #define PERIPH_INFORM_OUT_SLEEP_OVERHEAD_NO (1)
 #define PERIPH_SKIP_SLEEP_NO                (1)
 
@@ -317,7 +325,7 @@ static void IRAM_ATTR esp32s3_suspend_uarts(void)
                   UART_SW_FLOW_CON_EN | UART_FORCE_XOFF);
       do
         {
-          uart_fsm = REG_GET_FIELD(UART_STATUS_REG(i), UART_ST_UTX_OUT);
+          uart_fsm = REG_GET_FIELD(UART_FSM_STATUS_REG(i), UART_ST_UTX_OUT);
         }
       while (!(uart_fsm == UART_FSM_IDLE ||
                uart_fsm == UART_FSM_TX_WAIT_SEND));
@@ -427,6 +435,40 @@ static uint32_t IRAM_ATTR esp32s3_get_power_down_flags(void)
   g_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_ON;
 
   return pd_flags;
+}
+
+/****************************************************************************
+ * Name:  esp32s3_ext1_wakeup_prepare
+ *
+ * Description:
+ *   Configure gpio to wake-up
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static void IRAM_ATTR esp32s3_ext1_wakeup_prepare(void)
+{
+  static bool ext1_rtc_gpio_mask_configured = false;
+  if (ext1_rtc_gpio_mask_configured == false)
+    {
+      for (int i = 0; i < RTC_GPIO_NUMBER; i++)
+        {
+          if (g_config.ext1_rtc_gpio_mask & BIT(i))
+            {
+              esp32s3_configrtcio(i, RTC_INPUT_FUNCTION_RTCIO);
+            }
+        }
+
+      ext1_rtc_gpio_mask_configured = true;
+    }
+
+  esp32s3_rtc_ext1_prepare(g_config.ext1_trigger_mode,
+                           g_config.ext1_rtc_gpio_mask);
 }
 
 /****************************************************************************
@@ -594,6 +636,17 @@ static int IRAM_ATTR esp32s3_sleep_start(uint32_t pd_flags)
   if (g_config.wakeup_triggers & RTC_TIMER_TRIG_EN)
     {
       esp32s3_timer_wakeup_prepare();
+    }
+
+  if (g_config.wakeup_triggers & RTC_EXT1_TRIG_EN)
+    {
+      esp32s3_ext1_wakeup_prepare();
+    }
+
+  if (g_config.wakeup_triggers &
+      (RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN))
+    {
+      modifyreg32(RTC_CNTL_INT_CLR_RTC_REG, 0, ULP_INTR_CLR_FLAGS);
     }
 
   result = esp32s3_rtc_sleep_start(g_config.wakeup_triggers, 0);
@@ -866,6 +919,94 @@ void IRAM_ATTR esp32s3_periph_inform_out_sleep_overhead(uint32_t us)
 }
 
 /****************************************************************************
+ * Name:  esp32s3_sleep_enable_ext1_wakeup
+ *
+ * Description:
+ *   Enable wakeup by ext1 gpio
+ *
+ * Input Parameters:
+ *  None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void IRAM_ATTR esp32s3_sleep_enable_ext1_wakeup(void)
+{
+  g_config.wakeup_triggers |= RTC_EXT1_TRIG_EN;
+
+  #ifdef CONFIG_PM_EXT1_WAKEUP_TRIGGER_MODE 
+  g_config.ext1_trigger_mode = CONFIG_PM_EXT1_WAKEUP_TRIGGER_MODE;
+  #endif
+
+  g_config.ext1_rtc_gpio_mask = 0U;
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO0
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_0_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO1
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_1_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO2
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_2_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO3
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_3_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO4
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_4_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO5
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_5_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO6
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_6_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO7
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_7_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO8
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_8_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO9
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_9_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO10
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_10_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO11
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_11_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO12
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_12_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO13
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_13_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO14
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_14_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO15
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_15_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO16
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_16_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO17
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_17_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO18
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_18_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO19
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_19_GPIO_NUM);
+#endif
+#ifdef CONFIG_PM_EXT1_WAKEUP_RTC_GPIO20
+  g_config.ext1_rtc_gpio_mask |= BIT(RTCIO_CHANNEL_20_GPIO_NUM);
+#endif
+}
+
+/****************************************************************************
  * Name:  esp32s3_sleep_enable_timer_wakeup
  *
  * Description:
@@ -883,6 +1024,25 @@ void IRAM_ATTR esp32s3_sleep_enable_timer_wakeup(uint64_t time_in_us)
 {
   g_config.wakeup_triggers |= RTC_TIMER_TRIG_EN;
   g_config.sleep_duration = time_in_us;
+}
+
+/****************************************************************************
+ * Name:  esp32s3_sleep_enable_ulp_wakeup
+ *
+ * Description:
+ *   Enable wakeup by ULP RISC-V coprocessor
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void IRAM_ATTR esp32s3_sleep_enable_ulp_wakeup(void)
+{
+  g_config.wakeup_triggers |= (RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
 }
 
 /****************************************************************************
@@ -1025,6 +1185,14 @@ void esp32s3_pmstandby(uint64_t time_in_us)
 {
   uint64_t rtc_diff_us;
 
+  #ifdef CONFIG_PM_EXT1_WAKEUP
+  esp32s3_sleep_enable_ext1_wakeup();
+  #endif
+
+#ifdef CONFIG_PM_ULP_WAKEUP
+  esp32s3_sleep_enable_ulp_wakeup();
+#endif
+
   /* Don't power down XTAL - powering it up takes different time on. */
 
   esp32s3_sleep_enable_timer_wakeup(time_in_us);
@@ -1094,6 +1262,14 @@ void IRAM_ATTR esp32s3_deep_sleep_start(void)
 
 void esp32s3_pmsleep(uint64_t time_in_us)
 {
+  #ifdef CONFIG_PM_EXT1_WAKEUP
+  esp32s3_sleep_enable_ext1_wakeup();
+  #endif
+
+#ifdef CONFIG_PM_ULP_WAKEUP
+  esp32s3_sleep_enable_ulp_wakeup();
+#endif
+
   esp32s3_sleep_enable_timer_wakeup(time_in_us);
   esp32s3_deep_sleep_start();
 }

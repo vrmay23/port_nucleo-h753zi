@@ -5,102 +5,82 @@
 
 if ARCH_BOARD_NUCLEO_H753ZI
 
-config STM32_ROMFS
-	bool "Automount built-in ROMFS image"
-	default n
-	depends on FS_ROMFS
-	help
-		Select STM32_ROMFS_IMAGEFILE, STM32_ROMFS_DEV_MINOR, STM32_ROMFS_MOUNTPOINT
+#################################################################################
+#                     BOARD CLOCK CONFIGURATION
+#################################################################################
 
-config STM32_ROMFS_DEV_MINOR
-	int "Minor number for the block device backing the data"
-	depends on STM32_ROMFS
-	default 64
-
-config STM32_ROMFS_MOUNTPOINT
-	string "Mount point of the custom ROMFS image"
-	depends on STM32_ROMFS
-	default "/rom"
-
-config STM32_ROMFS_IMAGEFILE
-	string "ROMFS image file to include in the build"
-	depends on STM32_ROMFS
-	default "../../../rom.img"
-
-#
-# HSE source
-#
+menu "Board Clock Configuration"
 
 choice
 	prompt "HSE clock source"
-	default BOARD_HSE_SOURCE_STLINK
+	default NUCLEO_H753ZI_HSE_8MHZ
 	help
-		Select the source for the High Speed External (HSE) clock.
-		This choice determines the solder bridge configuration needed
-		on the Nucleo-H753ZI board.
+		Select the HSE clock source for the Nucleo-H753ZI board.
 
-config BOARD_HSE_SOURCE_STLINK
-	bool "ST-LINK MCO 8 MHz (default Nucleo)"
-	help
-		Default configuration for Nucleo-H753ZI.
-		Uses 8 MHz MCO output from ST-LINK.
-		
-		Solder Bridge Configuration:
-		SB45=ON, SB44=OFF, SB46=OFF, SB3=OFF, SB4=OFF.
-		
-		This is the factory default configuration and requires
-		no hardware modifications.
+		8 MHz: ST-LINK MCO (default, no hardware modification)
+		25 MHz: External crystal X3 (requires hardware modification)
 
-config BOARD_HSE_SOURCE_X3
-	bool "External crystal X3"
+config NUCLEO_H753ZI_HSE_8MHZ
+	bool "8 MHz from ST-LINK MCO"
 	help
-		Uses external crystal connected to X3 footprint.
-		Supports various crystal frequencies (8-25 MHz).
-		
+		Default Nucleo-H753ZI configuration.
+		Uses 8 MHz clock from ST-LINK MCO output (PH0-OSC_IN).
+
 		Solder Bridge Configuration:
-		SB3=ON, SB4=ON, SB45=OFF, SB44=OFF, SB46=OFF.
-		
-		You must solder a crystal to the X3 footprint and
-		configure the solder bridges as indicated.
+		SB45=ON, SB44=OFF, SB46=OFF, SB3=OFF, SB4=OFF
+
+		This is the factory default - no hardware changes needed.
+
+		System clocks with 8 MHz HSE:
+		- SYSCLK: 400 MHz
+		- HCLK: 200 MHz
+		- APB1/2/3/4: 100 MHz
+		- FDCAN: 25 MHz (via PLL2Q)
+
+config NUCLEO_H753ZI_HSE_25MHZ
+	bool "25 MHz external crystal X3"
+	help
+		Uses 25 MHz external crystal on X3 footprint.
+
+		Solder Bridge Configuration:
+		SB3=ON, SB4=ON, SB45=OFF, SB44=OFF, SB46=OFF
+
+		WARNING: Requires hardware modification:
+		- Install 25 MHz crystal at X3 footprint
+		- Reconfigure solder bridges as indicated above
+
+		System clocks with 25 MHz HSE:
+		- SYSCLK: 480 MHz
+		- HCLK: 240 MHz
+		- APB1/2/3/4: 120 MHz
+		- FDCAN: 25 MHz (direct from HSE)
 
 endchoice
 
-config BOARD_HSE_X3_FREQ
-	int "X3 crystal frequency (Hz)"
-	depends on BOARD_HSE_SOURCE_X3
-	default 25000000
-	range 8000000 25000000
-	help
-		Frequency of the external crystal X3.
-		
-		Supported frequencies:
-		- 8000000 (8 MHz)
-		- 12000000 (12 MHz)
-		- 16000000 (16 MHz)
-		- 20000000 (20 MHz)
-		- 24000000 (24 MHz)
-		- 25000000 (25 MHz)
-		
-		The PLL configuration will be automatically adjusted
-		to maintain 400 MHz SYSCLK regardless of the chosen
-		HSE frequency.
+config STM32H7_BOARD_HSE_FREQUENCY
+	int
+	default 8000000 if NUCLEO_H753ZI_HSE_8MHZ
+	default 25000000 if NUCLEO_H753ZI_HSE_25MHZ
+	depends on STM32H7_HSE
 
-#
-# Board-specific GPIO Driver
-#
+endmenu
+
+#################################################################################
+#                     GPIO DRIVER CONFIGURATION
+#################################################################################
 
 config NUCLEO_H753ZI_GPIO_DRIVER
 	bool "Enable Nucleo H753ZI board GPIO driver"
 	default n
 	select DEV_GPIO
 	help
-		This option enables the low-level GPIO driver for the Nucleo H753ZI
-		board. Other features like buttons or LEDs will depend on this
-		driver.
+		This option enables the low-level GPIO driver for the
+		Nucleo H753ZI board. Other features like buttons or LEDs
+		will depend on this driver.
 
-#
-# LEDs Configuration
-#
+#################################################################################
+#                     LED CONFIGURATION
+#################################################################################
 
 choice
 	prompt "LED Control Mode"
@@ -117,7 +97,7 @@ config NUCLEO_H753ZI_LEDS_AUTO
 		- GREEN: System ready, signals
 		- ORANGE: Heap allocation, IRQs
 		- RED: Assertions, panics, idle
-		
+
 		NOTE: You still need to manually enable:
 		Board Selection -> Board LED Status support
 
@@ -130,23 +110,24 @@ config NUCLEO_H753ZI_LEDS_USER
 		LEDs are controlled by user applications via /dev/userleds.
 		Applications can turn individual LEDs on/off as needed.
 		Kernel status indication is disabled.
-		
+
 		NOTE: You must manually disable:
-		Board Selection -> Board LED Status support (to avoid conflicts)
+		Board Selection -> Board LED Status support (to avoid
+		conflicts)
 
 config NUCLEO_H753ZI_LEDS_DISABLED
 	bool "LEDs disabled"
 	help
 		LED functionality is completely disabled to save resources.
-		
+
 		NOTE: You should manually disable:
 		Board Selection -> Board LED Status support
 
 endchoice
 
-#
-# Button Configuration
-#
+#################################################################################
+#                     BUTTON CONFIGURATION
+#################################################################################
 
 menu "Button Configuration"
 
@@ -164,7 +145,7 @@ config NUCLEO_H753ZI_BUTTON_COUNT
 	range 1 32
 	help
 		Total number of buttons to configure (1-32).
-		
+
 		The STM32H7 button driver supports up to 32 buttons using
 		a 32-bit bitmask for button states.
 
@@ -175,7 +156,7 @@ config NUCLEO_H753ZI_BUTTON_BUILTIN
 	help
 		Include the built-in blue user button connected to PC13.
 		This button will always be assigned as button index 0.
-		
+
 		If enabled, you need (BUTTON_COUNT - 1) additional pins.
 		If disabled, you need exactly BUTTON_COUNT pins.
 
@@ -185,21 +166,21 @@ config NUCLEO_H753ZI_BUTTON_PINS
 	default ""
 	help
 		Comma-separated list of GPIO pins for buttons.
-		
+
 		Format: PORT+PIN (e.g., "PF15,PG14,PG9,PE0,PA0,PB12")
-		
+
 		Number of pins required:
 		- With built-in: (BUTTON_COUNT - 1) pins
 		- Without built-in: BUTTON_COUNT pins
-		
+
 		Example for 5 buttons with built-in enabled:
 		"PF15,PG14,PG9,PE0"
-		
+
 		Common Nucleo-H753ZI pins:
 		Arduino Headers: PF15(D2), PG14(D1), PG9(D0), PE0(D34)
 		Morpho Headers: PA0-PA15, PB0-PB15, PC0-PC15, PD0-PD15,
 		                PE0-PE15, PF0-PF15, PG0-PG15, PH0-PH1
-		
+
 		Note: All buttons assume pull-down resistor configuration.
 
 config NUCLEO_H753ZI_BUTTON_VALIDATION
@@ -210,6 +191,10 @@ config NUCLEO_H753ZI_BUTTON_VALIDATION
 		Perform compile-time validation of GPIO pin assignments.
 
 endmenu
+
+#################################################################################
+#                     SPI CONFIGURATION
+#################################################################################
 
 menu "SPI Configuration"
 	depends on STM32H7_SPI
@@ -334,25 +319,17 @@ choice
 		Select which set of pins to use for SPI3.
 
 config NUCLEO_H753ZI_SPI3_PINSET_1
-	bool "Pin Set 1: PB3(SCK), PB4(MISO), PB2(MOSI)"
+	bool "Pin Set 1: PC10(SCK), PC11(MISO), PC12(MOSI)"
 	help
 		SPI3 Pin Set 1:
-		- SCK: PB3
-		- MISO: PB4
-		- MOSI: PB2
-
-config NUCLEO_H753ZI_SPI3_PINSET_2
-	bool "Pin Set 2: PC10(SCK), PC11(MISO), PC12(MOSI)"
-	help
-		SPI3 Pin Set 2:
 		- SCK: PC10
 		- MISO: PC11
 		- MOSI: PC12
 
-config NUCLEO_H753ZI_SPI3_PINSET_3
-	bool "Pin Set 3: PB3(SCK), PB4(MISO), PB5(MOSI)"
+config NUCLEO_H753ZI_SPI3_PINSET_2
+	bool "Pin Set 2: PB3(SCK), PB4(MISO), PB5(MOSI)"
 	help
-		SPI3 Pin Set 3:
+		SPI3 Pin Set 2:
 		- SCK: PB3
 		- MISO: PB4
 		- MOSI: PB5
@@ -422,33 +399,17 @@ choice
 		Select which set of pins to use for SPI5.
 
 config NUCLEO_H753ZI_SPI5_PINSET_1
-	bool "Pin Set 1: PF7(SCK), PF8(MISO), PF11(MOSI)"
+	bool "Pin Set 1: PF7(SCK), PF8(MISO), PF9(MOSI)"
 	help
 		SPI5 Pin Set 1:
 		- SCK: PF7
 		- MISO: PF8
-		- MOSI: PF11
-
-config NUCLEO_H753ZI_SPI5_PINSET_2
-	bool "Pin Set 2: PF7(SCK), PF8(MISO), PF9(MOSI)"
-	help
-		SPI5 Pin Set 2:
-		- SCK: PF7
-		- MISO: PF8
 		- MOSI: PF9
 
-config NUCLEO_H753ZI_SPI5_PINSET_3
-	bool "Pin Set 3: PH6(SCK), PH7(MISO), PF11(MOSI)"
+config NUCLEO_H753ZI_SPI5_PINSET_2
+	bool "Pin Set 2: PK0(SCK), PJ11(MISO), PJ10(MOSI)"
 	help
-		SPI5 Pin Set 3:
-		- SCK: PH6
-		- MISO: PH7
-		- MOSI: PF11
-
-config NUCLEO_H753ZI_SPI5_PINSET_4
-	bool "Pin Set 4: PK0(SCK), PJ11(MISO), PJ10(MOSI)"
-	help
-		SPI5 Pin Set 4:
+		SPI5 Pin Set 2:
 		- SCK: PK0
 		- MISO: PJ11
 		- MOSI: PJ10
@@ -488,32 +449,29 @@ config NUCLEO_H753ZI_SPI6_PINSET_1
 config NUCLEO_H753ZI_SPI6_PINSET_2
 	bool "Pin Set 2: PA5(SCK), PA6(MISO), PA7(MOSI)"
 	help
-		SPI6 Pin Set 2 (conflicts with SPI1 Pin Set 1):
+		SPI6 Pin Set 2:
 		- SCK: PA5
 		- MISO: PA6
 		- MOSI: PA7
-		WARNING: Do not use with SPI1 Pin Set 1!
-
-config NUCLEO_H753ZI_SPI6_PINSET_3
-	bool "Pin Set 3: PB3(SCK), PB4(MISO), PB5(MOSI)"
-	help
-		SPI6 Pin Set 3 (conflicts with SPI1 Pin Set 2):
-		- SCK: PB3
-		- MISO: PB4
-		- MOSI: PB5
-		WARNING: Do not use with SPI1 Pin Set 2!
 
 endchoice
 
 endmenu
+
 endif
+
 endmenu
 
-#
-# Sensors Configuration
-#
+#################################################################################
+#                     SPI SENSORS CONFIGURATION
+#################################################################################
 
-menu "Sensors Configuration"
+menu "SPI Sensors"
+    depends on STM32H7_SPI
+
+#################################################################################
+#                     MFRC522 RFID READER
+#################################################################################
 
 menu "MFRC522 RFID Reader Configuration"
     depends on CL_MFRC522
@@ -522,43 +480,44 @@ config NUCLEO_H753ZI_MFRC522_ENABLE
     bool "Enable MFRC522 RFID Reader"
     default n
     help
-        Enable MFRC522 RFID reader support with configurable
-        SPI bus, CS pin, and interrupt pin.
+        Enable MFRC522 13.56 MHz RFID reader with configurable SPI bus,
+        CS pin, and optional IRQ support.
+
+if NUCLEO_H753ZI_MFRC522_ENABLE
 
 choice
     prompt "MFRC522 SPI Bus"
-    depends on NUCLEO_H753ZI_MFRC522_ENABLE
     help
         Select which SPI bus the MFRC522 is connected to.
-    
+
 config NUCLEO_H753ZI_MFRC522_SPI1
     bool "Use SPI1"
     depends on NUCLEO_H753ZI_SPI1_ENABLE
-    
-config NUCLEO_H753ZI_MFRC522_SPI2  
+
+config NUCLEO_H753ZI_MFRC522_SPI2
     bool "Use SPI2"
     depends on NUCLEO_H753ZI_SPI2_ENABLE
-    
+
 config NUCLEO_H753ZI_MFRC522_SPI3
     bool "Use SPI3"
     depends on NUCLEO_H753ZI_SPI3_ENABLE
-    
+
 config NUCLEO_H753ZI_MFRC522_SPI4
     bool "Use SPI4"
     depends on NUCLEO_H753ZI_SPI4_ENABLE
-    
+
 config NUCLEO_H753ZI_MFRC522_SPI5
     bool "Use SPI5"
     depends on NUCLEO_H753ZI_SPI5_ENABLE
-    
+
 config NUCLEO_H753ZI_MFRC522_SPI6
     bool "Use SPI6"
     depends on NUCLEO_H753ZI_SPI6_ENABLE
+
 endchoice
 
 config NUCLEO_H753ZI_MFRC522_SPI_BUS
     int
-    depends on NUCLEO_H753ZI_MFRC522_ENABLE
     default 1 if NUCLEO_H753ZI_MFRC522_SPI1
     default 2 if NUCLEO_H753ZI_MFRC522_SPI2
     default 3 if NUCLEO_H753ZI_MFRC522_SPI3
@@ -568,7 +527,6 @@ config NUCLEO_H753ZI_MFRC522_SPI_BUS
 
 config NUCLEO_H753ZI_MFRC522_DEVID
     int "MFRC522 Device ID"
-    depends on NUCLEO_H753ZI_MFRC522_ENABLE
     range 0 15
     default 0
     help
@@ -576,57 +534,46 @@ config NUCLEO_H753ZI_MFRC522_DEVID
         Range: 0-15 for each SPI bus.
         This ID will be used to register the CS pin.
 
-menu "MFRC522 CS Pin Configuration"
-    depends on NUCLEO_H753ZI_MFRC522_ENABLE
-
 config NUCLEO_H753ZI_MFRC522_CS_PIN
-    string "CS GPIO Pin"
-    depends on NUCLEO_H753ZI_MFRC522_ENABLE
-    default "PF1"
+    string "CS (Chip Select) GPIO Pin"
+    default "PA4"
     help
         GPIO pin for MFRC522 Chip Select.
-        Format: PORT+PIN (e.g., "PF1", "PE0", "PA4")
-        
+        Format: PORT+PIN (e.g., "PA4", "PB0", "PC5")
+
         Common available pins:
         - Arduino Headers: PF15(D2), PG14(D1), PG9(D0), PE0(D34)
         - Morpho Headers: PA0-PA15, PB0-PB15, PC0-PC15, PD0-PD15,
                           PE0-PE15, PF0-PF15, PG0-PG15, PH0-PH1
-        
+
         Avoid pins already used by selected SPI MISO/MOSI/SCK.
 
 choice
     prompt "CS Pin Active Level"
-    depends on NUCLEO_H753ZI_MFRC522_ENABLE
     default NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
     help
         Select whether the CS pin is active low or active high.
 
 config NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW
-    bool "Active Low (most common)"
+    bool "Active Low (standard)"
     help
         CS pin is active low (0V = selected, 3.3V = deselected).
-        This is the standard for most SPI devices including MFRC522.
+        This is the standard for MFRC522.
 
 config NUCLEO_H753ZI_MFRC522_CS_ACTIVE_HIGH
-    bool "Active High"  
+    bool "Active High"
     help
         CS pin is active high (3.3V = selected, 0V = deselected).
-        Less common, use only if your hardware requires it.
+        Use only if your hardware requires it.
 
 endchoice
 
-endmenu
-
-menu "MFRC522 Interrupt Pin Configuration"
-    depends on NUCLEO_H753ZI_MFRC522_ENABLE
-
 config NUCLEO_H753ZI_MFRC522_IRQ_ENABLE
-    bool "Enable IRQ pin"
-    depends on NUCLEO_H753ZI_MFRC522_ENABLE
+    bool "Enable IRQ support"
     default n
     help
-        Enable interrupt pin support for MFRC522.
-        This allows for event-driven operation instead of polling.
+        Enable interrupt-driven operation for MFRC522.
+        Allows the reader to signal when a card is detected.
 
 config NUCLEO_H753ZI_MFRC522_IRQ_PIN
     string "IRQ GPIO Pin"
@@ -635,14 +582,14 @@ config NUCLEO_H753ZI_MFRC522_IRQ_PIN
     help
         GPIO pin for MFRC522 interrupt signal.
         Format: PORT+PIN (e.g., "PF2", "PE1", "PA3")
-        
+
         This pin should be connected to the MFRC522's IRQ output.
         Choose a pin that supports external interrupts.
-        
+
         Common interrupt-capable pins:
         - Arduino Headers: PF15(D2), PG14(D1), PG9(D0)
         - Morpho Headers: Most PA/PB/PC/PD/PE/PF/PG pins
-        
+
         Avoid pins already used by SPI or CS.
 
 choice
@@ -670,13 +617,13 @@ config NUCLEO_H753ZI_MFRC522_IRQ_BOTH_EDGES
 
 endchoice
 
-endmenu
+endif
 
 endmenu
 
-#
-# ST7796 LCD Display Configuration
-#
+#################################################################################
+#                     ST7796 LCD DISPLAY
+#################################################################################
 
 menu "ST7796 LCD Display Configuration"
     depends on LCD_ST7796
@@ -684,6 +631,7 @@ menu "ST7796 LCD Display Configuration"
 config NUCLEO_H753ZI_ST7796_ENABLE
     bool "Enable ST7796 LCD Display"
     default n
+    select SPI_CMDDATA
     help
         Enable ST7796 3.5" IPS LCD display (320x480) with configurable
         SPI bus, CS pin, DC pin, RESET pin, and LED backlight pin.
@@ -694,30 +642,31 @@ choice
     prompt "ST7796 SPI Bus"
     help
         Select which SPI bus the ST7796 is connected to.
-    
+
 config NUCLEO_H753ZI_ST7796_SPI1
     bool "Use SPI1"
     depends on NUCLEO_H753ZI_SPI1_ENABLE
-    
-config NUCLEO_H753ZI_ST7796_SPI2  
+
+config NUCLEO_H753ZI_ST7796_SPI2
     bool "Use SPI2"
     depends on NUCLEO_H753ZI_SPI2_ENABLE
-    
+
 config NUCLEO_H753ZI_ST7796_SPI3
     bool "Use SPI3"
     depends on NUCLEO_H753ZI_SPI3_ENABLE
-    
+
 config NUCLEO_H753ZI_ST7796_SPI4
     bool "Use SPI4"
     depends on NUCLEO_H753ZI_SPI4_ENABLE
-    
+
 config NUCLEO_H753ZI_ST7796_SPI5
     bool "Use SPI5"
     depends on NUCLEO_H753ZI_SPI5_ENABLE
-    
+
 config NUCLEO_H753ZI_ST7796_SPI6
     bool "Use SPI6"
     depends on NUCLEO_H753ZI_SPI6_ENABLE
+
 endchoice
 
 config NUCLEO_H753ZI_ST7796_SPI_BUS
@@ -746,12 +695,12 @@ config NUCLEO_H753ZI_ST7796_CS_PIN
     help
         GPIO pin for ST7796 Chip Select.
         Format: PORT+PIN (e.g., "PA4", "PB0", "PC5")
-        
+
         Common available pins:
         - Arduino Headers: PF15(D2), PG14(D1), PG9(D0), PE0(D34)
         - Morpho Headers: PA0-PA15, PB0-PB15, PC0-PC15, PD0-PD15,
                           PE0-PE15, PF0-PF15, PG0-PG15, PH0-PH1
-        
+
         Avoid pins already used by selected SPI MISO/MOSI/SCK.
 
 choice
@@ -767,7 +716,7 @@ config NUCLEO_H753ZI_ST7796_CS_ACTIVE_LOW
         This is the standard for most SPI displays including ST7796.
 
 config NUCLEO_H753ZI_ST7796_CS_ACTIVE_HIGH
-    bool "Active High"  
+    bool "Active High"
     help
         CS pin is active high (3.3V = selected, 0V = deselected).
         Less common, use only if your hardware requires it.
@@ -780,13 +729,13 @@ config NUCLEO_H753ZI_ST7796_DC_PIN
     help
         GPIO pin for ST7796 Data/Command selection.
         Format: PORT+PIN (e.g., "PA3", "PB1", "PC4")
-        
+
         This pin controls whether data sent to the display is
         interpreted as commands or display data.
-        
+
         DC=0: Command
         DC=1: Data
-        
+
         Choose a pin not used by SPI or CS.
 
 config NUCLEO_H753ZI_ST7796_RESET_PIN
@@ -795,10 +744,11 @@ config NUCLEO_H753ZI_ST7796_RESET_PIN
     help
         GPIO pin for ST7796 hardware reset.
         Format: PORT+PIN (e.g., "PA2", "PB2", "PC3")
-        
+
         This pin is used to perform a hardware reset of the display.
-        Active low reset (pull low to reset, high for normal operation).
-        
+        Active low reset (pull low to reset, high for normal
+        operation).
+
         Choose a pin not used by SPI, CS, or DC.
 
 config NUCLEO_H753ZI_ST7796_LED_PIN
@@ -807,13 +757,14 @@ config NUCLEO_H753ZI_ST7796_LED_PIN
     help
         GPIO pin for ST7796 backlight control.
         Format: PORT+PIN (e.g., "PA1", "PB3", "PC2")
-        
+
         This pin controls the LCD backlight LED.
         High = backlight on, Low = backlight off.
-        
-        Note: Currently configured for direct 3.3V connection without PWM.
-        For PWM brightness control, additional configuration will be needed.
-        
+
+        Note: Currently configured for direct 3.3V connection
+        without PWM. For PWM brightness control, additional
+        configuration will be needed.
+
         Choose a pin not used by SPI, CS, DC, or RESET.
 
 endmenu
@@ -869,24 +820,25 @@ config NUCLEO_H753ZI_ST7796_LANDSCAPE
 config NUCLEO_H753ZI_ST7796_RPORTRAIT
     bool "Reverse Portrait (320x480)"
     help
-        Reverse portrait orientation: 320 pixels wide, 480 pixels tall.
-        180 degree rotation from portrait.
+        Reverse portrait orientation: 320 pixels wide, 480 pixels
+        tall. 180 degree rotation from portrait.
 
 config NUCLEO_H753ZI_ST7796_RLANDSCAPE
     bool "Reverse Landscape (480x320)"
     help
-        Reverse landscape orientation: 480 pixels wide, 320 pixels tall.
-        270 degree rotation from portrait (or 90 degrees from landscape).
+        Reverse landscape orientation: 480 pixels wide, 320 pixels
+        tall. 270 degree rotation from portrait (or 90 degrees from
+        landscape).
 
 endchoice
 
 config NUCLEO_H753ZI_ST7796_BGR
     bool "Use BGR color order instead of RGB"
-    default y  # ← Mudou de 'n' para 'y'
+    default y
     help
         Enable this if your display shows colors incorrectly
         (e.g., red appears as blue and vice versa).
-        
+
         Most ST7796 displays use RGB order, but some use BGR.
 
 config NUCLEO_H753ZI_ST7796_FREQUENCY
@@ -895,12 +847,12 @@ config NUCLEO_H753ZI_ST7796_FREQUENCY
     range 1000000 80000000
     help
         SPI bus frequency for ST7796 communication.
-        
+
         Recommended values:
         - 40000000 (40 MHz): Safe default, works with most displays
         - 60000000 (60 MHz): Faster, may work depending on wiring
         - 80000000 (80 MHz): Maximum, requires good signal integrity
-        
+
         Lower frequencies (10-20 MHz) can be used if you experience
         display issues or have long/poor quality connections.
 
@@ -925,23 +877,50 @@ config NUCLEO_H753ZI_ST7796_FB_SIZE
     range 150 600
     help
         Size of the framebuffer in kilobytes.
-        
+
         Full resolution requirements:
         - RGB444 (12-bit): 300 KB (320x480x1.5 bytes)
         - RGB565 (16-bit): 300 KB (320x480x2 bytes)
         - RGB666 (18-bit): 450 KB (320x480x3 bytes)
-        
+
         For memory-constrained systems, you can reduce this
         and implement partial screen updates.
 
-endif # NUCLEO_H753ZI_ST7796_FB_SUPPORT
+endif
 
 endmenu
 
-endif # NUCLEO_H753ZI_ST7796_ENABLE
+endif
 
 endmenu
 
 endmenu
 
-endif # ARCH_BOARD_NUCLEO_H753ZI
+#################################################################################
+#                     ROMFS CONFIGURATION
+#################################################################################
+
+config STM32_ROMFS
+	bool "Automount built-in ROMFS image"
+	default n
+	depends on FS_ROMFS
+	help
+		Select STM32_ROMFS_IMAGEFILE, STM32_ROMFS_DEV_MINOR,
+		STM32_ROMFS_MOUNTPOINT
+
+config STM32_ROMFS_DEV_MINOR
+	int "Minor number for the block device backing the data"
+	depends on STM32_ROMFS
+	default 64
+
+config STM32_ROMFS_MOUNTPOINT
+	string "Mount point of the custom ROMFS image"
+	depends on STM32_ROMFS
+	default "/rom"
+
+config STM32_ROMFS_IMAGEFILE
+	string "ROMFS image file to include in the build"
+	depends on STM32_ROMFS
+	default "../../../rom.img"
+
+endif

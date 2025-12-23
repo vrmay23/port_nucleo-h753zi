@@ -53,7 +53,6 @@
 struct sig_arg_s
 {
   pid_t pid;
-  cpu_set_t saved_affinity;
   bool need_restore;
 };
 
@@ -82,7 +81,6 @@ static int sig_handler(FAR void *cookie)
 
   if (arg->need_restore)
     {
-      tcb->affinity = arg->saved_affinity;
       tcb->flags &= ~TCB_FLAG_CPU_LOCKED;
     }
 
@@ -175,12 +173,8 @@ static int nxsig_queue_action(FAR struct tcb_s *stcb,
                     }
                   else
                     {
-                      arg.saved_affinity = stcb->affinity;
                       arg.need_restore   = true;
-
                       stcb->flags        |= TCB_FLAG_CPU_LOCKED;
-                      CPU_ZERO(&stcb->affinity);
-                      CPU_SET(stcb->cpu, &stcb->affinity);
                     }
 
                   arg.pid = stcb->pid;
@@ -556,7 +550,7 @@ int nxsig_tcbdispatch(FAR struct tcb_s *stcb, siginfo_t *info,
 
           if (nxsched_add_readytorun(stcb))
             {
-              up_switch_context(stcb, rtcb);
+              up_switch_context(this_task(), rtcb);
             }
 
 #ifdef CONFIG_LIB_SYSCALL
@@ -614,7 +608,7 @@ int nxsig_tcbdispatch(FAR struct tcb_s *stcb, siginfo_t *info,
 
           if (nxsched_add_readytorun(stcb))
             {
-              up_switch_context(stcb, rtcb);
+              up_switch_context(this_task(), rtcb);
             }
         }
 
@@ -674,7 +668,7 @@ int nxsig_tcbdispatch(FAR struct tcb_s *stcb, siginfo_t *info,
 
           if (nxsched_add_readytorun(stcb))
             {
-              up_switch_context(stcb, rtcb);
+              up_switch_context(this_task(), rtcb);
             }
 #endif
         }
@@ -731,70 +725,29 @@ int nxsig_tcbdispatch(FAR struct tcb_s *stcb, siginfo_t *info,
 int nxsig_dispatch(pid_t pid, FAR siginfo_t *info, bool thread)
 {
 #ifdef HAVE_GROUP_MEMBERS
-  FAR struct tcb_s *stcb;
-  FAR struct task_group_s *group;
-
-  /* Get the TCB associated with the pid */
-
-  stcb = nxsched_get_tcb(pid);
-  if (stcb != NULL)
+  if (!thread)
     {
-      /* The task/thread associated with this PID is still active. Get its
-       * task group.
+      /* Find the group by process PID and call group signal() to send the
+       * signal to the correct group member.
        */
 
-      group = stcb->group;
+      FAR struct task_group_s *group = task_getgroup(pid);
+      if (group != NULL)
+        {
+          return group_signal(group, info);
+        }
     }
   else
+#endif
     {
-      /* The task/thread associated with this PID has exited. In the normal
-       * usage model, the PID should correspond to the PID of the task that
-       * created the task group. Try looking it up.
-       */
+      /* Get the TCB associated with the thread TID */
 
-      group = task_getgroup(pid);
-    }
-
-  /* Did we locate the group? */
-
-  if (group != NULL)
-    {
-      if (thread)
+      FAR struct tcb_s *stcb = nxsched_get_tcb(pid);
+      if (stcb != NULL)
         {
-          /* Before the notification, we should validate the tid and
-           * and make sure that the notified thread is in same process
-           * with the current thread.
-           */
-
-          if (stcb != NULL && group == this_task()->group)
-            {
-              return nxsig_tcbdispatch(stcb, info, false);
-            }
-        }
-      else
-        {
-          /* Yes.. call group_signal() to send the signal to the correct
-           * group member.
-           */
-
-          return group_signal(group, info);
+          return nxsig_tcbdispatch(stcb, info, false);
         }
     }
 
   return -ESRCH;
-
-#else
-  FAR struct tcb_s *stcb;
-
-  /* Get the TCB associated with the pid */
-
-  stcb = nxsched_get_tcb(pid);
-  if (stcb == NULL)
-    {
-      return -ESRCH;
-    }
-
-  return nxsig_tcbdispatch(stcb, info, false);
-
-#endif
 }

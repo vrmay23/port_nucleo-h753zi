@@ -56,6 +56,7 @@
 #include "utils/memory_reserve.h"
 #include "esp32_rt_timer.h"
 #include "espressif/esp_wireless.h"
+#include "espressif/esp_wifi_utils.h"
 #include "esp32_irq.h"
 #include "esp32_spicache.h"
 
@@ -3236,7 +3237,7 @@ int esp32_bt_controller_disable(void)
       async_wakeup_request(BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA);
       while (btdm_power_state_active() == false)
         {
-          nxsig_usleep(1000);
+          nxsched_usleep(1000);
         }
     }
 

@@ -152,8 +152,9 @@ endif
 
 ifeq ($(CONFIG_ESP_WIRELESS),y)
 	ifeq ($(CONFIG_ESPRESSIF_WIFI),y)
-		CHIP_CSRCS += esp_wifi_init.c
-		CHIP_CSRCS += esp_wlan.c
+		CHIP_CSRCS += esp_wifi_event_handler.c
+		CHIP_CSRCS += esp_wifi_api.c
+		CHIP_CSRCS += esp_wlan_netdev.c
 	endif
 	CHIP_CSRCS += esp_wifi_utils.c
 endif
@@ -178,6 +179,14 @@ ifeq ($(CONFIG_CRYPTO_CRYPTODEV_HARDWARE),y)
 	CHIP_CSRCS += esp_crypto.c
 endif
 
+ifeq ($(CONFIG_ESPRESSIF_USE_LP_CORE), y)
+	CHIP_CSRCS += esp_ulp.c
+endif
+
+ifeq ($(CONFIG_ESPRESSIF_EFUSE),y)
+	LDFLAGS += -u esp_efuse_startup_include_func
+endif
+
 #############################################################################
 # Espressif HAL for 3rd Party Platforms
 #############################################################################
@@ -186,7 +195,7 @@ endif
 
 ESP_HAL_3RDPARTY_REPO   = esp-hal-3rdparty
 ifndef ESP_HAL_3RDPARTY_VERSION
-	ESP_HAL_3RDPARTY_VERSION = 98dad3d9b4607df319eca4a7baf50545cda0b1a2
+	ESP_HAL_3RDPARTY_VERSION = 84efb531f4cdf3162e91652357cac6a0be8dd73e
 endif
 
 ifndef ESP_HAL_3RDPARTY_URL
@@ -248,7 +257,11 @@ context:: chip/$(ESP_HAL_3RDPARTY_REPO)
 distclean::
 	$(call DELFILE,../include/chip/gpio_sig_map.h)
 	$(call DELFILE,../include/chip/irq.h)
+	$(call DELFILE,../../../vefuse.bin)
 	$(call DELDIR,chip/$(ESP_HAL_3RDPARTY_REPO))
+ifeq ($(CONFIG_ESPRESSIF_USE_LP_CORE),y)
+	$(call DELDIR,chip/ulp)
+endif
 
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common$(DELIM)espressif
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common$(DELIM)espressif$(DELIM)platform_include

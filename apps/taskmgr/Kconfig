@@ -1,7 +1,0 @@
-config TASKMGR
-    bool "Task Manager (nuttPID)"
-    default n
-    depends on NSH_LIBRARY
-    ---help---
-        Task Manager utility to list and control tasks (similar to pidin).
-

@@ -2488,8 +2488,8 @@ void nxsched_timer_expiration(void);
 
 #if defined(CONFIG_SCHED_TICKLESS) && defined(CONFIG_SCHED_TICKLESS_ALARM)
 void nxsched_alarm_expiration(FAR const struct timespec *ts);
-void nxsched_alarm_tick_expiration(clock_t ticks);
 #endif
+void nxsched_tick_expiration(clock_t ticks);
 
 /****************************************************************************
  * Name:  nxsched_get_next_expired
@@ -2563,9 +2563,9 @@ void irq_dispatch(int irq, FAR void *context);
 
 #ifdef CONFIG_STACK_COLORATION
 struct tcb_s;
-size_t up_check_tcbstack(FAR struct tcb_s *tcb);
+size_t up_check_tcbstack(FAR struct tcb_s *tcb, size_t check_size);
 #if defined(CONFIG_ARCH_INTERRUPTSTACK) && CONFIG_ARCH_INTERRUPTSTACK > 3
-size_t up_check_intstack(int cpu);
+size_t up_check_intstack(int cpu, size_t check_size);
 #endif
 #endif
 

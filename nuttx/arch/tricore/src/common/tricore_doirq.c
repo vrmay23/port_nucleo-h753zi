@@ -46,7 +46,7 @@
 
 IFX_INTERRUPT_INTERNAL(tricore_doirq, 0, 255)
 {
-  struct tcb_s **running_task = &g_running_tasks[this_cpu()];
+  struct tcb_s *running_task = g_running_tasks[this_cpu()];
   struct tcb_s *tcb;
 
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
@@ -55,13 +55,13 @@ IFX_INTERRUPT_INTERNAL(tricore_doirq, 0, 255)
   Ifx_CPU_ICR icr;
   uintptr_t *regs;
 
-  if (*running_task != NULL)
-    {
-      (*running_task)->xcp.regs = regs;
-    }
-
   icr.U = __mfcr(CPU_ICR);
   regs = (uintptr_t *)__mfcr(CPU_PCXI);
+
+  if (running_task != NULL)
+    {
+      running_task->xcp.regs = regs;
+    }
 
   board_autoled_on(LED_INIRQ);
 
@@ -100,12 +100,17 @@ IFX_INTERRUPT_INTERNAL(tricore_doirq, 0, 255)
       addrenv_switch(tcb);
 #endif
 
+      /* Update scheduler parameters */
+
+      nxsched_switch_context(running_task, tcb);
+
       /* Record the new "running" task when context switch occurred.
        * g_running_tasks[] is only used by assertion logic for reporting
        * crashes.
        */
 
-      g_running_tasks[this_cpu()] = tcb;
+      running_task = tcb;
+      g_running_tasks[this_cpu()] = running_task;
 
       __mtcr(CPU_PCXI, (uintptr_t)up_current_regs());
       __isync();
@@ -117,11 +122,11 @@ IFX_INTERRUPT_INTERNAL(tricore_doirq, 0, 255)
 
   up_set_current_regs(NULL);
 
-  /* (*running_task)->xcp.regs is about to become invalid
+  /* running_task->xcp.regs is about to become invalid
    * and will be marked as NULL to avoid misusage.
    */
 
-  (*running_task)->xcp.regs = NULL;
+  running_task->xcp.regs = NULL;
   board_autoled_off(LED_INIRQ);
 #endif
 }

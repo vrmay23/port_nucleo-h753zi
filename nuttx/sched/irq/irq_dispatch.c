@@ -157,4 +157,10 @@ void irq_dispatch(int irq, FAR void *context)
       kmm_checkcorruption();
     }
 #endif
+
+#if defined(CONFIG_STACKCHECK_MARGIN) && (CONFIG_STACKCHECK_MARGIN > 0) && \
+    defined(CONFIG_ARCH_INTERRUPTSTACK) && (CONFIG_ARCH_INTERRUPTSTACK > 0)
+    DEBUGASSERT(up_check_intstack(this_cpu(),
+                                  CONFIG_STACKCHECK_MARGIN) == 0);
+#endif
 }

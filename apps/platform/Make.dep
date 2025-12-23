@@ -1,4 +1,5 @@
 # Gen Make.dep automatically
-dummy.c.home.vinicius.Desktop.nuttxspace.apps.platform.o: board/dummy.c
+dummy.c.home.vinicius.embedded_sys.nuttxspace.stm32h753zi_clean.apps.platform.o: \
+ board/dummy.c
 # No files specified for dependency generation
 # No files specified for dependency generation

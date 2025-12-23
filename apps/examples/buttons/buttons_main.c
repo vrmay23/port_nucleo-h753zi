@@ -59,6 +59,8 @@
 #  define CONFIG_INPUT_BUTTONS_POLL_DELAY 1000
 #endif
 
+/* Button name definitions for buttons 0-31 */
+
 #ifndef CONFIG_EXAMPLES_BUTTONS_NAME0
 #  define CONFIG_EXAMPLES_BUTTONS_NAME0 "BUTTON0"
 #endif
@@ -91,14 +93,112 @@
 #  define CONFIG_EXAMPLES_BUTTONS_NAME7 "BUTTON7"
 #endif
 
-#define BUTTON_MAX 8
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME8
+#  define CONFIG_EXAMPLES_BUTTONS_NAME8 "BUTTON8"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME9
+#  define CONFIG_EXAMPLES_BUTTONS_NAME9 "BUTTON9"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME10
+#  define CONFIG_EXAMPLES_BUTTONS_NAME10 "BUTTON10"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME11
+#  define CONFIG_EXAMPLES_BUTTONS_NAME11 "BUTTON11"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME12
+#  define CONFIG_EXAMPLES_BUTTONS_NAME12 "BUTTON12"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME13
+#  define CONFIG_EXAMPLES_BUTTONS_NAME13 "BUTTON13"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME14
+#  define CONFIG_EXAMPLES_BUTTONS_NAME14 "BUTTON14"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME15
+#  define CONFIG_EXAMPLES_BUTTONS_NAME15 "BUTTON15"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME16
+#  define CONFIG_EXAMPLES_BUTTONS_NAME16 "BUTTON16"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME17
+#  define CONFIG_EXAMPLES_BUTTONS_NAME17 "BUTTON17"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME18
+#  define CONFIG_EXAMPLES_BUTTONS_NAME18 "BUTTON18"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME19
+#  define CONFIG_EXAMPLES_BUTTONS_NAME19 "BUTTON19"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME20
+#  define CONFIG_EXAMPLES_BUTTONS_NAME20 "BUTTON20"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME21
+#  define CONFIG_EXAMPLES_BUTTONS_NAME21 "BUTTON21"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME22
+#  define CONFIG_EXAMPLES_BUTTONS_NAME22 "BUTTON22"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME23
+#  define CONFIG_EXAMPLES_BUTTONS_NAME23 "BUTTON23"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME24
+#  define CONFIG_EXAMPLES_BUTTONS_NAME24 "BUTTON24"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME25
+#  define CONFIG_EXAMPLES_BUTTONS_NAME25 "BUTTON25"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME26
+#  define CONFIG_EXAMPLES_BUTTONS_NAME26 "BUTTON26"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME27
+#  define CONFIG_EXAMPLES_BUTTONS_NAME27 "BUTTON27"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME28
+#  define CONFIG_EXAMPLES_BUTTONS_NAME28 "BUTTON28"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME29
+#  define CONFIG_EXAMPLES_BUTTONS_NAME29 "BUTTON29"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME30
+#  define CONFIG_EXAMPLES_BUTTONS_NAME30 "BUTTON30"
+#endif
+
+#ifndef CONFIG_EXAMPLES_BUTTONS_NAME31
+#  define CONFIG_EXAMPLES_BUTTONS_NAME31 "BUTTON31"
+#endif
+
+/* Maximum number of buttons supported (increased from 8 to 32) */
+
+#define BUTTON_MAX 32
 
 #ifndef CONFIG_EXAMPLES_BUTTONS_QTD
 #  define CONFIG_EXAMPLES_BUTTONS_QTD BUTTON_MAX
 #endif
 
-#if CONFIG_EXAMPLES_BUTTONS_QTD > 8
-#  error "CONFIG_EXAMPLES_BUTTONS_QTD > 8"
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 32
+#  error "CONFIG_EXAMPLES_BUTTONS_QTD > 32"
 #endif
 
 /****************************************************************************
@@ -129,6 +229,78 @@ static const char button_name[CONFIG_EXAMPLES_BUTTONS_QTD][16] =
 #endif
 #if CONFIG_EXAMPLES_BUTTONS_QTD > 7
   , CONFIG_EXAMPLES_BUTTONS_NAME7
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 8
+  , CONFIG_EXAMPLES_BUTTONS_NAME8
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 9
+  , CONFIG_EXAMPLES_BUTTONS_NAME9
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 10
+  , CONFIG_EXAMPLES_BUTTONS_NAME10
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 11
+  , CONFIG_EXAMPLES_BUTTONS_NAME11
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 12
+  , CONFIG_EXAMPLES_BUTTONS_NAME12
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 13
+  , CONFIG_EXAMPLES_BUTTONS_NAME13
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 14
+  , CONFIG_EXAMPLES_BUTTONS_NAME14
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 15
+  , CONFIG_EXAMPLES_BUTTONS_NAME15
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 16
+  , CONFIG_EXAMPLES_BUTTONS_NAME16
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 17
+  , CONFIG_EXAMPLES_BUTTONS_NAME17
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 18
+  , CONFIG_EXAMPLES_BUTTONS_NAME18
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 19
+  , CONFIG_EXAMPLES_BUTTONS_NAME19
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 20
+  , CONFIG_EXAMPLES_BUTTONS_NAME20
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 21
+  , CONFIG_EXAMPLES_BUTTONS_NAME21
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 22
+  , CONFIG_EXAMPLES_BUTTONS_NAME22
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 23
+  , CONFIG_EXAMPLES_BUTTONS_NAME23
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 24
+  , CONFIG_EXAMPLES_BUTTONS_NAME24
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 25
+  , CONFIG_EXAMPLES_BUTTONS_NAME25
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 26
+  , CONFIG_EXAMPLES_BUTTONS_NAME26
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 27
+  , CONFIG_EXAMPLES_BUTTONS_NAME27
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 28
+  , CONFIG_EXAMPLES_BUTTONS_NAME28
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 29
+  , CONFIG_EXAMPLES_BUTTONS_NAME29
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 30
+  , CONFIG_EXAMPLES_BUTTONS_NAME30
+#endif
+#if CONFIG_EXAMPLES_BUTTONS_QTD > 31
+  , CONFIG_EXAMPLES_BUTTONS_NAME31
 #endif
 };
 #endif
@@ -195,8 +367,8 @@ static int button_daemon(int argc, char *argv[])
       goto errout_with_fd;
     }
 
-  printf("button_daemon: Supported BUTTONs 0x%02x\n",
-         (unsigned int)supported);
+  printf("button_daemon: Supported BUTTONs 0x%08lx\n",
+         (unsigned long)supported);
 
 #ifdef CONFIG_EXAMPLES_BUTTONS_SIGNAL
   /* Define the notifications events */
@@ -214,7 +386,7 @@ static int button_daemon(int argc, char *argv[])
   if (ret < 0)
     {
       int errcode = errno;
-      printf("button_daemon: ERROR: ioctl(BTNIOC_SUPPORTED) failed: %d\n",
+      printf("button_daemon: ERROR: ioctl(BTNIOC_REGISTER) failed: %d\n",
              errcode);
       goto errout_with_fd;
     }
@@ -326,16 +498,22 @@ static int button_daemon(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_EXAMPLES_BUTTONS_NAMES
-      /* Print name of all pressed/release button */
+      /* Print name of all pressed/released buttons */
 
       for (i = 0; i < CONFIG_EXAMPLES_BUTTONS_QTD; i++)
         {
-          if ((sample & (1 << i)) && !(oldsample & (1 << i)))
+          btn_buttonset_t button_bit = (btn_buttonset_t)(1 << i);
+
+          /* Check if button was pressed */
+
+          if ((sample & button_bit) && !(oldsample & button_bit))
             {
               printf("%s was pressed\n", button_name[i]);
             }
 
-          if (!(sample & (1 << i)) && (oldsample & (1 << i)))
+          /* Check if button was released */
+
+          if (!(sample & button_bit) && (oldsample & button_bit))
             {
               printf("%s was released\n", button_name[i]);
             }
@@ -343,7 +521,7 @@ static int button_daemon(int argc, char *argv[])
 
       oldsample = sample;
 #else
-      printf("Sample = %jd\n", (intmax_t)sample);
+      printf("Sample = 0x%08lx\n", (unsigned long)sample);
 #endif
 
       /* Make sure that everything is displayed */

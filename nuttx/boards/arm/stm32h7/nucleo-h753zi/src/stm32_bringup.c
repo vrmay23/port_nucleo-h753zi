@@ -49,6 +49,9 @@
 /* STM32-specific includes */
 
 #include "stm32_gpio.h"
+#include "hardware/stm32_gpio.h"
+#include "arm_internal.h"
+#include "hardware/stm32h7x3xx_rcc.h"
 
 #ifdef CONFIG_I2C
 #  include "stm32_i2c.h"
@@ -120,6 +123,8 @@
 #  include "drivers/driver_middleware/stm32_romfs.h"
 #endif
 
+
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -149,6 +154,14 @@ static int nucleo_adc_initialize(void);
 #ifdef CONFIG_CAPTURE
   static int nucleo_capture_initialize(void);
 #endif
+
+#ifdef CONFIG_STM32H7_FDCAN
+int stm32_fdcansockinitialize(int intf);
+#endif
+
+/* Initialization functions organized by name length (longest to shortest) */
+
+static int nucleo_automotive_initialize(void);
 
 /****************************************************************************
  * Private Functions
@@ -346,9 +359,109 @@ static int nucleo_gpio_initialize(void)
 static int nucleo_automotive_initialize(void)
 {
   int ret = OK;
+  
+#ifdef CONFIG_STM32H7_FDCAN1
+  syslog(LOG_INFO, "[FDCAN1] Starting initialization...\n");
+  
+  /* Initialize FDCAN1 driver FIRST */
+  
+  int local_ret = stm32_fdcansockinitialize(0);
+  if (local_ret < 0)
+    {
+      syslog(LOG_ERR, "[FDCAN1] ERROR: Failed to initialize: %d\n", 
+             local_ret);
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
+    }
+  else
+    {
+      syslog(LOG_INFO, "[FDCAN1] Driver initialized as /dev/can0\n");
+      
+      /* NOW force GPIO configuration AFTER driver init */
+      
+      syslog(LOG_INFO, "[FDCAN1] Forcing GPIO reconfiguration...\n");
+      
+      stm32_configgpio(GPIO_CAN1_RX);  /* PB8 */
+      stm32_configgpio(GPIO_CAN1_TX);  /* PB9 */
+      
+      syslog(LOG_INFO, "[FDCAN1] GPIO_CAN1_RX: 0x%08lX\n", 
+             (unsigned long)GPIO_CAN1_RX);
+      syslog(LOG_INFO, "[FDCAN1] GPIO_CAN1_TX: 0x%08lX\n", 
+             (unsigned long)GPIO_CAN1_TX);
+      
+      /* Verify GPIO and RCC configuration */
+      
+      uint32_t rcc_apb1henr = getreg32(STM32_RCC_APB1HENR);
+      uint32_t rcc_d2ccip1r = getreg32(STM32_RCC_D2CCIP1R);
+      uint32_t gpiob_moder = getreg32(STM32_GPIOB_MODER);
+      uint32_t gpiob_afrh = getreg32(STM32_GPIOB_AFRH);
+      uint32_t gpiob_otyper = getreg32(STM32_GPIOB_OTYPER);
+      
+      syslog(LOG_INFO, "[FDCAN1] POST-CONFIG:\n");
+      syslog(LOG_INFO, "[FDCAN1]   RCC_APB1HENR: 0x%08lX (bit 8=%d)\n",
+             (unsigned long)rcc_apb1henr,
+             (int)((rcc_apb1henr >> 8) & 1));
+      syslog(LOG_INFO, "[FDCAN1]   RCC_D2CCIP1R: 0x%08lX (clk_sel=%lu)\n",
+             (unsigned long)rcc_d2ccip1r,
+             (unsigned long)((rcc_d2ccip1r >> 28) & 0x3));
+      syslog(LOG_INFO, "[FDCAN1]   GPIOB_MODER: 0x%08lX "
+             "(PB8[17:16]=%lu, PB9[19:18]=%lu)\n",
+             (unsigned long)gpiob_moder,
+             (unsigned long)((gpiob_moder >> 16) & 0x3),
+             (unsigned long)((gpiob_moder >> 18) & 0x3));
+      syslog(LOG_INFO, "[FDCAN1]   GPIOB_AFRH: 0x%08lX "
+             "(PB8[3:0]=%lu, PB9[7:4]=%lu)\n",
+             (unsigned long)gpiob_afrh,
+             (unsigned long)(gpiob_afrh & 0xF),
+             (unsigned long)((gpiob_afrh >> 4) & 0xF));
+      syslog(LOG_INFO, "[FDCAN1]   GPIOB_OTYPER: 0x%08lX "
+             "(PB8[8]=%d, PB9[9]=%d)\n",
+             (unsigned long)gpiob_otyper,
+             (int)((gpiob_otyper >> 8) & 1),
+             (int)((gpiob_otyper >> 9) & 1));
+      
+      /* Expected values:
+       * MODER: PB8=10b (AF), PB9=10b (AF)
+       * AFRH: PB8=9 (AF9), PB9=9 (AF9)
+       * OTYPER: PB8=0 (push-pull), PB9=0 (push-pull)
+       */
+      
+      if (((gpiob_moder >> 16) & 0x3) != 0x2 ||
+          ((gpiob_moder >> 18) & 0x3) != 0x2)
+        {
+          syslog(LOG_ERR, "[FDCAN1] ERROR: GPIO not in AF mode!\n");
+        }
+      
+      if ((gpiob_afrh & 0xF) != 9 || ((gpiob_afrh >> 4) & 0xF) != 9)
+        {
+          syslog(LOG_ERR, "[FDCAN1] ERROR: GPIO not set to AF9!\n");
+        }
+    }
+#endif
 
-  /* Future: CAN, LIN, FlexRay initialization here */
+#ifdef CONFIG_STM32H7_FDCAN2
+  /* Initialize FDCAN2 and register as /dev/can1 */
+  
+  int local_ret = stm32_fdcansockinitialize(1);
+  if (local_ret < 0)
+    {
+      syslog(LOG_ERR, "[FDCAN2] ERROR: Failed to initialize: %d\n", 
+             local_ret);
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
+    }
+  else
+    {
+      syslog(LOG_INFO, "[FDCAN2] Initialized as /dev/can1\n");
+    }
+#endif
 
+  /* Future: LIN, FlexRay initialization here */
+  
   return ret;
 }
 

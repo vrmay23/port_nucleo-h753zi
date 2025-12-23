@@ -1210,14 +1210,14 @@ static int set_drive_mode(FAR isx019_dev_t *priv)
 #endif
     };
 
-  nxsig_usleep(TRANSITION_TIME_TO_STARTUP);
+  nxsched_usleep(TRANSITION_TIME_TO_STARTUP);
 
   isx019_i2c_write(priv, CAT_CONFIG, MODE_SENSSEL,      &drv[INDEX_SENS], 1);
   isx019_i2c_write(priv, CAT_CONFIG, MODE_POSTSEL,      &drv[INDEX_POST], 1);
   isx019_i2c_write(priv,
     CAT_CONFIG, MODE_SENSPOST_SEL, &drv[INDEX_SENSPOST], 1);
 
-  nxsig_usleep(TRANSITION_TIME_TO_STREAMING);
+  nxsched_usleep(TRANSITION_TIME_TO_STREAMING);
 
   return OK;
 }
@@ -1230,11 +1230,7 @@ static bool try_repeat(int sec, int usec, FAR isx019_dev_t *priv,
   struct timespec now;
   struct timespec delta;
 
-  ret = clock_systime_timespec(&start);
-  if (ret < 0)
-    {
-      return false;
-    }
+  clock_systime_timespec(&start);
 
   while (1)
     {
@@ -1245,12 +1241,7 @@ static bool try_repeat(int sec, int usec, FAR isx019_dev_t *priv,
         }
       else
         {
-          ret = clock_systime_timespec(&now);
-          if (ret < 0)
-            {
-              return false;
-            }
-
+          clock_systime_timespec(&now);
           clock_timespec_subtract(&now, &start, &delta);
           if ((delta.tv_sec > sec) ||
               ((delta.tv_sec == sec) &&
@@ -2934,7 +2925,7 @@ static int set_jpg_quality(FAR isx019_dev_t *priv,
 
   /* Wait for swap of non-active side and active side. */
 
-  nxsig_usleep(DELAY_TIME_JPEGDQT_SWAP);
+  nxsched_usleep(DELAY_TIME_JPEGDQT_SWAP);
 
   /* Update non-active side in preparation for other activation trigger. */
 
