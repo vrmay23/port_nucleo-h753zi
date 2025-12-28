@@ -53,7 +53,7 @@
 #include "arm_internal.h"
 #include "hardware/stm32h7x3xx_rcc.h"
 
-#ifdef CONFIG_I2C
+#ifdef CONFIG_STM32H7_I2C
 #  include "stm32_i2c.h"
 #endif
 
@@ -68,8 +68,13 @@
 #  include <nuttx/lcd/st7796.h>
 #endif
 
+#ifdef CONFIG_LCD_DEV
+#  include <nuttx/lcd/lcd_dev.h>
+#endif
+
 #ifdef CONFIG_LCD_SSD1306
 #  include <nuttx/lcd/lcd.h>
+#  include <nuttx/lcd/ssd1306.h>
 #endif
 
 #include <nuttx/board.h>
@@ -155,9 +160,6 @@ static int nucleo_adc_initialize(void);
   static int nucleo_capture_initialize(void);
 #endif
 
-#ifdef CONFIG_STM32H7_FDCAN
-int stm32_fdcansockinitialize(int intf);
-#endif
 
 /* Initialization functions organized by name length (longest to shortest) */
 
@@ -522,6 +524,15 @@ static int nucleo_communication_initialize(void)
     }
 #endif
 
+#ifdef CONFIG_STM32H7_I2C
+  ret = stm32_i2c_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: I2C initialization failed: %d\n", ret);
+      /* Continue anyway - need to  implemente ELSE */
+    }
+#endif
+
   return ret;
 }
 
@@ -795,34 +806,28 @@ static int nucleo_display_initialize(void)
 {
   int ret = OK;
 
-#ifdef CONFIG_LCD_SSD1306
-  syslog(LOG_INFO, "Initializing SSD1306 OLED display...\n");
-  
-  int local_ret = board_lcd_initialize();
-  if (local_ret < 0)
+#if defined(CONFIG_LCD_SSD1306) && defined(CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE)
+  ret = board_lcd_initialize();
+  if (ret == OK)
     {
-      syslog(LOG_ERR, "ERROR: board_lcd_initialize() failed: %d\n", 
-             local_ret);
-      if (ret == OK)
-        {
-          ret = local_ret;
-        }
-    }
-  else
-    {
-      struct lcd_dev_s *lcd = board_lcd_getdev(0);
+      struct lcd_dev_s *lcd = board_lcd_getdev(NUCLEO_SSD1306_DEVNO);
       if (lcd != NULL)
         {
-          syslog(LOG_INFO, "SSD1306 OLED initialized successfully at %s\n",
-                 OLED_DRIVER_PATH);
-        }
-      else
-        {
-          syslog(LOG_ERR, "ERROR: Failed to get SSD1306 LCD device\n");
-          if (ret == OK)
+#ifdef CONFIG_LCD_DEV
+          ret = lcddev_register(NUCLEO_SSD1306_DEVNO);
+          if (ret < 0)
             {
-              ret = -ENODEV;
+              syslog(LOG_ERR, 
+                     "ERROR: lcddev_register(%d) failed: %d\n",
+                     NUCLEO_SSD1306_DEVNO, ret);
             }
+          else
+            {
+              syslog(LOG_INFO, 
+                     "SSD1306 OLED registered at /dev/lcd%d\n",
+                     NUCLEO_SSD1306_DEVNO);
+            }
+#endif
         }
     }
 #endif

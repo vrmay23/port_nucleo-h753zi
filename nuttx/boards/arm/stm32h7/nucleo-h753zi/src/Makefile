@@ -24,6 +24,10 @@ ifeq ($(CONFIG_STM32_ROMFS),y)
   CSRCS += drivers/driver_middleware/stm32_romfs_initialize.c
 endif
 
+ifeq ($(CONFIG_STM32H7_I2C),y)
+  CSRCS += drivers/driver_bus/stm32_i2c.c
+endif
+
 ifeq ($(CONFIG_STM32H7_SPI),y)
   CSRCS += drivers/driver_bus/stm32_spi.c
 endif

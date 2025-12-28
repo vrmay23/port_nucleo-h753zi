@@ -29,6 +29,7 @@
 
 #include <nuttx/config.h>
 #include <nuttx/compiler.h>
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -36,14 +37,9 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* ==========================================================================
- * FEATURE CONFIGURATION
- * ==========================================================================
- *
- * This section defines which features are available based on the
- * configuration. Features are automatically disabled if their dependencies
- * are not met.
- */
+/****************************************************************************
+ * SECTION 1: FEATURE CONFIGURATION
+ ****************************************************************************/
 
 /* Core System Features */
 
@@ -104,20 +100,35 @@
 #  define FLASH_BASED_PARAMS
 #endif
 
-/* ==========================================================================
- * DEVICE DRIVER PATHS
- * ==========================================================================
- *
- * This section centralizes the file system paths for all device drivers.
- */
+/****************************************************************************
+ * SECTION 2: DEVICE DRIVER PATHS
+ ****************************************************************************/
+
+/* LED Driver */
 
 #define LED_DRIVER_PATH      "/dev/userleds"
+
+/* Button Driver */
+
 #define BUTTONS_DRIVER_PATH  "/dev/buttons"
+
+/* RTC Driver */
+
 #define RTC_DRIVER_PATH      "/dev/rtc0"
-#define MFRC522_DEVPATH      "/dev/rfid0"
-#define OLED_DRIVER_PATH     "/dev/lcd0"
-#define ST7796_FB_PATH       "/dev/fb0"
+
+/* CAN Driver */
+
 #define CAN0_DRIVER_PATH     "/dev/can0"
+
+/* Sensor Drivers */
+
+#define MFRC522_DEVPATH      "/dev/rfid0"
+
+/* Display Drivers */
+
+#define ST7796_FB_PATH       "/dev/fb0"
+
+/* Filesystem Paths */
 
 #ifdef CONFIG_FS_PROCFS
 #  ifdef CONFIG_NSH_PROC_MOUNTPOINT
@@ -127,23 +138,24 @@
 #  endif
 #endif
 
+/* MTD Devices */
+
 #define PROGMEM_MTD_MINOR    0
 
-/* ==========================================================================
- * GPIO PIN DEFINITIONS
- * ==========================================================================
- *
- * This section groups all GPIO pin configurations.
- */
+/****************************************************************************
+ * SECTION 3: GPIO HARDWARE DEFINITIONS
+ ****************************************************************************/
+
+/****************************************************************************
+ * Board GPIO - LEDs
+ ****************************************************************************/
 
 /* LED GPIO Definitions */
 
 #define GPIO_LD1         (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
                           GPIO_OUTPUT_CLEAR | GPIO_PORTB | GPIO_PIN0)
-
 #define GPIO_LD2         (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
                           GPIO_OUTPUT_CLEAR | GPIO_PORTE | GPIO_PIN1)
-
 #define GPIO_LD3         (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
                           GPIO_OUTPUT_CLEAR | GPIO_PORTB | GPIO_PIN14)
 
@@ -153,7 +165,9 @@
 #define GPIO_LED_ORANGE      GPIO_LD2
 #define GPIO_LED_RED         GPIO_LD3
 
-/* Button GPIO Definitions */
+/****************************************************************************
+ * Board GPIO - Buttons
+ ****************************************************************************/
 
 #if defined(CONFIG_NUCLEO_H753ZI_BUTTON_SUPPORT) || \
     defined(CONFIG_NUCLEO_H753ZI_GPIO_DRIVER)
@@ -161,13 +175,15 @@
                                 GPIO_PORTC | GPIO_PIN13)
 #endif
 
-/* USB OTG FS GPIO Definitions */
+/****************************************************************************
+ * USB GPIO
+ ****************************************************************************/
 
 #define GPIO_OTGFS_VBUS      (GPIO_INPUT | GPIO_FLOAT | GPIO_SPEED_100MHz | \
                               GPIO_OPENDRAIN | GPIO_PORTA | GPIO_PIN9)
-
 #define GPIO_OTGFS_PWRON     (GPIO_OUTPUT | GPIO_FLOAT | GPIO_SPEED_100MHz | \
                               GPIO_PUSHPULL | GPIO_PORTG | GPIO_PIN6)
+
 #ifdef CONFIG_USBHOST
 #  define GPIO_OTGFS_OVER    (GPIO_INPUT | GPIO_EXTI | GPIO_FLOAT | \
                               GPIO_SPEED_100MHz | GPIO_PUSHPULL |   \
@@ -177,6 +193,10 @@
                               GPIO_PUSHPULL | GPIO_PORTG | GPIO_PIN7)
 #endif
 
+/****************************************************************************
+ * Generic GPIO Examples
+ ****************************************************************************/
+
 /* GPIO Subsystem Definitions */
 
 #define BOARD_NGPIOIN        1
@@ -185,63 +205,373 @@
 
 /* Placeholder - example for in, out and interrupt */
 
-#define GPIO_IN1             (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | GPIO_PIN2)
+#define GPIO_IN1             (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | \
+                              GPIO_PIN2)
+#define GPIO_OUT1            (GPIO_OUTPUT | GPIO_PUSHPULL | \
+                              GPIO_SPEED_50MHz | GPIO_OUTPUT_SET | \
+                              GPIO_PORTE | GPIO_PIN4)
+#define GPIO_INT1            (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | \
+                              GPIO_PIN5)
 
-#define GPIO_OUT1            (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
-                              GPIO_OUTPUT_SET | GPIO_PORTE | GPIO_PIN4)
+/****************************************************************************
+ * SECTION 4: PERIPHERAL DEVICE CONFIGURATIONS
+ ****************************************************************************/
 
-#define GPIO_INT1            (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTE | GPIO_PIN5)
+/****************************************************************************
+ * Core Communication Buses - I2C Pin Configurations
+ ****************************************************************************/
 
-/* Sensor GPIO Definitions */
+/* I2C1 Pin Configurations */
 
-#define GPIO_LPS22HB_INT1    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN10)
-#define GPIO_LSM6DSL_INT1    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN4)
-#define GPIO_LSM6DSL_INT2    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN5)
+#ifdef CONFIG_NUCLEO_H753ZI_I2C1_ENABLE
 
-/* Wireless GPIO Definitions */
+#  ifdef CONFIG_NUCLEO_H753ZI_I2C1_PINSET_1
+     /* AF4: I2C1 on PB6/PB7 (Arduino D10/D9) */
+#    define GPIO_I2C1_SCL  GPIO_I2C1_SCL_1  /* PB6 - AF4 */
+#    define GPIO_I2C1_SDA  GPIO_I2C1_SDA_1  /* PB7 - AF4 */
 
-#define GPIO_NRF24L01_CS     (GPIO_OUTPUT | GPIO_SPEED_50MHz | \
-                              GPIO_OUTPUT_SET | GPIO_PORTA | GPIO_PIN4)
-#define GPIO_NRF24L01_CE     (GPIO_OUTPUT | GPIO_SPEED_50MHz | \
-                              GPIO_OUTPUT_CLEAR | GPIO_PORTF | GPIO_PIN12)
-#define GPIO_NRF24L01_IRQ    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTD | GPIO_PIN15)
+#  elif defined(CONFIG_NUCLEO_H753ZI_I2C1_PINSET_2)
+     /* AF4: I2C1 on PB8/PB9 (Morpho) */
+#    define GPIO_I2C1_SCL  GPIO_I2C1_SCL_2  /* PB8 - AF4 */
+#    define GPIO_I2C1_SDA  GPIO_I2C1_SDA_2  /* PB9 - AF4 */
+#  endif
 
-/* Storage GPIO Definitions */
+#  define I2C1_FREQUENCY  CONFIG_NUCLEO_H753ZI_I2C1_DEFAULT_FREQUENCY
 
-#define GPIO_MMCSD_CS        (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz | \
-                              GPIO_OUTPUT_SET | GPIO_PORTD | GPIO_PIN15)
-#define GPIO_MMCSD_NCD       (GPIO_INPUT | GPIO_PULLUP | GPIO_EXTI | \
-                              GPIO_PORTF | GPIO_PIN12)
+#endif /* CONFIG_NUCLEO_H753ZI_I2C1_ENABLE */
 
-/* ==========================================================================
- * PERIPHERAL DEVICE DEFINITIONS
- * ==========================================================================
- *
- * This section contains peripheral-specific configurations that do not
- * fall under other categories.
+/* I2C2 Pin Configurations */
+
+#ifdef CONFIG_NUCLEO_H753ZI_I2C2_ENABLE
+
+#  ifdef CONFIG_NUCLEO_H753ZI_I2C2_PINSET_1
+     /* AF4: I2C2 on PB10/PB11 */
+#    define GPIO_I2C2_SCL  GPIO_I2C2_SCL_1  /* PB10 - AF4 */
+#    define GPIO_I2C2_SDA  GPIO_I2C2_SDA_1  /* PB11 - AF4 */
+
+#  elif defined(CONFIG_NUCLEO_H753ZI_I2C2_PINSET_2)
+     /* AF4: I2C2 on PF1/PF0 */
+#    define GPIO_I2C2_SCL  GPIO_I2C2_SCL_2  /* PF1 - AF4 */
+#    define GPIO_I2C2_SDA  GPIO_I2C2_SDA_2  /* PF0 - AF4 */
+
+#  elif defined(CONFIG_NUCLEO_H753ZI_I2C2_PINSET_3)
+     /* AF4: I2C2 on PH4/PH5 */
+#    define GPIO_I2C2_SCL  GPIO_I2C2_SCL_3  /* PH4 - AF4 */
+#    define GPIO_I2C2_SDA  GPIO_I2C2_SDA_3  /* PH5 - AF4 */
+#  endif
+
+#  define I2C2_FREQUENCY  CONFIG_NUCLEO_H753ZI_I2C2_DEFAULT_FREQUENCY
+
+#endif /* CONFIG_NUCLEO_H753ZI_I2C2_ENABLE */
+
+/* I2C3 Pin Configurations */
+
+#ifdef CONFIG_NUCLEO_H753ZI_I2C3_ENABLE
+
+#  ifdef CONFIG_NUCLEO_H753ZI_I2C3_PINSET_1
+     /* AF4: I2C3 on PA8/PC9 */
+#    define GPIO_I2C3_SCL  GPIO_I2C3_SCL_1  /* PA8 - AF4 */
+#    define GPIO_I2C3_SDA  GPIO_I2C3_SDA_1  /* PC9 - AF4 */
+
+#  elif defined(CONFIG_NUCLEO_H753ZI_I2C3_PINSET_2)
+     /* AF4: I2C3 on PH7/PH8 */
+#    define GPIO_I2C3_SCL  GPIO_I2C3_SCL_2  /* PH7 - AF4 */
+#    define GPIO_I2C3_SDA  GPIO_I2C3_SDA_2  /* PH8 - AF4 */
+#  endif
+
+#  define I2C3_FREQUENCY  CONFIG_NUCLEO_H753ZI_I2C3_DEFAULT_FREQUENCY
+
+#endif /* CONFIG_NUCLEO_H753ZI_I2C3_ENABLE */
+
+/* I2C4 Pin Configurations */
+
+#ifdef CONFIG_NUCLEO_H753ZI_I2C4_ENABLE
+
+#  ifdef CONFIG_NUCLEO_H753ZI_I2C4_PINSET_1
+     /* AF4: I2C4 on PD12/PD13 */
+#    define GPIO_I2C4_SCL  GPIO_I2C4_SCL_1  /* PD12 - AF4 */
+#    define GPIO_I2C4_SDA  GPIO_I2C4_SDA_1  /* PD13 - AF4 */
+
+#  elif defined(CONFIG_NUCLEO_H753ZI_I2C4_PINSET_2)
+     /* AF4: I2C4 on PF14/PF15 */
+#    define GPIO_I2C4_SCL  GPIO_I2C4_SCL_2  /* PF14 - AF4 */
+#    define GPIO_I2C4_SDA  GPIO_I2C4_SDA_2  /* PF15 - AF4 */
+
+#  elif defined(CONFIG_NUCLEO_H753ZI_I2C4_PINSET_3)
+     /* AF4: I2C4 on PH11/PH12 */
+#    define GPIO_I2C4_SCL  GPIO_I2C4_SCL_3  /* PH11 - AF4 */
+#    define GPIO_I2C4_SDA  GPIO_I2C4_SDA_3  /* PH12 - AF4 */
+
+#  elif defined(CONFIG_NUCLEO_H753ZI_I2C4_PINSET_4)
+     /* AF6: I2C4 on PB6/PB7 (shared with I2C1!) */
+#    define GPIO_I2C4_SCL  GPIO_I2C4_SCL_4  /* PB6 - AF6 */
+#    define GPIO_I2C4_SDA  GPIO_I2C4_SDA_4  /* PB7 - AF6 */
+
+#  elif defined(CONFIG_NUCLEO_H753ZI_I2C4_PINSET_5)
+     /* AF6: I2C4 on PB8/PB9 (shared with I2C1!) */
+#    define GPIO_I2C4_SCL  GPIO_I2C4_SCL_5  /* PB8 - AF6 */
+#    define GPIO_I2C4_SDA  GPIO_I2C4_SDA_5  /* PB9 - AF6 */
+#  endif
+
+#  define I2C4_FREQUENCY  CONFIG_NUCLEO_H753ZI_I2C4_DEFAULT_FREQUENCY
+
+#endif /* CONFIG_NUCLEO_H753ZI_I2C4_ENABLE */
+
+/****************************************************************************
+ * Sensors
+ ****************************************************************************/
+
+/* MFRC522 - SPI RFID Reader */
+
+#ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
+
+/* Validate Kconfig */
+
+#  ifndef CONFIG_NUCLEO_H753ZI_MFRC522_SPI_BUS
+#    error "MFRC522 enabled but SPI bus not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_MFRC522_DEVID
+#    error "MFRC522 enabled but device ID not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_MFRC522_CS_PIN
+#    error "MFRC522 enabled but CS pin not configured"
+#  endif
+
+/* Device configuration (from Kconfig) */
+
+#  define MFRC522_SPI_BUS            CONFIG_NUCLEO_H753ZI_MFRC522_SPI_BUS
+#  define MFRC522_DEVICE_ID          CONFIG_NUCLEO_H753ZI_MFRC522_DEVID
+#  define MFRC522_CS_PIN             CONFIG_NUCLEO_H753ZI_MFRC522_CS_PIN
+
+/* CS Active Level */
+
+#  if defined(CONFIG_NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW)
+#    define MFRC522_CS_ACTIVE_LOW    true
+#  elif defined(CONFIG_NUCLEO_H753ZI_MFRC522_CS_ACTIVE_HIGH)
+#    define MFRC522_CS_ACTIVE_LOW    false
+#  else
+     /* Default to active low if neither is explicitly set */
+#    define MFRC522_CS_ACTIVE_LOW    true
+#  endif
+
+/* IRQ Configuration */
+
+#  ifdef CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_ENABLE
+#    ifndef CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_PIN
+#      error "MFRC522 IRQ enabled but IRQ pin not configured"
+#    endif
+#    define MFRC522_IRQ_PIN          CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_PIN
+#    define MFRC522_IRQ_ENABLED      true
+#  else
+#    define MFRC522_IRQ_ENABLED      false
+#  endif
+
+#endif /* CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE */
+
+/* LPS22HB - I2C Pressure Sensor */
+
+#ifdef CONFIG_SENSORS_LPS22HB
+#  define GPIO_LPS22HB_INT1    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | \
+                                GPIO_PIN10)
+#endif
+
+/* LSM6DSL - I2C 6-axis IMU */
+
+#ifdef CONFIG_SENSORS_LSM6DSL
+#  define GPIO_LSM6DSL_INT1    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | \
+                                GPIO_PIN4)
+#  define GPIO_LSM6DSL_INT2    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | \
+                                GPIO_PIN5)
+#endif
+
+/* LSM303AGR - I2C Magnetometer/Accelerometer */
+
+/* TODO: Add LSM303AGR GPIO and I2C configurations when needed */
+
+/* LSM9DS1 - I2C 9-axis IMU */
+
+#ifdef CONFIG_SENSORS_LSM9DS1
+#  define LMS9DS1_I2CBUS 1
+#endif
+
+/* TODO: Add new sensors here following this pattern:
+ * - Validate required Kconfig settings
+ * - Define GPIO pins (CS for SPI, INT pins, etc)
+ * - Define bus configuration (SPI/I2C bus number)
+ * - Add function prototype in SECTION 5
+ * - Implement driver in src/drivers/driver_modules/stm32_yoursensor.c
  */
 
-/* Sensor Configuration */
+/****************************************************************************
+ * Displays
+ ****************************************************************************/
 
-#define LMS9DS1_I2CBUS 1
+/* ST7796 - SPI LCD Display (480x320) */
 
-/* PCA9635 LED Controller Configuration */
+#ifdef CONFIG_NUCLEO_H753ZI_ST7796_ENABLE
 
-#define PCA9635_I2CBUS       1
-#define PCA9635_I2CADDR      0x40
+/* Validate Kconfig */
 
-/* OLED Display Configuration */
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_SPI_BUS
+#    error "ST7796 enabled but SPI bus not configured"
+#  endif
 
-/* SSD1306 - I2C */
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_DEVID
+#    error "ST7796 enabled but device ID not configured"
+#  endif
 
-#define OLED_I2C_PORT        1
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN
+#    error "ST7796 enabled but CS pin not configured"
+#  endif
 
-/* PWM Timer Configuration */
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN
+#    error "ST7796 enabled but DC pin not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN
+#    error "ST7796 enabled but RESET pin not configured"
+#  endif
+
+#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN
+#    error "ST7796 enabled but LED pin not configured"
+#  endif
+
+/* Device configuration (from Kconfig) */
+
+#  define ST7796_SPI_BUS           CONFIG_NUCLEO_H753ZI_ST7796_SPI_BUS
+#  define ST7796_DEVICE_ID         CONFIG_NUCLEO_H753ZI_ST7796_DEVID
+#  define ST7796_CS_PIN            CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN
+#  define ST7796_DC_PIN            CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN
+#  define ST7796_RESET_PIN         CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN
+#  define ST7796_LED_PIN           CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN
+
+/* CS Active Level */
+
+#  if defined(CONFIG_NUCLEO_H753ZI_ST7796_CS_ACTIVE_LOW)
+#    define ST7796_CS_ACTIVE_LOW   true
+#  elif defined(CONFIG_NUCLEO_H753ZI_ST7796_CS_ACTIVE_HIGH)
+#    define ST7796_CS_ACTIVE_LOW   false
+#  else
+     /* Default to active low if neither is explicitly set */
+#    define ST7796_CS_ACTIVE_LOW   true
+#  endif
+
+#endif /* CONFIG_NUCLEO_H753ZI_ST7796_ENABLE */
+
+/* SSD1306 - I2C OLED Display (128x64/128x32) */
+
+#ifdef CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE
+
+/* Hardware configuration from Kconfig */
+
+#  define NUCLEO_SSD1306_I2C_BUS       CONFIG_NUCLEO_H753ZI_SSD1306_I2C_BUS
+#  define NUCLEO_SSD1306_I2C_ADDR      CONFIG_NUCLEO_H753ZI_SSD1306_I2C_ADDR
+#  define NUCLEO_SSD1306_I2C_FREQUENCY \
+          CONFIG_NUCLEO_H753ZI_SSD1306_I2C_FREQUENCY
+#  define NUCLEO_SSD1306_POWER_PERCENT \
+          CONFIG_NUCLEO_H753ZI_SSD1306_POWER_PERCENT
+
+/* System configuration - from Kconfig */
+
+#  define NUCLEO_SSD1306_DEVPATH       CONFIG_NUCLEO_H753ZI_SSD1306_DEVPATH
+#  define NUCLEO_SSD1306_DEVNO         CONFIG_NUCLEO_H753ZI_SSD1306_DEVNO
+
+/* Device name for internal tracking */
+
+#  define NUCLEO_SSD1306_DEVNAME       "ssd1306"
+
+#endif /* CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE */
+
+/* TODO: Add new displays here following ST7796/SSD1306 pattern:
+ * - Validate required Kconfig settings
+ * - Define GPIO pins (CS, DC, RESET, etc)
+ * - Define bus configuration (SPI/I2C)
+ * - Add function prototypes in SECTION 5
+ * - Implement driver in src/drivers/driver_modules/stm32_yourdisplay.c
+ */
+
+/****************************************************************************
+ * Wireless Modules
+ ****************************************************************************/
+
+/* NRF24L01 - SPI 2.4GHz Transceiver */
+
+#ifdef CONFIG_WL_NRF24L01
+#  define GPIO_NRF24L01_CS     (GPIO_OUTPUT | GPIO_SPEED_50MHz | \
+                                GPIO_OUTPUT_SET | GPIO_PORTA | GPIO_PIN4)
+#  define GPIO_NRF24L01_CE     (GPIO_OUTPUT | GPIO_SPEED_50MHz | \
+                                GPIO_OUTPUT_CLEAR | GPIO_PORTF | GPIO_PIN12)
+#  define GPIO_NRF24L01_IRQ    (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTD | \
+                                GPIO_PIN15)
+#endif
+
+/* TODO: Add new wireless modules here following NRF24L01 pattern:
+ * - WiFi modules (ESP8266, ESP32-AT, etc)
+ * - LoRa modules (SX1276, SX1278, etc)
+ * - Bluetooth modules (HC-05, nRF52, etc)
+ * - Validate Kconfig settings
+ * - Define GPIO pins
+ * - Add function prototypes in SECTION 5
+ * - Implement driver in src/drivers/driver_modules/stm32_yourwireless.c
+ */
+
+/****************************************************************************
+ * Storage Devices
+ ****************************************************************************/
+
+/* MMCSD - SPI SD Card */
+
+#ifdef CONFIG_MMCSD_SPI
+#  define GPIO_MMCSD_CS        (GPIO_OUTPUT | GPIO_PUSHPULL | \
+                                GPIO_SPEED_50MHz | GPIO_OUTPUT_SET | \
+                                GPIO_PORTD | GPIO_PIN15)
+#  define GPIO_MMCSD_NCD       (GPIO_INPUT | GPIO_PULLUP | GPIO_EXTI | \
+                                GPIO_PORTF | GPIO_PIN12)
+#endif
+
+/* TODO: Add new storage devices here following MMCSD pattern:
+ * - QSPI Flash (W25Q, MX25, etc)
+ * - I2C EEPROM (AT24C, M24C, etc)
+ * - SPI Flash (AT25, SST25, etc)
+ * - Validate Kconfig settings
+ * - Define GPIO pins (CS, WP, HOLD, etc)
+ * - Add function prototypes in SECTION 5
+ * - Implement driver in src/drivers/driver_modules/stm32_yourstorage.c
+ */
+
+/****************************************************************************
+ * Actuators & LED Controllers
+ ****************************************************************************/
+
+/* PCA9635 - I2C LED Controller */
+
+#ifdef CONFIG_PCA9635PW
+#  define PCA9635_I2CBUS       1
+#  define PCA9635_I2CADDR      0x40
+#endif
+
+/* PWM Configuration */
 
 #define NUCLEOH753ZI_PWMTIMER 1
 
+/* TODO: Add new actuators here:
+ * - Servo controllers (PCA9685, etc)
+ * - Motor drivers (DRV8833, L298N, etc)
+ * - Relay modules
+ * - Define GPIO pins
+ * - Define bus configuration
+ * - Add function prototypes in SECTION 5
+ * - Implement driver in src/drivers/driver_modules/stm32_youractuator.c
+ */
+
 /****************************************************************************
- * Public Function Prototypes
+ * SECTION 5: FUNCTION PROTOTYPES
+ ****************************************************************************/
+
+/****************************************************************************
+ * Core System Initialization
  ****************************************************************************/
 
 /****************************************************************************
@@ -261,10 +591,363 @@
 
 int stm32_bringup(void);
 
-/* ==========================================================================
- * DISPLAY DRIVER PROTOTYPES
- * ==========================================================================
- */
+/****************************************************************************
+ * Communication Bus Drivers - SPI
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: stm32_spi_initialize
+ *
+ * Description:
+ *   Initialize SPI interfaces and CS pins.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32H7_SPI
+int stm32_spi_initialize(void);
+
+/****************************************************************************
+ * Name: stm32_spi_register_cs_device
+ *
+ * Description:
+ *   Register a CS device for a specific SPI bus and device ID.
+ *
+ * Input Parameters:
+ *   spi_bus     - SPI bus number (1-6)
+ *   devid       - Device ID (0-15)
+ *   cs_pin      - CS pin string (e.g., "PF1")
+ *   active_low  - true if CS is active low, false if active high
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
+                                  const char *cs_pin, bool active_low);
+
+/****************************************************************************
+ * Name: stm32_spi_unregister_cs_device
+ *
+ * Description:
+ *   Unregister a CS device.
+ *
+ * Input Parameters:
+ *   spi_bus - SPI bus number (1-6)
+ *   devid   - Device ID
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid);
+
+#ifdef CONFIG_SPI_CMDDATA
+
+/****************************************************************************
+ * Name: stm32_spi_register_dc_pin
+ *
+ * Description:
+ *   Register CMD/DATA pin for SPI devices (e.g., displays).
+ *
+ * Input Parameters:
+ *   spi_bus - SPI bus number (1-6)
+ *   devid   - Device ID
+ *   dc_pin  - DC pin string (e.g., "PF2")
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_spi_register_dc_pin(int spi_bus, uint32_t devid,
+                               const char *dc_pin);
+
+#endif /* CONFIG_SPI_CMDDATA */
+#endif /* CONFIG_STM32H7_SPI */
+
+/****************************************************************************
+ * Name: stm32_spidev_initialize
+ *
+ * Description:
+ *   Called to configure SPI chip select GPIO pins for the Nucleo-H753ZI
+ *   board.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_STM32H7_SPI1) || defined(CONFIG_STM32H7_SPI2) || \
+    defined(CONFIG_STM32H7_SPI3) || defined(CONFIG_STM32H7_SPI4) || \
+    defined(CONFIG_STM32H7_SPI5) || defined(CONFIG_STM32H7_SPI6)
+void weak_function stm32_spidev_initialize(void);
+#endif
+
+#ifdef CONFIG_SPI_DRIVER
+
+/****************************************************************************
+ * Name: stm32_spidev_register_all
+ *
+ * Description:
+ *   Register all SPI devices for userspace access.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_spidev_register_all(void);
+
+#endif
+
+/****************************************************************************
+ * Communication Bus Drivers - I2C
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32H7_I2C
+
+/****************************************************************************
+ * Name: stm32_i2c_initialize
+ *
+ * Description:
+ *   Initialize I2C buses based on Kconfig configuration.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_i2c_initialize(void);
+
+/****************************************************************************
+ * Name: stm32_i2c_register_device
+ *
+ * Description:
+ *   Register an I2C device with specific address, frequency, and name.
+ *
+ * Input Parameters:
+ *   i2c_bus   - I2C bus number (1-4)
+ *   addr      - I2C slave address (7-bit, 0x08-0x77)
+ *   frequency - Bus frequency for this device (Hz)
+ *   name      - Descriptive name for logging (can be NULL)
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_i2c_register_device(int i2c_bus, uint8_t addr,
+                               uint32_t frequency, const char *name);
+
+/****************************************************************************
+ * Name: stm32_i2c_unregister_device
+ *
+ * Description:
+ *   Unregister an I2C device by address.
+ *
+ * Input Parameters:
+ *   i2c_bus - I2C bus number (1-4)
+ *   addr    - I2C slave address to unregister
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_i2c_unregister_device(int i2c_bus, uint8_t addr);
+
+/****************************************************************************
+ * Name: stm32_i2c_get_master
+ *
+ * Description:
+ *   Get I2C master interface for a specific bus.
+ *
+ * Input Parameters:
+ *   i2c_bus - I2C bus number (1-4)
+ *
+ * Returned Value:
+ *   Pointer to I2C master interface, NULL if invalid or not initialized
+ *
+ ****************************************************************************/
+
+struct i2c_master_s *stm32_i2c_get_master(int i2c_bus);
+
+#ifdef CONFIG_I2C_RESET
+
+/****************************************************************************
+ * Name: stm32_i2c_scan_bus
+ *
+ * Description:
+ *   Scan an I2C bus for connected devices (debugging).
+ *
+ * Input Parameters:
+ *   i2c_bus - I2C bus number (1-4)
+ *
+ * Returned Value:
+ *   Number of devices found, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_i2c_scan_bus(int i2c_bus);
+
+#endif
+
+/****************************************************************************
+ * Name: stm32_i2c_list_devices
+ *
+ * Description:
+ *   List all registered I2C devices on a specific bus (debugging).
+ *
+ * Input Parameters:
+ *   i2c_bus - I2C bus number (1-4), or 0 for all buses
+ *
+ * Returned Value:
+ *   Number of registered devices
+ *
+ ****************************************************************************/
+
+int stm32_i2c_list_devices(int i2c_bus);
+
+#endif /* CONFIG_STM32H7_I2C */
+
+/****************************************************************************
+ * CAN/FDCAN Drivers
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32H7_FDCAN
+
+/****************************************************************************
+ * Name: stm32_fdcansockinitialize
+ *
+ * Description:
+ *   Initialize FDCAN socket interface.
+ *
+ * Input Parameters:
+ *   intf - Interface number (0 for FDCAN1/can0, 1 for FDCAN2/can1)
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_fdcansockinitialize(int intf);
+
+#endif
+
+/****************************************************************************
+ * USB Drivers
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32H7_OTGFS
+void weak_function stm32_usbinitialize(void);
+#endif
+
+#if defined(CONFIG_STM32H7_OTGFS) && defined(CONFIG_USBHOST)
+
+/****************************************************************************
+ * Name: stm32_usbhost_initialize
+ *
+ * Description:
+ *   Initialize USB host controller.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_usbhost_initialize(void);
+
+#endif
+
+/****************************************************************************
+ * Sensor Drivers
+ ****************************************************************************/
+
+#ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
+
+/****************************************************************************
+ * Name: stm32_mfrc522initialize
+ *
+ * Description:
+ *   Initialize MFRC522 RFID reader.
+ *
+ * Input Parameters:
+ *   devpath - Device path (e.g., "/dev/rfid0")
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_mfrc522initialize(const char *devpath);
+
+#endif
+
+#ifdef CONFIG_SENSORS_LSM6DSL
+
+/****************************************************************************
+ * Name: stm32_lsm6dsl_initialize
+ *
+ * Description:
+ *   Initialize LSM6DSL 6-axis IMU sensor.
+ *
+ * Input Parameters:
+ *   devpath - Device path (e.g., "/dev/lsm6dsl0")
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_lsm6dsl_initialize(char *devpath);
+
+#endif
+
+#ifdef CONFIG_SENSORS_LSM303AGR
+
+/****************************************************************************
+ * Name: stm32_lsm303agr_initialize
+ *
+ * Description:
+ *   Initialize LSM303AGR magnetometer/accelerometer.
+ *
+ * Input Parameters:
+ *   devpath - Device path
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_lsm303agr_initialize(char *devpath);
+
+#endif
+
+#ifdef CONFIG_SENSORS_LSM9DS1
+
+/****************************************************************************
+ * Name: stm32_lsm9ds1_initialize
+ *
+ * Description:
+ *   Initialize LSM9DS1 9-axis IMU sensor.
+ *
+ * Input Parameters:
+ *   devpath - Device path
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_lsm9ds1_initialize(char *devpath);
+
+#endif
+
+/****************************************************************************
+ * Display Drivers
+ ****************************************************************************/
 
 #if defined(CONFIG_LCD_ST7796) && defined(CONFIG_NUCLEO_H753ZI_ST7796_ENABLE)
 
@@ -328,72 +1011,146 @@ int stm32_st7796_cleanup(void);
 
 #endif /* CONFIG_LCD_ST7796 && CONFIG_NUCLEO_H753ZI_ST7796_ENABLE */
 
-/* ==========================================================================
- * DISPLAY CONFIGURATION VALUES
- * ========================================================================== */
+#ifdef CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE
 
-/* ST7796 Configuration derived from Kconfig */
+/****************************************************************************
+ * Name: stm32_ssd1306_get_devpath
+ *
+ * Description:
+ *   Get the configured device path for SSD1306.
+ *
+ * Returned Value:
+ *   Pointer to device path string
+ *
+ ****************************************************************************/
 
-#ifdef CONFIG_NUCLEO_H753ZI_ST7796_ENABLE
+const char *stm32_ssd1306_get_devpath(void);
 
-/* Validate required configurations */
+/****************************************************************************
+ * Name: stm32_ssd1306_set_power
+ *
+ * Description:
+ *   Change SSD1306 display power/brightness at runtime.
+ *
+ * Input Parameters:
+ *   percent - Power level 0-100%
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
 
-#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_SPI_BUS
-#    error "ST7796 enabled but SPI bus not configured"
-#  endif
+int stm32_ssd1306_set_power(int percent);
 
-#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_DEVID
-#    error "ST7796 enabled but device ID not configured"
-#  endif
+#endif /* CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE */
 
-#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN
-#    error "ST7796 enabled but CS pin not configured"
-#  endif
+/****************************************************************************
+ * Wireless Drivers
+ ****************************************************************************/
 
-#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN
-#    error "ST7796 enabled but DC pin not configured"
-#  endif
+#ifdef CONFIG_WL_NRF24L01
 
-#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN
-#    error "ST7796 enabled but RESET pin not configured"
-#  endif
+/****************************************************************************
+ * Name: stm32_wlinitialize
+ *
+ * Description:
+ *   Initialize NRF24L01 wireless module.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
 
-#  ifndef CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN
-#    error "ST7796 enabled but LED pin not configured"
-#  endif
+int stm32_wlinitialize(void);
 
-/* Define configuration macros */
-
-#  define ST7796_SPI_BUS           CONFIG_NUCLEO_H753ZI_ST7796_SPI_BUS
-#  define ST7796_DEVICE_ID         CONFIG_NUCLEO_H753ZI_ST7796_DEVID
-#  define ST7796_CS_PIN            CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN
-#  define ST7796_DC_PIN            CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN
-#  define ST7796_RESET_PIN         CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN
-#  define ST7796_LED_PIN           CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN
-
-/* CS Active Level - CORRECTED LOGIC */
-
-#  if defined(CONFIG_NUCLEO_H753ZI_ST7796_CS_ACTIVE_LOW)
-#    define ST7796_CS_ACTIVE_LOW   true
-#  elif defined(CONFIG_NUCLEO_H753ZI_ST7796_CS_ACTIVE_HIGH)
-#    define ST7796_CS_ACTIVE_LOW   false
-#  else
-     /* Default to active low if neither is explicitly set */
-#    define ST7796_CS_ACTIVE_LOW   true
-#  endif
-
-#endif /* CONFIG_NUCLEO_H753ZI_ST7796_ENABLE */
-
-#ifdef CONFIG_LCD_SSD1306
-int stm32_ssd1306_initialize(void);
-int board_lcd_initialize(void);
-struct lcd_dev_s *board_lcd_getdev(int devno);
-void board_lcd_uninitialize(void);
 #endif
 
-#ifdef CONFIG_ADC
-int stm32_adc_setup(void);
+/****************************************************************************
+ * Storage Drivers
+ ****************************************************************************/
+
+#ifdef CONFIG_MMCSD_SPI
+
+/****************************************************************************
+ * Name: stm32_mmcsd_initialize
+ *
+ * Description:
+ *   Initialize MMC/SD card over SPI.
+ *
+ * Input Parameters:
+ *   minor - Device minor number
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_mmcsd_initialize(int minor);
+
 #endif
+
+#ifdef CONFIG_MTD
+#ifdef HAVE_PROGMEM_CHARDEV
+
+/****************************************************************************
+ * Name: stm32_progmem_init
+ *
+ * Description:
+ *   Initialize internal flash as MTD device.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_progmem_init(void);
+
+#endif /* HAVE_PROGMEM_CHARDEV */
+#endif /* CONFIG_MTD */
+
+/****************************************************************************
+ * Actuator & LED Controller Drivers
+ ****************************************************************************/
+
+#ifdef CONFIG_PCA9635PW
+
+/****************************************************************************
+ * Name: stm32_pca9635_initialize
+ *
+ * Description:
+ *   Initialize PCA9635 I2C LED controller.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_pca9635_initialize(void);
+
+#endif
+
+#ifdef CONFIG_PWM
+
+/****************************************************************************
+ * Name: stm32_pwm_setup
+ *
+ * Description:
+ *   Initialize PWM outputs.
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_pwm_setup(void);
+
+#endif
+
+/****************************************************************************
+ * GPIO & ADC Drivers
+ ****************************************************************************/
+
+#ifdef CONFIG_DEV_GPIO
 
 /****************************************************************************
  * Name: stm32_gpio_initialize
@@ -401,181 +1158,30 @@ int stm32_adc_setup(void);
  * Description:
  *   Initialize GPIO drivers for use with /apps/examples/gpio
  *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
  ****************************************************************************/
 
-#ifdef CONFIG_DEV_GPIO
 int stm32_gpio_initialize(void);
+
 #endif
 
+#ifdef CONFIG_ADC
+
 /****************************************************************************
- * Name: stm32_spi_initialize
+ * Name: stm32_adc_setup
  *
  * Description:
- *   Initialize SPI interfaces and CS pins.
+ *   Initialize ADC and register the ADC driver.
  *
  * Returned Value:
  *   OK on success, negative errno on error
  *
  ****************************************************************************/
 
-#ifdef CONFIG_STM32H7_SPI
-int stm32_spi_initialize(void);
+int stm32_adc_setup(void);
 
-/* SPI CS device registration functions */
-
-int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
-                                  const char *cs_pin, bool active_low);
-int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid);
 #endif
-
-#ifdef CONFIG_SPI_DRIVER
-int stm32_spidev_register_all(void);
-#endif
-
-/****************************************************************************
- * Name: stm32_spidev_initialize
- *
- * Description:
- *   Called to configure SPI chip select GPIO pins for the Nucleo-H753ZI board.
- *
- ****************************************************************************/
-
-#if defined(CONFIG_STM32H7_SPI1) || defined(CONFIG_STM32H7_SPI2) || \
-    defined(CONFIG_STM32H7_SPI3) || defined(CONFIG_STM32H7_SPI4) || \
-    defined(CONFIG_STM32H7_SPI5) || defined(CONFIG_STM32H7_SPI6)
-void weak_function stm32_spidev_initialize(void);
-#endif
-
-#ifdef CONFIG_STM32H7_OTGFS
-void weak_function stm32_usbinitialize(void);
-#endif
-
-#if defined(CONFIG_STM32H7_OTGFS) && defined(CONFIG_USBHOST)
-int stm32_usbhost_initialize(void);
-#endif
-
-/****************************************************************************
- * Name: stm32_spi_register_dc_pin
- *
- * Description:
- *   Called to configure CMD/DATA for the Nucleo-H753ZI board.
- *
- ****************************************************************************/
-#ifdef CONFIG_STM32H7_SPI
-
-int stm32_spi_initialize(void);
-int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
-                                  const char *cs_pin, bool active_low);
-
-#ifdef CONFIG_SPI_CMDDATA
-int stm32_spi_register_dc_pin(int spi_bus, uint32_t devid,
-                               const char *dc_pin);
-#endif
-
-int stm32_spi_unregister_cs_device(int spi_bus, uint32_t devid);
-
-#ifdef CONFIG_SPI_DRIVER
-int stm32_spidev_register_all(void);
-#endif
-
-#endif /* CONFIG_STM32H7_SPI */
-
-/****************************************************************************
- * Sensors - driver registration
- ****************************************************************************/
-
-#ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
-int stm32_mfrc522initialize(const char *devpath);
-#endif
-
-#ifdef CONFIG_SENSORS_LSM6DSL
-int stm32_lsm6dsl_initialize(char *devpath);
-#endif
-
-#ifdef CONFIG_SENSORS_LSM303AGR
-int stm32_lsm303agr_initialize(char *devpath);
-#endif
-
-#ifdef CONFIG_SENSORS_LSM9DS1
-int stm32_lsm9ds1_initialize(char *devpath);
-#endif
-
-#ifdef CONFIG_WL_NRF24L01
-int stm32_wlinitialize(void);
-#endif
-
-#ifdef CONFIG_PCA9635PW
-int stm32_pca9635_initialize(void);
-#endif
-
-#ifdef CONFIG_PWM
-int stm32_pwm_setup(void);
-#endif
-
-#ifdef CONFIG_MTD
-
-#ifdef HAVE_PROGMEM_CHARDEV
-int stm32_progmem_init(void);
-#endif /* HAVE_PROGMEM_CHARDEV */
-
-#endif /* CONFIG_MTD */
-
-#ifdef CONFIG_MMCSD_SPI
-int stm32_mmcsd_initialize(int minor);
-#endif
-
-/* ==========================================================================
- * SENSOR CONFIGURATION VALUES
- * ==========================================================================
- */
-
-/* MFRC522 Configuration derived from Kconfig */
-
-#ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
-
-/* Validate required configurations */
-
-#  ifndef CONFIG_NUCLEO_H753ZI_MFRC522_SPI_BUS
-#    error "MFRC522 enabled but SPI bus not configured"
-#  endif
-
-#  ifndef CONFIG_NUCLEO_H753ZI_MFRC522_DEVID
-#    error "MFRC522 enabled but device ID not configured"
-#  endif
-
-#  ifndef CONFIG_NUCLEO_H753ZI_MFRC522_CS_PIN
-#    error "MFRC522 enabled but CS pin not configured"
-#  endif
-
-/* Define configuration macros */
-
-#  define MFRC522_SPI_BUS            CONFIG_NUCLEO_H753ZI_MFRC522_SPI_BUS
-#  define MFRC522_DEVICE_ID          CONFIG_NUCLEO_H753ZI_MFRC522_DEVID
-#  define MFRC522_CS_PIN             CONFIG_NUCLEO_H753ZI_MFRC522_CS_PIN
-
-/* CS Active Level - CORRECTED LOGIC (same as ST7796) */
-
-#  if defined(CONFIG_NUCLEO_H753ZI_MFRC522_CS_ACTIVE_LOW)
-#    define MFRC522_CS_ACTIVE_LOW    true
-#  elif defined(CONFIG_NUCLEO_H753ZI_MFRC522_CS_ACTIVE_HIGH)
-#    define MFRC522_CS_ACTIVE_LOW    false
-#  else
-     /* Default to active low if neither is explicitly set */
-#    define MFRC522_CS_ACTIVE_LOW    true
-#  endif
-
-/* IRQ Configuration */
-
-#  ifdef CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_ENABLE
-#    ifndef CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_PIN
-#      error "MFRC522 IRQ enabled but IRQ pin not configured"
-#    endif
-#    define MFRC522_IRQ_PIN          CONFIG_NUCLEO_H753ZI_MFRC522_IRQ_PIN
-#    define MFRC522_IRQ_ENABLED      true
-#  else
-#    define MFRC522_IRQ_ENABLED      false
-#  endif
-
-#endif /* CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE */
 
 #endif /* __BOARDS_ARM_STM32H7_NUCLEO_H753ZI_SRC_NUCLEO_H753ZI_H */
