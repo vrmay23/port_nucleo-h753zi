@@ -26,6 +26,11 @@ if(CONFIG_STM32_ROMFS)
   list(APPEND SRCS drivers/driver_middleware/stm32_romfs_initialize.c)
 endif()
 
+if(CONFIG_STM32H7_I2C)
+  list(APPEND SRCS drivers/driver_bus/stm32_i2c.c)
+endif()
+
+
 if(CONFIG_STM32H7_SPI)
   list(APPEND SRCS drivers/driver_bus/stm32_spi.c)
 endif()
