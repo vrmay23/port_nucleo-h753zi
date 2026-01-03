@@ -949,6 +949,10 @@ int stm32_lsm9ds1_initialize(char *devpath);
  * Display Drivers
  ****************************************************************************/
 
+/****************************************************************************
+ * ST7796 TFT Display Support
+ ****************************************************************************/
+
 #if defined(CONFIG_LCD_ST7796) && defined(CONFIG_NUCLEO_H753ZI_ST7796_ENABLE)
 
 /****************************************************************************
@@ -968,6 +972,20 @@ int stm32_lsm9ds1_initialize(char *devpath);
 int stm32_st7796initialize(int devno);
 
 /****************************************************************************
+ * Name: stm32_st7796_flush_fb
+ *
+ * Description:
+ *   Flush the entire framebuffer to the display. This is needed for SPI
+ *   displays to make the splashscreen visible after fb_register().
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int stm32_st7796_flush_fb(void);
+
+/****************************************************************************
  * Name: stm32_st7796_backlight
  *
  * Description:
@@ -984,7 +1002,23 @@ int stm32_st7796initialize(int devno);
 void stm32_st7796_backlight(bool on);
 
 /****************************************************************************
- * Name: stm32_st7796_reset
+ * Name: stm32_st7796_power
+ *
+ * Description:
+ *   Control the ST7796 display power.
+ *
+ * Input Parameters:
+ *   on - true to turn on, false to turn off
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void stm32_st7796_power(bool on);
+
+/****************************************************************************
+ * Name: stm32_st7796_reset_display
  *
  * Description:
  *   Perform hardware reset of the ST7796 display.
@@ -994,7 +1028,7 @@ void stm32_st7796_backlight(bool on);
  *
  ****************************************************************************/
 
-void stm32_st7796_reset(void);
+void stm32_st7796_reset_display(void);
 
 /****************************************************************************
  * Name: stm32_st7796_cleanup
@@ -1012,7 +1046,6 @@ int stm32_st7796_cleanup(void);
 #endif /* CONFIG_LCD_ST7796 && CONFIG_NUCLEO_H753ZI_ST7796_ENABLE */
 
 #ifdef CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE
-
 /****************************************************************************
  * Name: stm32_ssd1306_get_devpath
  *
@@ -1030,10 +1063,10 @@ const char *stm32_ssd1306_get_devpath(void);
  * Name: stm32_ssd1306_set_power
  *
  * Description:
- *   Change SSD1306 display power/brightness at runtime.
+ *   Change SSD1306 display power at runtime.
  *
  * Input Parameters:
- *   percent - Power level 0-100%
+ *   percent - Power level 0-100% (0 = off, 1-100 = on with brightness)
  *
  * Returned Value:
  *   OK on success, negative errno on error
@@ -1041,6 +1074,22 @@ const char *stm32_ssd1306_get_devpath(void);
  ****************************************************************************/
 
 int stm32_ssd1306_set_power(int percent);
+
+/****************************************************************************
+ * Name: stm32_ssd1306_set_brightness
+ *
+ * Description:
+ *   Change SSD1306 display brightness at runtime (display must be on).
+ *
+ * Input Parameters:
+ *   percent - Brightness level 0-100%
+ *
+ * Returned Value:
+ *   OK on success, negative errno on error
+ *
+ ****************************************************************************/
+
+int stm32_ssd1306_set_brightness(int percent);
 
 #endif /* CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE */
 

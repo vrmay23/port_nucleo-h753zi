@@ -851,9 +851,23 @@ static int nucleo_display_initialize(void)
              "ST7796 TFT display initialized successfully at %s\n",
              ST7796_FB_PATH);
       
+      /* CRITICAL: Flush splashscreen from RAM to SPI display */
+      local_ret = stm32_st7796_flush_fb();
+      if (local_ret < 0)
+        {
+          syslog(LOG_ERR, "ERROR: Failed to flush splashscreen: %d\n", 
+                 local_ret);
+        }
+      else
+        {
+          syslog(LOG_INFO, "ST7796: Splashscreen flushed to display\n");
+        }
+      
+      /* Enable backlight after flush */
       stm32_st7796_backlight(true);
       syslog(LOG_INFO, "ST7796 backlight enabled\n");
     }
+
 #endif
 
   return ret;
