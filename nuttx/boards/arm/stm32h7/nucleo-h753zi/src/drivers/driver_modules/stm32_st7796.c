@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_st7796.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_modules/stm32_st7796.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -143,12 +143,27 @@
 #define ST7796_GPIO_IN_FLOAT \
   (GPIO_INPUT | GPIO_FLOAT | GPIO_SPEED_50MHz)
 
+/* Display resolution for flush */
+
+#if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE) || \
+    defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE) || \
+    defined(CONFIG_LCD_LANDSCAPE) || defined(CONFIG_LCD_RLANDSCAPE)
+#  define ST7796_FLUSH_XRES 480
+#  define ST7796_FLUSH_YRES 320
+#else
+#  define ST7796_FLUSH_XRES 320
+#  define ST7796_FLUSH_YRES 480
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
 static uint32_t g_reset_pin;
 static uint32_t g_led_pin;
+static bool g_st7796_initialized = false;
+static FAR struct spi_dev_s *g_spi_dev = NULL;
+static FAR struct fb_vtable_s *g_fb_vtable = NULL;
 
 /****************************************************************************
  * Private Functions
@@ -260,7 +275,6 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
  *
  * Description:
  *   Initialize GPIO pins for ST7796 (RESET, LED).
- *   DC pin is now registered via SPI system.
  *
  ****************************************************************************/
 
@@ -271,10 +285,8 @@ static int stm32_st7796_gpio_initialize(void)
 
   syslog(LOG_INFO, "ST7796: Configuring GPIO pins...\n");
 
-  /* Parse and configure RESET pin */
-
   g_reset_pin = parse_gpio_pin(CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN,
-                                &error);
+                               &error);
   if (error != 0)
     {
       syslog(LOG_ERR, "ERROR: Invalid RESET pin '%s': %d\n",
@@ -288,8 +300,6 @@ static int stm32_st7796_gpio_initialize(void)
       syslog(LOG_ERR, "ERROR: Failed to configure RESET pin: %d\n", ret);
       return ret;
     }
-
-  /* Parse and configure LED pin */
 
   g_led_pin = parse_gpio_pin(CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN, &error);
   if (error != 0)
@@ -306,14 +316,12 @@ static int stm32_st7796_gpio_initialize(void)
       return ret;
     }
 
-  /* Set initial states - RESET high, LED on */
-
   stm32_gpiowrite(g_reset_pin, true);
-  stm32_gpiowrite(g_led_pin, true);
+  stm32_gpiowrite(g_led_pin, false);  /* Start with backlight OFF */
 
-  syslog(LOG_INFO, "ST7796 GPIO pins initialized:\n");
-  syslog(LOG_INFO, "  RESET: %s\n", CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN);
-  syslog(LOG_INFO, "  LED: %s\n", CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN);
+  syslog(LOG_INFO, "ST7796 GPIO initialized: RESET=%s, LED=%s\n",
+         CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN,
+         CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN);
 
   return OK;
 }
@@ -329,101 +337,63 @@ static int stm32_st7796_gpio_initialize(void)
 static void stm32_st7796_hardware_reset(void)
 {
   syslog(LOG_INFO, "ST7796: Performing hardware reset...\n");
-  
-  /* Reset sequence per ST7796 datasheet:
-   * 1. Set RESET high for stability
-   * 2. Pull RESET low for at least 10ms
-   * 3. Release RESET high
-   * 4. Wait 120ms for display to initialize
-   */
 
   stm32_gpiowrite(g_reset_pin, true);
   nxsig_usleep(ST7796_RESET_DELAY_MS * 1000);
-  
+
   stm32_gpiowrite(g_reset_pin, false);
   nxsig_usleep(ST7796_RESET_HOLD_MS * 1000);
-  
+
   stm32_gpiowrite(g_reset_pin, true);
   nxsig_usleep(ST7796_RESET_RELEASE_MS * 1000);
-  
+
   syslog(LOG_INFO, "ST7796: Reset complete\n");
 }
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: stm32_st7796initialize
+ * Name: stm32_st7796_spi_initialize
  *
  * Description:
- *   Initialize and register the ST7796 LCD driver.
+ *   Initialize SPI bus and register CS/DC pins for ST7796.
  *
  ****************************************************************************/
 
-int stm32_st7796initialize(int devno)
+static int stm32_st7796_spi_initialize(void)
 {
-  FAR struct spi_dev_s *spi;
-  FAR struct fb_vtable_s *fb;
   int ret;
 
   syslog(LOG_INFO, "========================================\n");
-  syslog(LOG_INFO, "ST7796: Starting initialization\n");
-  syslog(LOG_INFO, "  SPI Bus: SPI%d\n", ST7796_SPI_PORTNO);
-  syslog(LOG_INFO, "  Device ID: %d\n", CONFIG_NUCLEO_H753ZI_ST7796_DEVID);
-  syslog(LOG_INFO, "  CS Pin: %s\n", CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN);
-  syslog(LOG_INFO, "  DC Pin: %s\n", CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN);
+  syslog(LOG_INFO, "ST7796: SPI%d init (CS=%s, DC=%s)\n",
+         ST7796_SPI_PORTNO,
+         CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN,
+         CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN);
   syslog(LOG_INFO, "========================================\n");
-
-  /* Step 1: Initialize GPIO pins (RESET, LED) */
-
-  ret = stm32_st7796_gpio_initialize();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: Failed to initialize GPIO: %d\n", ret);
-      return ret;
-    }
-
-  /* Step 2: Perform hardware reset */
 
   stm32_st7796_hardware_reset();
 
-  /* Step 3: Register CS device */
-
-  syslog(LOG_INFO, "ST7796: Registering CS device...\n");
   ret = stm32_spi_register_cs_device(ST7796_SPI_PORTNO,
                                      CONFIG_NUCLEO_H753ZI_ST7796_DEVID,
                                      CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN,
                                      CONFIG_NUCLEO_H753ZI_ST7796_CS_ACTIVE_LOW);
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to register CS device: %d\n", ret);
+      syslog(LOG_ERR, "ERROR: Failed to register CS: %d\n", ret);
       return ret;
     }
 
-  syslog(LOG_INFO, "ST7796 CS registered successfully\n");
-
-  /* Step 4: Register DC pin for SPI_CMDDATA */
-
-  syslog(LOG_INFO, "ST7796: Registering DC pin...\n");
   ret = stm32_spi_register_dc_pin(ST7796_SPI_PORTNO,
                                   CONFIG_NUCLEO_H753ZI_ST7796_DEVID,
                                   CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN);
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to register DC pin: %d\n", ret);
+      syslog(LOG_ERR, "ERROR: Failed to register DC: %d\n", ret);
       stm32_spi_unregister_cs_device(ST7796_SPI_PORTNO,
                                      CONFIG_NUCLEO_H753ZI_ST7796_DEVID);
       return ret;
     }
 
-  syslog(LOG_INFO, "ST7796 DC pin registered successfully\n");
-
-  /* Step 5: Initialize SPI bus */
-
-  syslog(LOG_INFO, "ST7796: Initializing SPI%d bus...\n", ST7796_SPI_PORTNO);
-  spi = stm32_spibus_initialize(ST7796_SPI_PORTNO);
-  if (!spi)
+  g_spi_dev = stm32_spibus_initialize(ST7796_SPI_PORTNO);
+  if (!g_spi_dev)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize SPI%d\n",
              ST7796_SPI_PORTNO);
@@ -432,58 +402,180 @@ int stm32_st7796initialize(int devno)
       return -ENODEV;
     }
 
-  syslog(LOG_INFO, "SPI%d bus initialized successfully\n", ST7796_SPI_PORTNO);
+  syslog(LOG_INFO, "ST7796: SPI initialized\n");
+  g_st7796_initialized = true;
 
-  /* Step 6: Initialize ST7796 framebuffer driver */
+  return OK;
+}
 
-  syslog(LOG_INFO, "ST7796: Initializing framebuffer driver...\n");
-  fb = st7796_fbinitialize(spi);
-  if (!fb)
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_fbinitialize
+ *
+ * Description:
+ *   Initialize the framebuffer video hardware. Called by fb_register().
+ *
+ ****************************************************************************/
+
+int up_fbinitialize(int display)
+{
+  syslog(LOG_INFO, "ST7796: up_fbinitialize(%d)\n", display);
+
+  if (!g_st7796_initialized || g_spi_dev == NULL)
     {
-      syslog(LOG_ERR, "ERROR: Failed to initialize ST7796 driver\n");
-      stm32_spi_unregister_cs_device(ST7796_SPI_PORTNO,
-                                     CONFIG_NUCLEO_H753ZI_ST7796_DEVID);
+      syslog(LOG_ERR, "ERROR: ST7796 not initialized\n");
       return -ENODEV;
     }
 
-  syslog(LOG_INFO, "ST7796 framebuffer driver initialized successfully\n");
+  if (display != 0)
+    {
+      syslog(LOG_ERR, "ERROR: Invalid display: %d\n", display);
+      return -EINVAL;
+    }
 
-  /* Step 7: Register framebuffer device */
+  g_fb_vtable = st7796_fbinitialize(g_spi_dev);
+  if (!g_fb_vtable)
+    {
+      syslog(LOG_ERR, "ERROR: st7796_fbinitialize() failed\n");
+      return -ENODEV;
+    }
 
-  syslog(LOG_INFO, "ST7796: Registering framebuffer device...\n");
-  ret = fb_register_device(0, devno, fb);
+  syslog(LOG_INFO, "ST7796: Framebuffer initialized\n");
+  return OK;
+}
+
+/****************************************************************************
+ * Name: up_fbgetvplane
+ *
+ * Description:
+ *   Return a reference to the framebuffer object for the specified plane.
+ *
+ ****************************************************************************/
+
+FAR struct fb_vtable_s *up_fbgetvplane(int display, int vplane)
+{
+  if (display != 0 || vplane != 0)
+    {
+      return NULL;
+    }
+
+  return g_fb_vtable;
+}
+
+/****************************************************************************
+ * Name: up_fbuninitialize
+ *
+ * Description:
+ *   Uninitialize the framebuffer hardware.
+ *
+ ****************************************************************************/
+
+void up_fbunitialize(int display)
+{
+  syslog(LOG_INFO, "ST7796: up_fbuninitialize(%d)\n", display);
+
+  if (display != 0)
+    {
+      return;
+    }
+
+  stm32_gpiowrite(g_led_pin, false);
+  g_fb_vtable = NULL;
+}
+
+/****************************************************************************
+ * Name: stm32_st7796initialize
+ *
+ * Description:
+ *   Initialize and register the ST7796 LCD driver.
+ *   Called from board bringup.
+ *
+ ****************************************************************************/
+
+int stm32_st7796initialize(int devno)
+{
+  int ret;
+
+  syslog(LOG_INFO, "========================================\n");
+  syslog(LOG_INFO, "ST7796: Starting initialization\n");
+  syslog(LOG_INFO, "========================================\n");
+
+  /* Step 1: Initialize GPIO pins (RESET, LED) */
+
+  ret = stm32_st7796_gpio_initialize();
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to register framebuffer: %d\n", ret);
+      syslog(LOG_ERR, "ERROR: GPIO init failed: %d\n", ret);
+      return ret;
+    }
+
+  /* Step 2: Initialize SPI bus and register CS/DC */
+
+  ret = stm32_st7796_spi_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: SPI init failed: %d\n", ret);
+      return ret;
+    }
+
+  /* Step 3: Register framebuffer device
+   * This calls up_fbinitialize() and draws splashscreen to RAM
+   */
+
+  ret = fb_register(0, 0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: fb_register() failed: %d\n", ret);
       stm32_spi_unregister_cs_device(ST7796_SPI_PORTNO,
                                      CONFIG_NUCLEO_H753ZI_ST7796_DEVID);
       return ret;
     }
 
   syslog(LOG_INFO, "========================================\n");
-  syslog(LOG_INFO, "ST7796: Initialization complete!\n");
-  syslog(LOG_INFO, "  Device: /dev/fb%d\n", devno);
+  syslog(LOG_INFO, "ST7796: Init complete - /dev/fb%d\n", devno);
   syslog(LOG_INFO, "========================================\n");
 
   return OK;
 }
 
 /****************************************************************************
- * Name: stm32_st7796_backlight
+ * Name: stm32_st7796_flush_fb
  *
  * Description:
- *   Control backlight.
+ *   Flush the entire framebuffer to the display. Call this after
+ *   fb_register() to make splashscreen visible on SPI displays.
  *
  ****************************************************************************/
+
+int stm32_st7796_flush_fb(void)
+{
+  struct fb_area_s area;
+
+  if (g_fb_vtable == NULL || g_fb_vtable->updatearea == NULL)
+    {
+      syslog(LOG_ERR, "ERROR: Framebuffer not ready for flush\n");
+      return -ENODEV;
+    }
+
+  area.x = 0;
+  area.y = 0;
+  area.w = ST7796_FLUSH_XRES;
+  area.h = ST7796_FLUSH_YRES;
+
+  syslog(LOG_INFO, "ST7796: Flushing framebuffer (%dx%d) to display...\n", 
+         area.w, area.h);
+
+  return g_fb_vtable->updatearea(g_fb_vtable, &area);
+}
 
 /****************************************************************************
  * Name: stm32_st7796_backlight
  *
  * Description:
  *   Control backlight LED.
- *
- * Input Parameters:
- *   on - true to turn backlight on, false to turn off
  *
  ****************************************************************************/
 
@@ -497,10 +589,7 @@ void stm32_st7796_backlight(bool on)
  * Name: stm32_st7796_power
  *
  * Description:
- *   Control display power (backlight + potential future power control).
- *
- * Input Parameters:
- *   on - true to power on display, false to power off
+ *   Control display power.
  *
  ****************************************************************************/
 
@@ -508,13 +597,13 @@ void stm32_st7796_power(bool on)
 {
   if (on)
     {
-      syslog(LOG_INFO, "ST7796: Powering on display\n");
+      syslog(LOG_INFO, "ST7796: Power ON\n");
       stm32_st7796_hardware_reset();
       stm32_gpiowrite(g_led_pin, true);
     }
   else
     {
-      syslog(LOG_INFO, "ST7796: Powering off display\n");
+      syslog(LOG_INFO, "ST7796: Power OFF\n");
       stm32_gpiowrite(g_led_pin, false);
     }
 }
@@ -523,13 +612,13 @@ void stm32_st7796_power(bool on)
  * Name: stm32_st7796_reset_display
  *
  * Description:
- *   Public function to reset the display (useful for recovery).
+ *   Public function to reset the display.
  *
  ****************************************************************************/
 
 void stm32_st7796_reset_display(void)
 {
-  syslog(LOG_INFO, "ST7796: Manual reset requested\n");
+  syslog(LOG_INFO, "ST7796: Manual reset\n");
   stm32_st7796_hardware_reset();
 }
 
@@ -545,32 +634,25 @@ int stm32_st7796_cleanup(void)
 {
   int ret;
 
-  syslog(LOG_INFO, "ST7796: Starting cleanup...\n");
-
-  /* Turn off backlight */
+  syslog(LOG_INFO, "ST7796: Cleanup...\n");
 
   stm32_gpiowrite(g_led_pin, false);
 
-  /* Unconfigure GPIO pins */
-
-  syslog(LOG_INFO, "ST7796: Unconfiguring GPIO pins...\n");
   stm32_configgpio((g_reset_pin & ST7796_GPIO_CONFIG_MASK) |
                    ST7796_GPIO_IN_FLOAT);
   stm32_configgpio((g_led_pin & ST7796_GPIO_CONFIG_MASK) |
                    ST7796_GPIO_IN_FLOAT);
 
-  /* Unregister CS device */
-
   ret = stm32_spi_unregister_cs_device(ST7796_SPI_PORTNO,
                                        CONFIG_NUCLEO_H753ZI_ST7796_DEVID);
   if (ret < 0)
     {
-      syslog(LOG_WARNING, "WARNING: Failed to unregister CS: %d\n", ret);
+      syslog(LOG_WARNING, "WARNING: CS unregister failed: %d\n", ret);
     }
-  else
-    {
-      syslog(LOG_INFO, "ST7796 CS device unregistered\n");
-    }
+
+  g_st7796_initialized = false;
+  g_spi_dev = NULL;
+  g_fb_vtable = NULL;
 
   syslog(LOG_INFO, "ST7796: Cleanup complete\n");
 

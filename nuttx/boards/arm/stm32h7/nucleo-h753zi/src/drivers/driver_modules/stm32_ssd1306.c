@@ -75,6 +75,17 @@
  * - /dev/lcdX (LCD interface): Used for smaller displays with internal
  *   memory. The SSD1306 has 1KB RAM inside the chip itself, so we don't
  *   need a big framebuffer in our MCU's RAM.
+ *
+ * BRIGHTNESS CONTROL:
+ * -------------------
+ * The SSD1306 requires 3 registers to effectively control brightness:
+ * - 0x81: Contrast (0-255)
+ * - 0xD9: Pre-charge period
+ * - 0xDB: VCOMH deselect level
+ *
+ * The NuttX driver only sets contrast (0x81), which has minimal visual
+ * effect. This driver sends all 3 commands directly via I2C for real
+ * brightness control.
  */
 
 /****************************************************************************
@@ -146,6 +157,13 @@
 #define SSD1306_DEVNO         NUCLEO_SSD1306_DEVNO         /* 0 */
 #define SSD1306_DEVNAME       NUCLEO_SSD1306_DEVNAME       /* "ssd1306" */
 
+/* SSD1306 Command Bytes */
+
+#define SSD1306_CMD_BYTE          0x00  /* Control byte: Co=0, D/C#=0 */
+#define SSD1306_CMD_SETCONTRAST   0x81  /* Set contrast control */
+#define SSD1306_CMD_SETPRECHARGE  0xd9  /* Set pre-charge period */
+#define SSD1306_CMD_SETVCOMDETECT 0xdb  /* Set VCOMH deselect level */
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -167,6 +185,168 @@ static struct lcd_dev_s    *g_ssd1306_lcd = NULL;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: ssd1306_send_cmd_arg
+ *
+ * Description:
+ *   Send a command with one argument byte to the SSD1306 via I2C.
+ *
+ * Input Parameters:
+ *   cmd - Command byte
+ *   arg - Argument byte
+ *
+ * Returned Value:
+ *   OK on success, negative errno on failure
+ *
+ ****************************************************************************/
+
+static int ssd1306_send_cmd_arg(uint8_t cmd, uint8_t arg)
+{
+  struct i2c_msg_s msg;
+  uint8_t buf[3];
+  int ret;
+
+  if (!g_ssd1306_i2c)
+    {
+      return -ENODEV;
+    }
+
+  /* SSD1306 I2C protocol for double-byte commands:
+   * [Control byte: 0x00] [Command] [Argument]
+   *
+   * Control byte 0x00 = Co=0 (continuous), D/C#=0 (command mode)
+   * This tells SSD1306 that following bytes are all commands.
+   */
+
+  buf[0] = SSD1306_CMD_BYTE;  /* Control byte: command mode */
+  buf[1] = cmd;
+  buf[2] = arg;
+
+  msg.frequency = SSD1306_I2C_FREQUENCY;
+  msg.addr      = SSD1306_I2C_ADDR;
+  msg.flags     = 0;          /* Write */
+  msg.buffer    = buf;
+  msg.length    = 3;
+
+  ret = I2C_TRANSFER(g_ssd1306_i2c, &msg, 1);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "SSD1306: I2C cmd 0x%02x arg 0x%02x failed: %d\n",
+             cmd, arg, ret);
+    }
+
+  return ret;
+}
+
+/****************************************************************************
+ * Name: ssd1306_set_brightness_raw
+ *
+ * Description:
+ *   Set display brightness using all 3 required SSD1306 registers.
+ *   This bypasses the NuttX driver to provide real brightness control.
+ *
+ *   The SSD1306 brightness is controlled by:
+ *   - Contrast register (0x81): 0-255, controls OLED segment current
+ *   - Pre-charge period (0xD9): affects charge pump timing
+ *   - VCOMH level (0xDB): affects voltage levels
+ *
+ *   For effective dimming, all 3 must be adjusted together.
+ *
+ * Input Parameters:
+ *   percent - Brightness 0-100%
+ *
+ * Returned Value:
+ *   OK on success, negative errno on failure
+ *
+ ****************************************************************************/
+
+static int ssd1306_set_brightness_raw(int percent)
+{
+  uint8_t contrast;
+  uint8_t precharge;
+  uint8_t vcomh;
+  int ret;
+
+  /* Clamp to valid range */
+
+  if (percent < 0)
+    {
+      percent = 0;
+    }
+  else if (percent > 100)
+    {
+      percent = 100;
+    }
+
+  /* Calculate register values based on percentage.
+   *
+   * Contrast: Linear scale 0-255
+   *
+   * Pre-charge (0xD9): Controls charge/discharge time
+   *   - Low nibble: phase 1 (1-15 DCLKs)
+   *   - High nibble: phase 2 (1-15 DCLKs)
+   *   - Range: 0x11 (dimmest) to 0xFF (brightest)
+   *
+   * VCOMH (0xDB): Deselect voltage level
+   *   - 0x00 = 0.65 x VCC (dimmest)
+   *   - 0x20 = 0.77 x VCC
+   *   - 0x30 = 0.83 x VCC
+   *   - 0x40 = 1.00 x VCC (brightest, may cause damage on some displays)
+   *
+   * Using linear interpolation for smoother transitions.
+   */
+
+  /* Contrast: direct linear mapping */
+
+  contrast = (uint8_t)((percent * 255) / 100);
+
+  /* Pre-charge: scale from 0x11 to 0xF1
+   * phase1 = 1 + (percent * 14 / 100)  -> 1 to 15
+   * phase2 = 1 + (percent * 14 / 100)  -> 1 to 15
+   */
+
+  {
+    uint8_t phase1;
+    uint8_t phase2;
+
+    phase1 = 1 + (uint8_t)((percent * 14) / 100);
+    phase2 = 1 + (uint8_t)((percent * 14) / 100);
+    precharge = (phase2 << 4) | phase1;
+  }
+
+  /* VCOMH: scale from 0x00 to 0x30 (avoid 0x40 for safety)
+   * Linear: 0x00 at 0%, 0x30 at 100%
+   */
+
+  vcomh = (uint8_t)((percent * 0x30) / 100);
+
+  syslog(LOG_INFO,
+         "SSD1306: Brightness %d%% -> con=0x%02x pre=0x%02x vcom=0x%02x\n",
+         percent, contrast, precharge, vcomh);
+
+  /* Send all three commands */
+
+  ret = ssd1306_send_cmd_arg(SSD1306_CMD_SETCONTRAST, contrast);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  ret = ssd1306_send_cmd_arg(SSD1306_CMD_SETPRECHARGE, precharge);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  ret = ssd1306_send_cmd_arg(SSD1306_CMD_SETVCOMDETECT, vcomh);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  return OK;
+}
 
 /****************************************************************************
  * Name: calculate_power_level
@@ -238,7 +418,7 @@ int board_lcd_initialize(void)
   syslog(LOG_INFO, "SSD1306:   Address: 0x%02X\n", SSD1306_I2C_ADDR);
   syslog(LOG_INFO, "SSD1306:   Frequency: %lu Hz\n",
          (unsigned long)SSD1306_I2C_FREQUENCY);
-  syslog(LOG_INFO, "SSD1306:   Power: %d%%\n", SSD1306_POWER_PERCENT);
+  syslog(LOG_INFO, "SSD1306:   Brightness: %d%%\n", SSD1306_POWER_PERCENT);
 
   /* Step 1: Register I2C device for tracking and debugging
    *
@@ -294,6 +474,7 @@ int board_lcd_initialize(void)
  *   This function:
  *   1. Calls ssd1306_initialize() to init the display hardware
  *   2. Turns on the display if configured to do so
+ *   3. Sets the brightness level from Kconfig (using direct I2C)
  *
  *   IMPORTANT: Do NOT call lcddev_register() from inside this function!
  *   lcddev_register() internally calls board_lcd_getdev(), which would
@@ -374,22 +555,17 @@ struct lcd_dev_s *board_lcd_getdev(int devno)
 
   if (power_level > 0)
     {
-      int contrast;
-
       syslog(LOG_INFO, "SSD1306: Turning on display\n");
       g_ssd1306_lcd->setpower(g_ssd1306_lcd, power_level);
 
-      /* Step 3: Set display contrast/brightness
+      /* Step 3: Set display brightness using direct I2C commands
        *
-       * The SSD1306 uses a contrast register (0x81) to control brightness.
-       * Values range from 0x00 (dimmest) to 0xFF (brightest).
-       * We convert the Kconfig percentage to this 0-255 range.
+       * The NuttX setcontrast() only sends the contrast register (0x81),
+       * which has minimal visual effect on brightness. For real brightness
+       * control, we need to also adjust pre-charge and VCOMH registers.
        */
 
-      contrast = (SSD1306_POWER_PERCENT * 255) / 100;
-      syslog(LOG_INFO, "SSD1306: Setting contrast to %d (from %d%%)\n",
-             contrast, SSD1306_POWER_PERCENT);
-      g_ssd1306_lcd->setcontrast(g_ssd1306_lcd, contrast);
+      ssd1306_set_brightness_raw(SSD1306_POWER_PERCENT);
     }
   else
     {
@@ -489,7 +665,7 @@ const char *stm32_ssd1306_get_devpath(void)
  *
  * Input Parameters:
  *   percent - Power level 0-100%
- *             0 = off, 1-100 = on
+ *             0 = off, 1-100 = on (and sets brightness)
  *
  * Returned Value:
  *   OK on success
@@ -528,7 +704,56 @@ int stm32_ssd1306_set_power(int percent)
 
   g_ssd1306_lcd->setpower(g_ssd1306_lcd, power_level);
 
+  /* If turning on, also set brightness */
+
+  if (power_level > 0)
+    {
+      ssd1306_set_brightness_raw(percent);
+    }
+
   return OK;
+}
+
+/****************************************************************************
+ * Name: stm32_ssd1306_set_brightness
+ *
+ * Description:
+ *   Change SSD1306 display brightness at runtime using direct I2C.
+ *
+ *   This function provides real brightness control by adjusting all 3
+ *   required SSD1306 registers (contrast, pre-charge, VCOMH).
+ *
+ * Input Parameters:
+ *   percent - Brightness level 0-100%
+ *
+ * Returned Value:
+ *   OK on success
+ *   -ENODEV if LCD not initialized
+ *   -EINVAL if percentage is invalid
+ *
+ ****************************************************************************/
+
+int stm32_ssd1306_set_brightness(int percent)
+{
+  /* Check if the I2C interface was initialized */
+
+  if (!g_ssd1306_i2c)
+    {
+      syslog(LOG_ERR, "SSD1306: ERROR - Not initialized\n");
+      return -ENODEV;
+    }
+
+  /* Validate input range */
+
+  if (percent < 0 || percent > 100)
+    {
+      syslog(LOG_ERR,
+             "SSD1306: ERROR - Invalid brightness: %d (must be 0-100)\n",
+             percent);
+      return -EINVAL;
+    }
+
+  return ssd1306_set_brightness_raw(percent);
 }
 
 #endif /* CONFIG_LCD_SSD1306 && CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE */
