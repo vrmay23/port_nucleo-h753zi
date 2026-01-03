@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+config EXAMPLES_LCD_BATTERY
+	bool "LCD Battery Demo for SSD1306"
+	default n
+	depends on LCD && LCD_DEV
+	---help---
+        Enable LCD Battery Demo that shows a battery icon draining
+        from 100% to 0% on SSD1306 OLED display via /dev/lcd0.
+        When battery reaches 0%, displays "NuttX" inside the battery.
+
+config EXAMPLES_LCD_BATTERY_PROGNAME
+	string "Program name"
+	default "lcd_battery"
+	depends on EXAMPLES_LCD_BATTERY
+
+config EXAMPLES_LCD_BATTERY_PRIORITY
+	int "LCD Battery task priority"
+	default 100
+	depends on EXAMPLES_LCD_BATTERY
+
+config EXAMPLES_LCD_BATTERY_STACKSIZE
+	int "LCD Battery stack size"
+	default DEFAULT_TASK_STACKSIZE
+	depends on EXAMPLES_LCD_BATTERY

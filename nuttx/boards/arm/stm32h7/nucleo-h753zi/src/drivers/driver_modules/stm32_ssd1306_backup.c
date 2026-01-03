@@ -374,22 +374,8 @@ struct lcd_dev_s *board_lcd_getdev(int devno)
 
   if (power_level > 0)
     {
-      int contrast;
-
       syslog(LOG_INFO, "SSD1306: Turning on display\n");
       g_ssd1306_lcd->setpower(g_ssd1306_lcd, power_level);
-
-      /* Step 3: Set display contrast/brightness
-       *
-       * The SSD1306 uses a contrast register (0x81) to control brightness.
-       * Values range from 0x00 (dimmest) to 0xFF (brightest).
-       * We convert the Kconfig percentage to this 0-255 range.
-       */
-
-      contrast = (SSD1306_POWER_PERCENT * 255) / 100;
-      syslog(LOG_INFO, "SSD1306: Setting contrast to %d (from %d%%)\n",
-             contrast, SSD1306_POWER_PERCENT);
-      g_ssd1306_lcd->setcontrast(g_ssd1306_lcd, contrast);
     }
   else
     {

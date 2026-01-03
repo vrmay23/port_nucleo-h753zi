@@ -435,9 +435,11 @@
 #ifdef CONFIG_NUCLEO_H753ZI_HSE_25MHZ
 /* FDCAN 1 2 clock source - HSE (25 MHz direct) */
 #  define STM32_RCC_D2CCIP1R_FDCANSEL  RCC_D2CCIP1R_FDCANSEL_HSE
+#  define STM32_FDCANCLK               STM32_HSE_FREQUENCY
 #else
 /* FDCAN 1 2 clock source - PLL2Q (25 MHz for CAN compliance) */
 #  define STM32_RCC_D2CCIP1R_FDCANSEL  RCC_D2CCIP1R_FDCANSEL_PLL2
+#  define STM32_FDCANCLK               STM32_PLL2Q_FREQUENCY
 #endif
 
 /* SDMMC 1 2 clock source - PLL1Q */
