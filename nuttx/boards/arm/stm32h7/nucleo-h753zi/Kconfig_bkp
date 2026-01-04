@@ -1022,44 +1022,6 @@ endif
 
 endmenu
 
-menu "ST7796 Orientation"
-
-choice
-	prompt "Display Rotation"
-	default NUCLEO_H753ZI_ST7796_ROTATION_0
-	help
-		Select the display rotation angle. Use this if your display
-		is mounted upside down or needs rotation.
-		This rotation is applied AFTER the base orientation selected
-		in "Display Settings" above.
-
-config NUCLEO_H753ZI_ST7796_ROTATION_0
-	bool "0 degrees (Normal)"
-	help
-		No rotation. Display orientation as configured in Display
-		Settings (Portrait, Landscape, etc).
-		Use this if your display is mounted correctly.
-
-config NUCLEO_H753ZI_ST7796_ROTATION_180
-	bool "180 degrees (Flip)"
-	help
-		Rotate display 180 degrees. Use this if your display is
-		mounted upside down.
-		This flips both horizontal and vertical axes, effectively
-		rotating the entire display content 180 degrees.
-		Works with all orientation modes (Portrait, Landscape, etc).
-
-endchoice
-
-config NUCLEO_H753ZI_ST7796_ROTATION
-	int
-	default 0 if NUCLEO_H753ZI_ST7796_ROTATION_0
-	default 180 if NUCLEO_H753ZI_ST7796_ROTATION_180
-	help
-		Internal: Rotation angle in degrees.
-
-endmenu
-
 endif
 
 endmenu
