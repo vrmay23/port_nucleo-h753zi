@@ -155,6 +155,25 @@
 #  define ST7796_FLUSH_YRES 480
 #endif
 
+/* Rotation configuration */
+
+#ifdef CONFIG_NUCLEO_H753ZI_ST7796_ROTATION_180
+#  define ST7796_APPLY_180_ROTATION true
+#else
+#  define ST7796_APPLY_180_ROTATION false
+#endif
+
+
+/* SPI Frequency */
+
+#ifndef CONFIG_LCD_ST7796_FREQUENCY
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY
+#    define CONFIG_LCD_ST7796_FREQUENCY CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY
+#  else
+#    define CONFIG_LCD_ST7796_FREQUENCY 40000000
+#  endif
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -409,6 +428,90 @@ static int stm32_st7796_spi_initialize(void)
 }
 
 /****************************************************************************
+ * Name: stm32_st7796_apply_rotation
+ *
+ * Description:
+ *   Apply 180-degree rotation if configured. This modifies the MADCTL
+ *   register to flip both X and Y axes.
+ *
+ ****************************************************************************/
+
+static void stm32_st7796_apply_rotation(void)
+{
+  uint8_t madctl_base;
+  uint8_t madctl_rotated;
+  
+  if (!ST7796_APPLY_180_ROTATION)
+    {
+      syslog(LOG_INFO, "ST7796: No rotation applied (0°)\n");
+      return;
+    }
+
+  syslog(LOG_INFO, "ST7796: Applying 180° rotation...\n");
+
+  /* Determine base MADCTL value from orientation configuration */
+
+#if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE) || \
+    defined(CONFIG_LCD_LANDSCAPE)
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+  madctl_base = 0x28;  /* Landscape: MV=1, BGR=1 */
+#  else
+  madctl_base = 0x20;  /* Landscape: MV=1, RGB=1 */
+#  endif
+#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RPORTRAIT) || \
+      defined(CONFIG_LCD_RPORTRAIT)
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+  madctl_base = 0x88;  /* Reverse Portrait: MY=1, BGR=1 */
+#  else
+  madctl_base = 0x80;  /* Reverse Portrait: MY=1, RGB=1 */
+#  endif
+#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE) || \
+      defined(CONFIG_LCD_RLANDSCAPE)
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+  madctl_base = 0xE8;  /* Reverse Landscape: MY=1, MX=1, MV=1, BGR=1 */
+#  else
+  madctl_base = 0xE0;  /* Reverse Landscape: MY=1, MX=1, MV=1, RGB=1 */
+#  endif
+#else
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+  madctl_base = 0x48;  /* Portrait: MX=1, BGR=1 */
+#  else
+  madctl_base = 0x40;  /* Portrait: MX=1, RGB=1 */
+#  endif
+#endif
+
+  /* Apply 180° rotation: XOR with 0xC0 (flip MX and MY bits) */
+
+  madctl_rotated = madctl_base ^ 0xC0;
+  
+  /* Select SPI and send MADCTL command */
+
+  SPI_LOCK(g_spi_dev, true);
+  SPI_SETMODE(g_spi_dev, SPIDEV_MODE0);
+  SPI_SETBITS(g_spi_dev, 8);
+  SPI_SETFREQUENCY(g_spi_dev, CONFIG_LCD_ST7796_FREQUENCY);
+  SPI_SELECT(g_spi_dev, SPIDEV_DISPLAY(0), true);
+
+  /* Send MADCTL command (0x36) */
+
+  SPI_CMDDATA(g_spi_dev, SPIDEV_DISPLAY(0), true);
+  SPI_SEND(g_spi_dev, ST7796_MADCTL);
+  
+  /* Send rotated MADCTL value */
+
+  SPI_CMDDATA(g_spi_dev, SPIDEV_DISPLAY(0), false);
+  SPI_SEND(g_spi_dev, madctl_rotated);
+  
+  /* Deselect SPI */
+
+  SPI_SELECT(g_spi_dev, SPIDEV_DISPLAY(0), false);
+  SPI_LOCK(g_spi_dev, false);
+  
+  syslog(LOG_INFO, "ST7796: 180° rotation applied (MADCTL: 0x%02X -> 0x%02X)\n",
+         madctl_base, madctl_rotated);
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -473,7 +576,7 @@ FAR struct fb_vtable_s *up_fbgetvplane(int display, int vplane)
  *
  ****************************************************************************/
 
-void up_fbunitialize(int display)
+void up_fbuninitialize(int display)
 {
   syslog(LOG_INFO, "ST7796: up_fbuninitialize(%d)\n", display);
 
@@ -533,6 +636,10 @@ int stm32_st7796initialize(int devno)
                                      CONFIG_NUCLEO_H753ZI_ST7796_DEVID);
       return ret;
     }
+
+  /* Step 4: Apply rotation if configured (BEFORE flushing framebuffer) */
+
+  stm32_st7796_apply_rotation();
 
   syslog(LOG_INFO, "========================================\n");
   syslog(LOG_INFO, "ST7796: Init complete - /dev/fb%d\n", devno);
