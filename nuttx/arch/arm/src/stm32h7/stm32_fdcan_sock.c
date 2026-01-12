@@ -2269,7 +2269,7 @@ int fdcan_initialize(struct fdcan_driver_s *priv)
    * https://community.st.com/s/question/0D73W000001nzqFSAQ
    */
 
-  const uint8_t n_extid = 64;
+  const uint8_t n_extid = 128;
   priv->message_ram.filt_extid_addr = gl_ram_base + ram_offset * WORD_LENGTH;
 
   regval = (n_extid << FDCAN_XIDFC_LSE_SHIFT) & FDCAN_XIDFC_LSE_MASK;
