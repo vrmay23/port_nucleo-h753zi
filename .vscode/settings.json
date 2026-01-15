@@ -1,0 +1,36 @@
+{
+    "terminal.integrated.scrollback": 50000,
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.enhancedColorization": "enabled",
+    "C_Cpp.dimInactiveRegions": true,
+    "C_Cpp.inactiveRegionOpacity": 1,
+    "C_Cpp.default.forcedInclude": [
+        "${workspaceFolder}/nuttx/include/nuttx/config.h",
+    ],
+    "C_Cpp.inactiveRegionBackgroundColor": "#000000",//"#793d1c",
+    "C_Cpp.inactiveRegionForegroundColor": "#FFFFFF",
+    "ctags.languages": [
+        "Kconfig",
+        "Make"
+    ],
+    "cortex-debug.variableUseNaturalFormat": false,
+    // "cortex-debug.stlinkPath": "/usr/bin/st-util",
+    //"cortex-debug.gdbPath": "/opt/st/stm32cubeclt_1.20.0/STLink-gdb-server/bin/ST-LINK_gdbserver",
+    "cortex-debug.gdbPath": "gdb-multiarch",
+    "cortex-debug.stm32cubeprogrammer": "/opt/st/stm32cubeclt_1.20.0/STM32CubeProgrammer/bin",
+    "cortex-debug.armToolchainPath": "/opt/st/stm32cubeclt_1.20.0/GNU-tools-for-STM32/bin",
+    "nuttx.checkPatch": false,
+    "nuttx.checkPatchPath": "${workspaceFolder}/nuttx/tools/checkpatch.sh",
+    "nuttx.configureScriptPath": "${workspaceFolder}/nuttx/tools/configure.sh",
+    "files.associations": {
+        "xedge.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "ranges": "c"
+    },
+    "cmake.sourceDirectory": "/home/vinicius/embedded_sys/nuttxspace/stm32h753zi_clean/apps",
+    "restructuredtext.syntaxHighlighting.disabled": true,
+    "cmake.configureOnOpen": true,
+    "C_Cpp.default.compilerPath": "/usr/bin/arm-none-eabi-gcc",
+}

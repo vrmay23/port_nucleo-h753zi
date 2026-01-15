@@ -1,0 +1,145 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // {
+        //     "label": "Configure",
+        //     "command": "${workspaceFolder}/nuttx/tools/configure.sh",
+        //     "type": "shell",
+        //     "args": [
+        //         "-l",
+        //         "${command:nuttx.chooseFromConfigureList}"
+        //     ],
+        //     "problemMatcher": [],
+        //     "presentation": {
+        //         "reveal": "always"
+        //     },
+        //     "icon": {
+        //         "id": "list-selection",
+        //         "color": "terminal.ansiBlue"
+        //     },
+        //     "group": "build"
+        // },
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-j",
+                "$(nproc)"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/nuttx"
+            },
+            "problemMatcher": [],
+            "icon": {
+                "id": "flame",
+                "color": "terminal.ansiRed"
+            },
+            "group": "build"
+        },
+         {
+            "label": "Flash and run",
+            "type": "shell",
+            "command": "openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c \"init\" -c \"reset halt\" -c \"flash write_image erase nuttx.bin 0x08000000\" -c \"reset run\"",
+            "args": [
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/nuttx"
+            },
+            "problemMatcher": [],
+            "icon": {
+                "id": "flame",
+                "color": "terminal.ansiRed"
+            },
+            "group": "build"
+        },
+        // {
+        //     "label": "DistClean",
+        //     "type": "shell",
+        //     "command": "make",
+        //     "args": [
+        //         "distclean"
+        //     ],
+        //     "options": {
+        //         "cwd": "${workspaceFolder}/nuttx"
+        //     },
+        //     "problemMatcher": [],
+        //     "icon": {
+        //         "id": "flame",
+        //         "color": "terminal.ansiRed"
+        //     },
+        //     "group": "build"
+        // },
+        {
+            "label": "run-ctags",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "${command:embeddedLinuxDev.regenerateCTags}"
+            ],
+            "problemMatcher": [],
+            "icon": {
+                "color": "terminal.ansiGreen",
+                "id": "variable"
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "J-Link Flash",
+            "command": "JLinkExe",
+            "type": "shell",
+            "args": [
+                "-device",
+                "STM32H753ZI",
+                // "stm32f401RC",
+                // "STM32L475VG",
+                // "rp2040",
+                // "STM32H743VI",
+                "-if",
+                "SWD",
+                "-speed",
+                "4000",
+                "-commanderscript",
+                "linum.jlink"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            },
+            "icon": {
+                "id": "list-selection",
+                "color": "terminal.ansiBlue"
+            },
+            "group": "build"
+        },
+        {
+            "label": "ST-Link Flash",
+            "command": "STM32_Programmer_CLI",
+            "args": [
+                "-c",
+                "port=SWD",
+                "reset=HWrst",
+                "-e all",
+                "-w",
+                "${workspaceFolder}/nuttx/nuttx.bin",
+                "0x08000000",
+                "-v",
+                "--go"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "clear": true,
+                "panel": "shared"
+            },
+
+            "icon": {
+                "id": "debug-start",
+                "color": "terminal.ansiGreen"
+            },
+            "group": "build"
+        }
+    ]
+}

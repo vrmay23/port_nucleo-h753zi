@@ -1,0 +1,84 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "J-Link",
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceFolder}/nuttx/nuttx",
+            "request": "launch",
+            "type": "cortex-debug",
+            "device": "stm32h753zi",
+            "interface": "swd",
+            "runToEntryPoint": "main",
+            "servertype": "jlink",
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            },
+            "preLaunchTask": "Build",
+        },
+        {
+            "name": "ST-Link",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/nuttx/nuttx",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "stutil",
+            "serverArgs": [
+                "--freq=8000k"
+            ],
+            "device": "stm32h753zi",
+            // "device": "stm32f746g",
+            // "device": "stm32f401rc",
+            "interface": "swd",
+            "svdFile": "",
+            "swoConfig": {}
+        },
+        {
+            "name": "ST-Link - Debug",
+            "device": "stm32h753zi",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/nuttx/nuttx",
+            "interface": "swd",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "stlink",
+            "serverArgs": [
+                "-s",
+                "-m",
+                "0",
+                "-k",
+                "--frequency",
+                "8000"
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            },
+            "preLaunchTask": "Build",
+            "showDevDebugOutput": "raw"
+        },
+                {
+            "name": "Tobias ST-Link - Debug",
+            "device": "stm32h753zi",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/nuttx/nuttx",
+            "interface": "swd",
+            "request": "launch",
+            "type": "cortex-debug",
+            //"runToEntryPoint": "main",
+            "servertype": "stlink",
+            "serverArgs": [
+                "-v",
+                "-t",
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            },
+            "preLaunchTask": "Build",
+            "showDevDebugOutput": "raw"
+        },
+    ]
+}
