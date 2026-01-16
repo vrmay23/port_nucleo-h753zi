@@ -29,10 +29,12 @@
 #include <metal/sys.h>
 #include <nuttx/kmalloc.h>
 #include <nuttx/mutex.h>
+#include <nuttx/rwsem.h>
 #include <nuttx/semaphore.h>
 #include <nuttx/rpmsg/rpmsg.h>
 
 #include "rpmsg_ping.h"
+#include "rpmsg_test.h"
 
 /****************************************************************************
  * Private Types
@@ -69,7 +71,7 @@ static int rpmsg_dev_ioctl(FAR struct file *filep, int cmd,
 static METAL_DECLARE_LIST(g_rpmsg_cb);
 static METAL_DECLARE_LIST(g_rpmsg);
 
-static rmutex_t g_rpmsg_lock = NXRMUTEX_INITIALIZER;
+static rw_semaphore_t g_rpmsg_lock = RWSEM_INITIALIZER;
 
 static const struct file_operations g_rpmsg_dev_ops =
 {
@@ -122,6 +124,11 @@ static int rpmsg_dev_ioctl_(FAR struct rpmsg_s *rpmsg, int cmd,
 #ifdef CONFIG_RPMSG_PING
       case RPMSGIOC_PING:
         ret = rpmsg_ping(&rpmsg->ping, (FAR const struct rpmsg_ping_s *)arg);
+        break;
+#endif
+#ifdef CONFIG_RPMSG_TEST
+      case RPMSGIOC_TEST:
+        ret = rpmsg_test(&rpmsg->test, arg);
         break;
 #endif
       default:
@@ -209,6 +216,23 @@ FAR const char *rpmsg_get_cpuname(FAR struct rpmsg_device *rdev)
   return rpmsg ? rpmsg->ops->get_cpuname(rpmsg) : NULL;
 }
 
+int rpmsg_get_signals(FAR struct rpmsg_device *rdev)
+{
+  FAR struct rpmsg_s *rpmsg = rpmsg_get_by_rdev(rdev);
+
+  if (rpmsg == NULL)
+    {
+      return -EINVAL;
+    }
+
+  if (rpmsg->ops->get_signals != NULL)
+    {
+      return rpmsg->ops->get_signals(rpmsg);
+    }
+
+  return 0;
+}
+
 int rpmsg_register_callback(FAR void *priv,
                             rpmsg_dev_cb_t device_created,
                             rpmsg_dev_cb_t device_destroy,
@@ -231,7 +255,9 @@ int rpmsg_register_callback(FAR void *priv,
   cb->ns_match       = ns_match;
   cb->ns_bind        = ns_bind;
 
-  nxrmutex_lock(&g_rpmsg_lock);
+  down_write(&g_rpmsg_lock);
+  metal_list_add_tail(&g_rpmsg_cb, &cb->node);
+  downgrade_write(&g_rpmsg_lock);
   metal_list_for_each(&g_rpmsg, node)
     {
       FAR struct rpmsg_s *rpmsg =
@@ -275,8 +301,7 @@ again:
        nxrmutex_unlock(&rpmsg->lock);
     }
 
-  metal_list_add_tail(&g_rpmsg_cb, &cb->node);
-  nxrmutex_unlock(&g_rpmsg_lock);
+  up_read(&g_rpmsg_lock);
 
   return 0;
 }
@@ -290,7 +315,7 @@ void rpmsg_unregister_callback(FAR void *priv,
   FAR struct metal_list *node;
   FAR struct metal_list *pnode;
 
-  nxrmutex_lock(&g_rpmsg_lock);
+  down_write(&g_rpmsg_lock);
   metal_list_for_each(&g_rpmsg_cb, node)
     {
       FAR struct rpmsg_cb_s *cb =
@@ -308,6 +333,7 @@ void rpmsg_unregister_callback(FAR void *priv,
         }
     }
 
+  downgrade_write(&g_rpmsg_lock);
   if (device_destroy)
     {
       metal_list_for_each(&g_rpmsg, pnode)
@@ -322,7 +348,7 @@ void rpmsg_unregister_callback(FAR void *priv,
         }
     }
 
-  nxrmutex_unlock(&g_rpmsg_lock);
+  up_read(&g_rpmsg_lock);
 }
 
 void rpmsg_ns_bind(FAR struct rpmsg_device *rdev,
@@ -332,7 +358,7 @@ void rpmsg_ns_bind(FAR struct rpmsg_device *rdev,
   FAR struct rpmsg_bind_s *bind;
   FAR struct metal_list *node;
 
-  nxrmutex_lock(&g_rpmsg_lock);
+  down_read(&g_rpmsg_lock);
   metal_list_for_each(&g_rpmsg_cb, node)
     {
       FAR struct rpmsg_cb_s *cb =
@@ -343,14 +369,12 @@ void rpmsg_ns_bind(FAR struct rpmsg_device *rdev,
           rpmsg_bind_cb_t ns_bind = cb->ns_bind;
           FAR void *cb_priv = cb->priv;
 
-          nxrmutex_unlock(&g_rpmsg_lock);
+          up_read(&g_rpmsg_lock);
 
           ns_bind(rdev, cb_priv, name, dest);
           return;
         }
     }
-
-  nxrmutex_unlock(&g_rpmsg_lock);
 
   bind = kmm_malloc(sizeof(struct rpmsg_bind_s));
   if (bind == NULL)
@@ -364,6 +388,8 @@ void rpmsg_ns_bind(FAR struct rpmsg_device *rdev,
   nxrmutex_lock(&rpmsg->lock);
   metal_list_add_tail(&rpmsg->bind, &bind->node);
   nxrmutex_unlock(&rpmsg->lock);
+
+  up_read(&g_rpmsg_lock);
 }
 
 void rpmsg_ns_unbind(FAR struct rpmsg_device *rdev,
@@ -394,7 +420,7 @@ void rpmsg_device_created(FAR struct rpmsg_s *rpmsg)
   FAR struct metal_list *node;
   FAR struct metal_list *tmp;
 
-  nxrmutex_lock(&g_rpmsg_lock);
+  down_write(&g_rpmsg_lock);
   metal_list_for_each_safe(&g_rpmsg_cb, tmp, node)
     {
       FAR struct rpmsg_cb_s *cb =
@@ -407,10 +433,13 @@ void rpmsg_device_created(FAR struct rpmsg_s *rpmsg)
     }
 
   rpmsg->init = true;
-  nxrmutex_unlock(&g_rpmsg_lock);
+  up_write(&g_rpmsg_lock);
 
 #ifdef CONFIG_RPMSG_PING
   rpmsg_ping_init(rpmsg->rdev, &rpmsg->ping);
+#endif
+#ifdef CONFIG_RPMSG_TEST
+  rpmsg_test_init(rpmsg->rdev, &rpmsg->test);
 #endif
 }
 
@@ -418,9 +447,14 @@ void rpmsg_device_destory(FAR struct rpmsg_s *rpmsg)
 {
   FAR struct metal_list *node;
   FAR struct metal_list *tmp;
+  FAR struct rpmsg_endpoint *ept;
 
 #ifdef CONFIG_RPMSG_PING
   rpmsg_ping_deinit(&rpmsg->ping);
+#endif
+
+#ifdef CONFIG_RPMSG_TEST
+  rpmsg_test_deinit(&rpmsg->test);
 #endif
 
   nxrmutex_lock(&rpmsg->lock);
@@ -437,7 +471,9 @@ void rpmsg_device_destory(FAR struct rpmsg_s *rpmsg)
 
   /* Broadcast device_destroy to all registers */
 
-  nxrmutex_lock(&g_rpmsg_lock);
+  down_write(&g_rpmsg_lock);
+  rpmsg->init = false;
+  downgrade_write(&g_rpmsg_lock);
   metal_list_for_each_safe(&g_rpmsg_cb, tmp, node)
     {
       FAR struct rpmsg_cb_s *cb =
@@ -449,7 +485,25 @@ void rpmsg_device_destory(FAR struct rpmsg_s *rpmsg)
         }
     }
 
-  nxrmutex_unlock(&g_rpmsg_lock);
+  up_read(&g_rpmsg_lock);
+
+  /* Release all ept attached to current rpmsg device */
+
+  metal_mutex_acquire(&rpmsg->rdev->lock);
+  metal_list_for_each_safe(&rpmsg->rdev->endpoints, tmp, node)
+    {
+      ept = metal_container_of(node, struct rpmsg_endpoint, node);
+      if (ept->ns_unbind_cb)
+        {
+          ept->ns_unbind_cb(ept);
+        }
+      else
+        {
+          rpmsg_destroy_ept(ept);
+        }
+    }
+
+  metal_mutex_release(&rpmsg->rdev->lock);
 }
 
 int rpmsg_register(FAR const char *path, FAR struct rpmsg_s *rpmsg,
@@ -477,18 +531,18 @@ int rpmsg_register(FAR const char *path, FAR struct rpmsg_s *rpmsg,
 
   /* Add priv to list */
 
-  nxrmutex_lock(&g_rpmsg_lock);
+  down_write(&g_rpmsg_lock);
   metal_list_add_tail(&g_rpmsg, &rpmsg->node);
-  nxrmutex_unlock(&g_rpmsg_lock);
+  up_write(&g_rpmsg_lock);
 
   return ret;
 }
 
 void rpmsg_unregister(FAR const char *path, FAR struct rpmsg_s *rpmsg)
 {
-  nxrmutex_lock(&g_rpmsg_lock);
+  down_write(&g_rpmsg_lock);
   metal_list_del(&rpmsg->node);
-  nxrmutex_unlock(&g_rpmsg_lock);
+  up_write(&g_rpmsg_lock);
 
   nxrmutex_destroy(&rpmsg->lock);
   unregister_driver(path);
@@ -503,7 +557,7 @@ int rpmsg_ioctl(FAR const char *cpuname, int cmd, unsigned long arg)
 
   if (!up_interrupt_context())
     {
-      nxrmutex_lock(&g_rpmsg_lock);
+      down_read(&g_rpmsg_lock);
     }
 
   metal_list_for_each(&g_rpmsg, node)
@@ -523,7 +577,7 @@ int rpmsg_ioctl(FAR const char *cpuname, int cmd, unsigned long arg)
 
   if (!up_interrupt_context())
     {
-      nxrmutex_unlock(&g_rpmsg_lock);
+      up_read(&g_rpmsg_lock);
     }
 
   return ret;

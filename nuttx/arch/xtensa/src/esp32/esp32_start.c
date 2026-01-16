@@ -49,6 +49,9 @@
 #include "espressif/esp_loader.h"
 #include "espressif/esp_efuse.h"
 #include "esp_private/startup_internal.h"
+#include "esp_private/spi_flash_os.h"
+#include "esp_private/esp_mmu_map_private.h"
+#include "bootloader_flash_config.h"
 
 #ifdef CONFIG_ESPRESSIF_SIMPLE_BOOT
 #  include "bootloader_init.h"
@@ -193,6 +196,16 @@ static noreturn_function void __esp32_start(void)
 
 #endif
 
+  /* Initialize flash state and MMU */
+
+  esp_mspi_pin_init();
+
+  bootloader_flash_update_id();
+
+  spi_flash_init_chip_state();
+
+  esp_mmu_map_init();
+
 #ifndef CONFIG_SMP
   /* Make sure that the APP_CPU is disabled for now */
 
@@ -287,7 +300,7 @@ static noreturn_function void __esp32_start(void)
 
   if (chip_rev < 300)
     {
-#ifndef ESP32_IGNORE_CHIP_REVISION_CHECK
+#ifndef CONFIG_ESP32_IGNORE_CHIP_REVISION_CHECK
       ets_printf("ERROR: NuttX supports ESP32 chip revision >= v3.0"
                  " (chip revision is v%" PRId32 ".%01ld)\n",
                  chip_rev / 100, chip_rev % 100);

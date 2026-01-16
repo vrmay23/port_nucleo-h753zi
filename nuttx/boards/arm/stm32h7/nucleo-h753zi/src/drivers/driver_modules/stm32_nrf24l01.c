@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_nrf24l01.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_modules/stm32_nrf24l01.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *

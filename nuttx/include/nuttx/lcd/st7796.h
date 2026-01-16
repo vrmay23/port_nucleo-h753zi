@@ -44,48 +44,48 @@
 #define ST7796_SLPOUT           0x11  /* Sleep Out */
 #define ST7796_PTLON            0x12  /* Partial Display Mode On */
 #define ST7796_NORON            0x13  /* Normal Display Mode On */
-#define ST7796_RDIMGFMT         0x0A  /* Read Display Image Format */
-#define ST7796_RDSELFDIAG       0x0F  /* Read Display Self-Diagnostic Result */
+#define ST7796_RDIMGFMT         0x0a  /* Read Display Image Format */
+#define ST7796_RDSELFDIAG       0x0f  /* Read Display Self-Diagnostic Result */
 #define ST7796_INVOFF           0x20  /* Display Inversion Off */
 #define ST7796_INVON            0x21  /* Display Inversion On */
 #define ST7796_GAMMASET         0x26  /* Gamma Set */
 #define ST7796_DISPOFF          0x28  /* Display Off */
 #define ST7796_DISPON           0x29  /* Display On */
-#define ST7796_CASET            0x2A  /* Column Address Set */
-#define ST7796_RASET            0x2B  /* Row Address Set */
-#define ST7796_RAMWR            0x2C  /* Memory Write */
-#define ST7796_RAMRD            0x2E  /* Memory Read */
+#define ST7796_CASET            0x2a  /* Column Address Set */
+#define ST7796_RASET            0x2b  /* Row Address Set */
+#define ST7796_RAMWR            0x2c  /* Memory Write */
+#define ST7796_RAMRD            0x2e  /* Memory Read */
 #define ST7796_PTLAR            0x30  /* Partial Area */
 #define ST7796_VSCRDEF          0x33  /* Vertical Scrolling Definition */
 #define ST7796_TEOFF            0x34  /* Tearing Effect Line Off */
 #define ST7796_TEON             0x35  /* Tearing Effect Line On */
 #define ST7796_MADCTL           0x36  /* Memory Access Control */
 #define ST7796_VSCRSADD         0x37  /* Vertical Scrolling Start Address */
-#define ST7796_PIXFMT           0x3A  /* Pixel Format Set */
+#define ST7796_PIXFMT           0x3a  /* Pixel Format Set */
 #define ST7796_WRDISPBRIGHT     0x51  /* Write Display Brightness */
 #define ST7796_RDDISPBRIGHT     0x52  /* Read Display Brightness */
 #define ST7796_WRCTRLD          0x53  /* Write Control Display */
 #define ST7796_RDCTRLD          0x54  /* Read Control Display */
 #define ST7796_WRCABC           0x55  /* Write Content Adaptive Brightness Control */
 #define ST7796_RDCABC           0x56  /* Read Content Adaptive Brightness Control */
-#define ST7796_WRCABCMIN        0x5E  /* Write CABC Minimum Brightness */
-#define ST7796_RDCABCMIN        0x5F  /* Read CABC Minimum Brightness */
+#define ST7796_WRCABCMIN        0x5e  /* Write CABC Minimum Brightness */
+#define ST7796_RDCABCMIN        0x5f  /* Read CABC Minimum Brightness */
 
 /* ST7796 Commands - Extended */
 
-#define ST7796_INVCTR           0xB4  /* Display Inversion Control */
-#define ST7796_DFC              0xB6  /* Display Function Control */
-#define ST7796_PWCTRL1          0xC0  /* Power Control 1 */
-#define ST7796_PWCTRL2          0xC1  /* Power Control 2 */
-#define ST7796_PWCTRL3          0xC2  /* Power Control 3 */
-#define ST7796_PWCTRL4          0xC3  /* Power Control 4 */
-#define ST7796_PWCTRL5          0xC4  /* Power Control 5 */
-#define ST7796_VCOM             0xC5  /* VCOM Control */
-#define ST7796_PWCTRL6          0xC6  /* Power Control 6 */
-#define ST7796_GAMMAPOS         0xE0  /* Positive Gamma Correction */
-#define ST7796_GAMMANEG         0xE1  /* Negative Gamma Correction */
-#define ST7796_DOCA             0xE9  /* Set DDB Write Address */
-#define ST7796_CSCON            0xF0  /* Command Set Control */
+#define ST7796_INVCTR           0xb4  /* Display Inversion Control */
+#define ST7796_DFC              0xb6  /* Display Function Control */
+#define ST7796_PWCTRL1          0xc0  /* Power Control 1 */
+#define ST7796_PWCTRL2          0xc1  /* Power Control 2 */
+#define ST7796_PWCTRL3          0xc2  /* Power Control 3 */
+#define ST7796_PWCTRL4          0xc3  /* Power Control 4 */
+#define ST7796_PWCTRL5          0xc4  /* Power Control 5 */
+#define ST7796_VCOM             0xc5  /* VCOM Control */
+#define ST7796_PWCTRL6          0xc6  /* Power Control 6 */
+#define ST7796_GAMMAPOS         0xe0  /* Positive Gamma Correction */
+#define ST7796_GAMMANEG         0xe1  /* Negative Gamma Correction */
+#define ST7796_DOCA             0xe9  /* Set DDB Write Address */
+#define ST7796_CSCON            0xf0  /* Command Set Control */
 
 /* ST7796 MADCTL bits */
 

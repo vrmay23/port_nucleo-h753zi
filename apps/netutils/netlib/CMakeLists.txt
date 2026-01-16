@@ -47,7 +47,7 @@ if(CONFIG_NETUTILS_NETLIB)
       endif()
     endif()
     if(CONFIG_NETDB_DNSCLIENT)
-      list(APPEND SRCS netlib_setipv4dnsaddr.c)
+      list(APPEND SRCS netlib_setipv4dnsaddr.c netlib_delipv4dnsaddr.c)
     endif()
     if(CONFIG_NET_ROUTE)
       list(APPEND SRCS netlib_ipv4route.c netlib_ipv4router.c)
@@ -70,7 +70,7 @@ if(CONFIG_NETUTILS_NETLIB)
       list(APPEND SRCS netlib_autoconfig.c netlib_obtainipv6addr.c)
     endif()
     if(CONFIG_NETDB_DNSCLIENT)
-      list(APPEND SRCS netlib_setipv6dnsaddr.c)
+      list(APPEND SRCS netlib_setipv6dnsaddr.c netlib_delipv6dnsaddr.c)
     endif()
     if(CONFIG_NET_ROUTE)
       list(APPEND SRCS netlib_ipv6route.c netlib_ipv6router.c)
@@ -118,6 +118,10 @@ if(CONFIG_NETUTILS_NETLIB)
     list(APPEND SRCS netlib_setmacaddr.c netlib_getmacaddr.c)
   endif()
 
+  if(CONFIG_NET_VLAN)
+    list(APPEND SRCS netlib_addvlan.c netlib_delvlan.c)
+  endif()
+
   list(APPEND SRCS netlib_setmtu.c)
 
   if(CONFIG_WIRELESS_IEEE802154)
@@ -141,6 +145,20 @@ if(CONFIG_NETUTILS_NETLIB)
     if(CONFIG_NET_IPv4) # Not yet available for IPv6
       list(APPEND SRCS netlib_ipmsfilter.c)
     endif()
+  endif()
+
+  # Network check support
+
+  if(CONFIG_NET_ARP_ACD)
+    list(APPEND SRCS netlib_checkifconflict.c)
+  endif()
+
+  if(CONFIG_MM_IOB)
+    list(APPEND SRCS netlib_getiobinfo.c)
+  endif()
+
+  if(CONFIG_NETUTILS_PING)
+    list(APPEND SRCS netlib_checkipconnectivity.c netlib_checkifconnectivity.c)
   endif()
 
   target_sources(apps PRIVATE ${SRCS})

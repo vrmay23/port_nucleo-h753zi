@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_lsm6dsl.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_modules/stm32_lsm6dsl.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *

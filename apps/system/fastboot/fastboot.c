@@ -52,6 +52,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#ifdef CONFIG_SYSTEM_FASTBOOTD_NET_INIT
+#  include "netutils/netinit.h"
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -222,6 +226,10 @@ static void fastboot_filedump(FAR struct fastboot_ctx_s *ctx,
 static void fastboot_shell(FAR struct fastboot_ctx_s *ctx,
                            FAR const char *arg);
 #endif
+#ifdef CONFIG_BOARDCTL_SWITCH_BOOT
+static void fastboot_switchboot(FAR struct fastboot_ctx_s *context,
+                                FAR const char *arg);
+#endif
 
 /* USB transport */
 
@@ -267,6 +275,9 @@ static const struct fastboot_cmd_s g_oem_cmd[] =
   { "memdump",            fastboot_memdump          },
 #ifdef CONFIG_SYSTEM_FASTBOOTD_SHELL
   { "shell",              fastboot_shell            },
+#endif
+#ifdef CONFIG_BOARDCTL_SWITCH_BOOT
+  { "switchboot",         fastboot_switchboot       },
 #endif
 };
 
@@ -341,14 +352,14 @@ static int fastboot_write(int fd, FAR const void *buf, size_t len)
 static void fastboot_ack(FAR struct fastboot_ctx_s *ctx,
                          FAR const char *code, FAR const char *reason)
 {
-  char response[FASTBOOT_MSG_LEN];
+  char response[FASTBOOT_MSG_LEN + 4];
 
   if (reason == NULL)
     {
       reason = "";
     }
 
-  snprintf(response, FASTBOOT_MSG_LEN, "%s%s", code, reason);
+  snprintf(response, FASTBOOT_MSG_LEN + 4, "%s%s", code, reason);
   ctx->ops->write(ctx, response, strlen(response));
 }
 
@@ -926,6 +937,21 @@ static void fastboot_shell(FAR struct fastboot_ctx_s *ctx,
 }
 #endif
 
+#ifdef CONFIG_BOARDCTL_SWITCH_BOOT
+static void fastboot_switchboot(FAR struct fastboot_ctx_s *context,
+                                FAR const char *arg)
+{
+  if (!arg)
+    {
+      fastboot_fail(context, "Invalid argument");
+      return;
+    }
+
+  boardctl(BOARDIOC_SWITCH_BOOT, (uintptr_t)&arg[0]);
+  fastboot_okay(context, "");
+}
+#endif
+
 static void fastboot_upload(FAR struct fastboot_ctx_s *ctx,
                             FAR const char *arg)
 {
@@ -987,11 +1013,12 @@ static void fastboot_oem(FAR struct fastboot_ctx_s *ctx, FAR const char *arg)
     }
 }
 
-static void fastboot_command_loop(FAR struct fastboot_ctx_s *ctx,
-                                  size_t nctx)
+static int fastboot_command_loop(FAR struct fastboot_ctx_s *ctx,
+                                 size_t nctx)
 {
   FAR struct fastboot_ctx_s *c;
   struct epoll_event ev[nctx];
+  int ret = OK;
   int epfd;
   int n;
 
@@ -999,14 +1026,15 @@ static void fastboot_command_loop(FAR struct fastboot_ctx_s *ctx,
   if (epfd < 0)
     {
       fb_err("open epoll failed %d", errno);
-      return;
+      return epfd;
     }
 
   for (c = ctx, n = nctx; n-- > 0; c++)
     {
       ev[n].events = EPOLLIN;
       ev[n].data.ptr = c;
-      if (epoll_ctl(epfd, EPOLL_CTL_ADD, c->tran_fd[0], &ev[n]) < 0)
+      ret = epoll_ctl(epfd, EPOLL_CTL_ADD, c->tran_fd[0], &ev[n]);
+      if (ret < 0)
         {
           fb_err("err add poll %d", c->tran_fd[0]);
           goto epoll_close;
@@ -1015,7 +1043,8 @@ static void fastboot_command_loop(FAR struct fastboot_ctx_s *ctx,
 
   if (ctx->left > 0)
     {
-      if (epoll_wait(epfd, ev, nitems(ev), ctx->left) <= 0)
+      ret = epoll_wait(epfd, ev, nitems(ev), ctx->left);
+      if (ret <= 0)
         {
           goto epoll_close;
         }
@@ -1070,6 +1099,7 @@ epoll_close:
     }
 
   close(epfd);
+  return ret;
 }
 
 static void fastboot_publish(FAR struct fastboot_ctx_s *ctx,
@@ -1259,6 +1289,12 @@ static int fastboot_tcp_initialize(FAR struct fastboot_ctx_s *ctx)
 {
   struct sockaddr_in addr;
 
+#ifdef CONFIG_SYSTEM_FASTBOOTD_NET_INIT
+  /* Bring up the network */
+
+  netinit_bringup();
+#endif
+
   ctx->tran_fd[0] = socket(AF_INET, SOCK_STREAM,
                            SOCK_CLOEXEC | SOCK_NONBLOCK);
   if (ctx->tran_fd[0] < 0)
@@ -1424,7 +1460,7 @@ static int fastboot_tcp_write(FAR struct fastboot_ctx_s *ctx,
 static int fastboot_context_initialize(FAR struct fastboot_ctx_s *ctx,
                                        size_t nctx)
 {
-  int ret;
+  int ret = ERROR;
 
   for (; nctx-- > 0; ctx++)
     {
@@ -1455,7 +1491,7 @@ static int fastboot_context_initialize(FAR struct fastboot_ctx_s *ctx,
         }
     }
 
-  return 0;
+  return ret;
 }
 
 static void fastboot_context_deinit(FAR struct fastboot_ctx_s *ctx,
@@ -1475,10 +1511,29 @@ static void fastboot_context_deinit(FAR struct fastboot_ctx_s *ctx,
  * Public Functions
  ****************************************************************************/
 
-int main(int argc, FAR char **argv)
+int fastboot_handler(uint64_t timeout)
 {
   struct fastboot_ctx_s context[nitems(g_tran_ops)];
   int ret;
+
+  context[0].left = timeout;
+  ret = fastboot_context_initialize(context, nitems(context));
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  fastboot_create_publish(context, nitems(context));
+  ret = fastboot_command_loop(context, nitems(context));
+  fastboot_free_publish(context, nitems(context));
+  fastboot_context_deinit(context, nitems(context));
+
+  return ret;
+}
+
+int main(int argc, FAR char **argv)
+{
+  uint64_t timeout = 0;
 
   if (argc > 1)
     {
@@ -1490,22 +1545,11 @@ int main(int argc, FAR char **argv)
           return 0;
         }
 
-      if (sscanf(argv[1], "%" SCNu64 , &context[0].left) != 1)
+      if (sscanf(argv[1], "%" SCNu64 , &timeout) != 1)
         {
           return -EINVAL;
         }
     }
 
-  ret = fastboot_context_initialize(context, nitems(context));
-  if (ret < 0)
-    {
-      return ret;
-    }
-
-  fastboot_create_publish(context, nitems(context));
-  fastboot_command_loop(context, nitems(context));
-  fastboot_free_publish(context, nitems(context));
-  fastboot_context_deinit(context, nitems(context));
-
-  return ret;
+  return fastboot_handler(timeout);
 }

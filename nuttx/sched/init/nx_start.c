@@ -270,6 +270,13 @@ static void tasklist_initialize(void)
   tlist[TSTATE_WAIT_SEM].attr = TLIST_ATTR_PRIORITIZED |
                                 TLIST_ATTR_OFFSET;
 
+#ifdef CONFIG_SCHED_EVENTS
+  /* TSTATE_WAIT_EVENT */
+
+  tlist[TSTATE_WAIT_EVENT].list = (FAR void *)offsetof(nxevent_t, waitlist);
+  tlist[TSTATE_WAIT_EVENT].attr = TLIST_ATTR_PRIORITIZED |
+                                  TLIST_ATTR_OFFSET;
+#endif
   /* TSTATE_WAIT_SIG */
 
   tlist[TSTATE_WAIT_SIG].list = list_waitingforsignal();
@@ -438,14 +445,14 @@ static void idle_group_initialize(void)
       /* Allocate the IDLE group */
 
       DEBUGVERIFY(
-        group_initialize((FAR struct task_tcb_s *)tcb, tcb->flags));
+        group_allocate(tcb, tcb->flags));
 
       /* Initialize the task join */
 
       nxtask_joininit(tcb);
 
-#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
-      spin_lock_init(&tcb->mutex_lock);
+#if !defined(CONFIG_DISABLE_PTHREAD) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
+      spin_lock_init(&tcb->mhead_lock);
 #endif
 
 #ifdef CONFIG_SMP
@@ -471,7 +478,7 @@ static void idle_group_initialize(void)
        * of child status in the IDLE group.
        */
 
-      group_postinitialize((FAR struct task_tcb_s *)tcb);
+      group_initialize(tcb);
       tcb->group->tg_flags = GROUP_FLAG_NOCLDWAIT | GROUP_FLAG_PRIVILEGED;
     }
 }
@@ -698,8 +705,7 @@ void nx_start(void)
         {
           /* Clone stdout, stderr, stdin from the CPU0 IDLE task. */
 
-          DEBUGVERIFY(group_setuptaskfiles(
-            (FAR struct task_tcb_s *)&g_idletcb[i], NULL, true));
+          DEBUGVERIFY(group_setuptaskfiles(&g_idletcb[i], NULL, true));
         }
       else
         {

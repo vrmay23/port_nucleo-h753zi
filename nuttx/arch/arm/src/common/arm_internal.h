@@ -328,6 +328,10 @@ EXTERN const void *__vector_table[];
 EXTERN const void * const _vectors[];
 #endif
 
+#ifdef CONFIG_LIB_SYSCALL
+void arm_dispatch_syscall(void);
+#endif
+
 /* Exception Handlers */
 
 int  arm_svcall(int irq, void *context, void *arg);
@@ -461,6 +465,21 @@ void arm_addregion(void);
 void arm_netinitialize(void);
 #else
 #  define arm_netinitialize()
+#endif
+
+/****************************************************************************
+ * Name: arm_timer_secondary_init
+ *
+ * Description:
+ *   Initialize the ARM timer for secondary CPUs.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+void arm_timer_secondary_init(unsigned int freq);
 #endif
 
 /* USB **********************************************************************/

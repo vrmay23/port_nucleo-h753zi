@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_autoleds.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_middleware/stm32_autoleds.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -86,7 +86,9 @@ void board_autoled_initialize(void)
     }
 
 #ifdef CONFIG_NUCLEO_H753ZI_LEDS_AUTO
+
   /* Log only when explicitly configured for AUTO mode */
+
   ledinfo("Auto LEDs initialized for kernel status indication\n");
 #endif
 }

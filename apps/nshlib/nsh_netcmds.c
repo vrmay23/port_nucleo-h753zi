@@ -142,6 +142,15 @@ struct tftpc_args_s
 };
 #endif
 
+#ifdef CONFIG_NET_ARP
+typedef enum
+{
+  ARP_DEFAULT,               /* Did not set arp configure in the command */
+  ARP_ENABLE,                /* Clean the NOARP flag for the interface to enable the arp learning function */
+  ARP_DISABLE                /* Set the NOARP flag for the interface to disable the arp learning function */
+} arp_cfg_e;
+#endif
+
 typedef int (*nsh_netdev_callback_t)(FAR struct nsh_vtbl_s *vtbl,
                                      FAR char *devname);
 
@@ -575,6 +584,9 @@ int cmd_ifconfig(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv)
 #endif
   bool missingarg = true;
   bool badarg = false;
+#ifdef CONFIG_NET_ARP
+  arp_cfg_e arpflag = ARP_DEFAULT;
+#endif
 #ifdef HAVE_HWADDR
   mac_addr_t macaddr;
 #endif
@@ -742,6 +754,20 @@ int cmd_ifconfig(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv)
                       badarg = true;
                     }
                 }
+#ifdef CONFIG_NET_ARP
+              else if (!strcmp(tmp, "arp"))
+                {
+                  /* Enable arp function on interface */
+
+                  arpflag = ARP_ENABLE;
+                }
+              else if (!strcmp(tmp, "-arp"))
+                {
+                  /* Disable arp function on interface */
+
+                  arpflag = ARP_DISABLE;
+                }
+#endif
               else if (hostip == NULL && i <= 4)
                 {
                   /* Let first non-option be host ip, to support inet/inet6
@@ -1044,6 +1070,17 @@ int cmd_ifconfig(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv)
     }
 #endif
 
+#ifdef CONFIG_NET_ARP
+  if (arpflag == ARP_ENABLE)
+    {
+      netlib_ifarp(ifname);
+    }
+  else if (arpflag == ARP_DISABLE)
+    {
+      netlib_ifnoarp(ifname);
+    }
+#endif
+
 #if !defined(CONFIG_NET_IPv4) && !defined(CONFIG_NET_IPv6)
   UNUSED(hostip);
   UNUSED(mask);
@@ -1055,6 +1092,60 @@ int cmd_ifconfig(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv)
 #ifdef CONFIG_NET_IPv6
   UNUSED(gip6);
 #endif
+
+  return OK;
+}
+#endif
+
+/****************************************************************************
+ * Name: cmd_vconfig
+ ****************************************************************************/
+
+#if defined(CONFIG_NET_VLAN) && !defined(CONFIG_NSH_DISABLE_VCONFIG)
+int cmd_vconfig(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv)
+{
+  DEBUGASSERT(argc >= 2);
+
+  if (!strcmp(argv[1], "add"))
+    {
+      int prio = 0;
+
+      if (argc != 4 && argc != 5)
+        {
+          nsh_error(vtbl, g_fmtargrequired, argv[0]);
+          return ERROR;
+        }
+
+      if (argc == 5)
+        {
+          prio = atoi(argv[4]);
+        }
+
+      if (netlib_add_vlan(argv[2], atoi(argv[3]), prio) < 0)
+        {
+          perror("Failed to add VLAN");
+          return ERROR;
+        }
+    }
+  else if (!strcmp(argv[1], "rem") || !strcmp(argv[1], "del"))
+    {
+      if (argc != 3)
+        {
+          nsh_error(vtbl, g_fmtargrequired, argv[0]);
+          return ERROR;
+        }
+
+      if (netlib_del_vlan(argv[2]) < 0)
+        {
+          perror("Failed to remove VLAN");
+          return ERROR;
+        }
+    }
+  else
+    {
+      nsh_error(vtbl, g_fmtarginvalid, argv[1]);
+      return ERROR;
+    }
 
   return OK;
 }

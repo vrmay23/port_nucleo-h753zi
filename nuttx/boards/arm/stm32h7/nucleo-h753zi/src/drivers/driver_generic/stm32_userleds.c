@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_userleds.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_generic/stm32_userleds.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -106,9 +106,11 @@ void board_userled(int led, bool ledon)
  *
  * Description:
  *   If CONFIG_ARCH_LEDS is defined, then NuttX will control the on-board
- *  LEDs.  If CONFIG_ARCH_LEDS is not defined, then the board_userled_all()
- *  is available to control the LED from user application logic. NOTE: since
- *  there is only a single LED on-board, this is function is not very useful.
+ *   LEDs. If CONFIG_ARCH_LEDS is not defined, then board_userled_all()
+ *   is available to control all LEDs from user application logic.
+ *   This function allows controlling multiple LEDs simultaneously using
+ *   a bitmask, which is more efficient than calling board_userled()
+ *   individually for each LED.
  *
  ****************************************************************************/
 

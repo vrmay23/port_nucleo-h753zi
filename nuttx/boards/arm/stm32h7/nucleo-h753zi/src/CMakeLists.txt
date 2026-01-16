@@ -1,12 +1,8 @@
-############################################################################
+# ##############################################################################
 # boards/arm/stm32h7/nucleo-h753zi/src/CMakeLists.txt
-############################################################################
+# ##############################################################################
 
-set(SRCS
-  stm32_boot.c
-  stm32_bringup.c
-  stm32_appinitialize.c
-)
+set(SRCS stm32_boot.c stm32_bringup.c stm32_appinitialize.c)
 
 if(CONFIG_ADC)
   list(APPEND SRCS drivers/driver_generic/stm32_adc.c)
@@ -29,7 +25,6 @@ endif()
 if(CONFIG_STM32H7_I2C)
   list(APPEND SRCS drivers/driver_bus/stm32_i2c.c)
 endif()
-
 
 if(CONFIG_STM32H7_SPI)
   list(APPEND SRCS drivers/driver_bus/stm32_spi.c)
@@ -112,9 +107,13 @@ target_sources(board PRIVATE ${SRCS})
 # Linker scripts
 if(CONFIG_STM32_APP_FORMAT_MCUBOOT)
   if(CONFIG_MCUBOOT_BOOTLOADER)
-    set_property(GLOBAL PROPERTY LD_SCRIPT "${NUTTX_BOARD_DIR}/scripts/flash-mcuboot-loader.ld")
+    set_property(
+      GLOBAL PROPERTY LD_SCRIPT
+                      "${NUTTX_BOARD_DIR}/scripts/flash-mcuboot-loader.ld")
   else()
-    set_property(GLOBAL PROPERTY LD_SCRIPT "${NUTTX_BOARD_DIR}/scripts/flash-mcuboot-app.ld")
+    set_property(
+      GLOBAL PROPERTY LD_SCRIPT
+                      "${NUTTX_BOARD_DIR}/scripts/flash-mcuboot-app.ld")
   endif()
 else()
   set_property(GLOBAL PROPERTY LD_SCRIPT "${NUTTX_BOARD_DIR}/scripts/flash.ld")
@@ -123,9 +122,6 @@ endif()
 if(NOT CONFIG_BUILD_FLAT)
   add_subdirectory(${NUTTX_BOARD_DIR}/kernel)
   set_property(
-    GLOBAL PROPERTY LD_SCRIPT_USER
-    ${NUTTX_BOARD_DIR}/scripts/memory.ld
-    ${NUTTX_BOARD_DIR}/scripts/user-space.ld
-  )
+    GLOBAL PROPERTY LD_SCRIPT_USER ${NUTTX_BOARD_DIR}/scripts/memory.ld
+                    ${NUTTX_BOARD_DIR}/scripts/user-space.ld)
 endif()
-

@@ -85,7 +85,7 @@ jobs:
           echo "apps_ref=$APPS_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout nuttx repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: apache/nuttx
           ref: ${{ steps.gittargets.outputs.os_ref }}
@@ -95,7 +95,7 @@ jobs:
         run: git -C sources/nuttx fetch --tags
 
       - name: Checkout apps repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: apache/nuttx-apps
           ref: ${{ steps.gittargets.outputs.apps_ref }}
@@ -106,7 +106,7 @@ jobs:
         run: tar zcf sources.tar.gz sources
 
       - name: Archive Source Bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: source-bundle
           path: sources.tar.gz
@@ -143,8 +143,18 @@ jobs:
 
     steps:
 
+      - name: Show Disk Space
+        run: df -h
+
+      - name: Free Disk Space (Ubuntu)
+        run: |
+          sudo rm -rf /usr/local/lib/android
+
+      - name: After CLEAN-UP Disk Space
+        run: df -h
+
       - name: Download Source Artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: source-bundle
           path: .
@@ -165,6 +175,30 @@ jobs:
       - name: Export NuttX Repo SHA
         run: echo "nuttx_sha=`git -C sources/nuttx rev-parse HEAD`" >> $GITHUB_ENV
 
+      - name: Install NTFC
+        uses: ./sources/nuttx/.github/actions/ci-container
+        env:
+          BLOBDIR: /tools/blobs
+        with:
+          run: |
+            # install python venv
+            apt-get update
+            apt-get install -y python3 python3-dev python3-venv
+
+            # get NTFC sources
+            git clone -b release-0.0.1 https://github.com/szafonimateusz-mi/nuttx-ntfc
+            cd /github/workspace/nuttx-ntfc
+
+            # install NTFC with venv
+            python3 -m venv /github/workspace/nuttx-ntfc/venv
+            source /github/workspace/nuttx-ntfc/venv/bin/activate
+            pip3 install .
+            deactivate
+
+            # get NTFC test cases
+            cd external
+            git clone -b release-0.0.1 https://github.com/szafonimateusz-mi/nuttx-testing
+
       - name: Run builds
         uses: ./sources/nuttx/.github/actions/ci-container
         env:
@@ -173,6 +207,7 @@ jobs:
           run: |
             echo "::add-matcher::sources/nuttx/.github/gcc.json"
             export ARTIFACTDIR=`pwd`/buildartifacts
+            export NTFCDIR=/github/workspace/nuttx-ntfc
             git config --global --add safe.directory /github/workspace/sources/nuttx
             git config --global --add safe.directory /github/workspace/sources/apps
             cd sources/nuttx/tools/ci
@@ -183,7 +218,11 @@ jobs:
                 ./cibuild.sh -c -A -N -R -S testlist/${{matrix.boards}}.dat
             fi
 
-      - uses: actions/upload-artifact@v4
+      - name: Post-build Disk Space
+        if: always()
+        run: df -h
+
+      - uses: actions/upload-artifact@v6
         if: ${{ always() }}
         with:
           name: linux-${{matrix.boards}}-builds
@@ -198,7 +237,7 @@ jobs:
       DOCKER_BUILDKIT: 1
     steps:
       - name: Download Source Artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: source-bundle
           path: .
@@ -228,7 +267,7 @@ jobs:
             cd sources/nuttx
             ./tools/ci/cibuild-oot.sh
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: ${{ always() }}
         with:
           name: oot-build-artifacts
@@ -248,7 +287,7 @@ jobs:
   macOS:
     permissions:
       contents: none
-    runs-on: macos-13
+    runs-on: macos-15-intel
     needs: macOS-Arch
     if: ${{ needs.macOS-Arch.outputs.skip_all_builds != '1' }}
     strategy:
@@ -257,7 +296,7 @@ jobs:
         boards: ${{ fromJSON(needs.macOS-Arch.outputs.selected_builds) }}
     steps:
       - name: Download Source Artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: source-bundle
           path: .
@@ -267,7 +306,7 @@ jobs:
 
       - name: Restore Tools Cache
         id: cache-tools
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         env:
           cache-name: ${{ runner.os }}-cache-tools
         with:
@@ -289,7 +328,7 @@ jobs:
           cd sources/nuttx/tools/ci
           ./cibuild.sh -i -c -A -R testlist/${{matrix.boards}}.dat
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: macos-${{matrix.boards}}-builds
           path: buildartifacts/
@@ -319,7 +358,7 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MSYS
@@ -352,7 +391,7 @@ jobs:
       - run: git config --global core.autocrlf false
 
       - name: Download Source Artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: source-bundle
           path: .
@@ -372,7 +411,7 @@ jobs:
           cd sources/nuttx/tools/ci
           ./cibuild.sh -g -i -A -C -N -R testlist/${{matrix.boards}}.dat
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: msys2-${{matrix.boards}}-builds
           path: buildartifacts/
@@ -393,7 +432,7 @@ jobs:
     if: ${{ needs.msvc-Arch.outputs.skip_all_builds != '1' }}
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       # Set up Python environment and install kconfiglib
       - name: Set up Python and install kconfiglib
         uses: actions/setup-python@v6
@@ -406,7 +445,7 @@ jobs:
       - run: git config --global core.autocrlf false
 
       - name: Download Source Artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: source-bundle
           path: .
@@ -424,7 +463,7 @@ jobs:
           cd sources\nuttx\tools\ci
           .\cibuild.ps1 -n -i -A -C -N testlist\windows.dat
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: msvc-builds
           path: ./sources/buildartifacts/
