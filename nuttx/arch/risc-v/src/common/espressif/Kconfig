@@ -3,18 +3,18 @@
 # see the file kconfig-language.txt in the NuttX tools repository.
 #
 
-if ARCH_CHIP_ESPRESSIF || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2 || ARCH_CHIP_ESP32C3_GENERIC
+if ARCH_CHIP_ESPRESSIF || ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_CHIP_SERIES
 	string
-	default "esp32c3" if ARCH_CHIP_ESP32C3_GENERIC
+	default "esp32c3" if ARCH_CHIP_ESP32C3
 	default "esp32c6" if ARCH_CHIP_ESP32C6
 	default "esp32h2" if ARCH_CHIP_ESP32H2
 	default "unknown"
 
 choice ESPRESSIF_FLASH
 	prompt "Flash Size"
-	default ESPRESSIF_FLASH_4M if ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
+	default ESPRESSIF_FLASH_4M if ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_FLASH_2M
 	bool "2 MB"
@@ -38,18 +38,18 @@ config ESPRESSIF_FLASH_DETECT
 
 config ESPRESSIF_NUM_CPUS
 	int
-	default 1 if ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
+	default 1 if ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
 
 choice ESPRESSIF_CPU_FREQ
 	prompt "CPU frequency"
 	default ESPRESSIF_CPU_FREQ_96 if ARCH_CHIP_ESP32H2
-	default ESPRESSIF_CPU_FREQ_160 if ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
+	default ESPRESSIF_CPU_FREQ_160 if ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
 	---help---
 		CPU frequency to be set on application startup.
 
 config ESPRESSIF_CPU_FREQ_40
 	bool "40 MHz"
-	depends on ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
+	depends on ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
 	---help---
 		Set the CPU frequency to 40 MHz.
 
@@ -67,7 +67,7 @@ config ESPRESSIF_CPU_FREQ_64
 
 config ESPRESSIF_CPU_FREQ_80
 	bool "80 MHz"
-	depends on ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
+	depends on ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
 	---help---
 		Set the CPU frequency to 80 MHz.
 
@@ -79,7 +79,7 @@ config ESPRESSIF_CPU_FREQ_96
 
 config ESPRESSIF_CPU_FREQ_160
 	bool "160 MHz"
-	depends on ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
+	depends on ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
 	---help---
 		Set the CPU frequency to 160 MHz.
 
@@ -146,7 +146,7 @@ config ESPRESSIF_BOOTLOADER_MCUBOOT
 config ESPRESSIF_MCUBOOT_VERSION
 	string "MCUboot version"
 	depends on ESPRESSIF_BOOTLOADER_MCUBOOT
-	default "aa4fa2b6e17361dd3ce16a60883059778fd147a9"
+	default "8a07053d42e592c85cb35b79c4de1b7749943387"
 
 choice ESPRESSIF_ESPTOOL_TARGET_SLOT
 	prompt "Target slot for image flashing"
@@ -225,6 +225,120 @@ config ESPRESSIF_OTA_SCRATCH_DEVPATH
 
 endif # ESPRESSIF_HAVE_OTA_PARTITION
 
+config ESPRESSIF_SECURE_FLASH_ENC_ENABLED
+	bool "Enable Flash Encryption on boot (READ DOCS FIRST)"
+	default n
+	depends on ESPRESSIF_BOOTLOADER_MCUBOOT
+	select ESPRESSIF_EFUSE
+	---help---
+		If this option is set, flash contents will be encrypted by the bootloader on first boot.
+
+		Note: After first boot, the system will be permanently encrypted. Re-flashing an encrypted
+		system is complicated and not always possible.
+
+		Read https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html
+		before enabling.
+
+		Note: enabling this option will automatically select ESPRESSIF_EFUSE and ESPRESSIF_EFUSE_VIRTUAL,
+		as a mean to avoid accidental burning of the E-Fuses.
+
+if ESPRESSIF_SECURE_FLASH_ENC_ENABLED
+
+config ESPRESSIF_SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
+	bool "Leave UART bootloader encryption enabled"
+	depends on ESPRESSIF_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+	default n
+	---help---
+		If not set (default), the bootloader will permanently disable UART bootloader encryption access on
+		first boot. If set, the UART bootloader will still be able to access hardware encryption.
+
+		It is recommended to only set this option in testing environments.
+
+config ESPRESSIF_SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC
+	bool "Leave UART bootloader decryption enabled"
+	default n
+	depends on ESPRESSIF_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+	---help---
+		If not set (default), the bootloader will permanently disable UART bootloader decryption access on
+		first boot. If set, the UART bootloader will still be able to access hardware decryption.
+
+		Only set this option in testing environments. Setting this option allows complete bypass of flash
+		encryption.
+
+config ESPRESSIF_SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
+	bool "Leave UART bootloader flash cache enabled"
+	default n
+	depends on ESPRESSIF_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+	---help---
+		If not set (default), the bootloader will permanently disable UART bootloader flash cache access on
+		first boot. If set, the UART bootloader will still be able to access the flash cache.
+
+		Only set this option in testing environments.
+
+choice ESPRESSIF_SECURE_FLASH_ENCRYPTION_MODE
+	bool "Enable usage mode"
+	default ESPRESSIF_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+	---help---
+		By default, Development mode is enabled which allows ROM download mode to perform Flash Encryption
+		operations (plaintext is sent to the device, and it encrypts it internally and writes ciphertext
+		to flash). This mode is not secure, it's possible for an attacker to write their own chosen plaintext
+		to flash.
+
+		Release mode should always be selected for production or manufacturing. Once enabled it's no longer
+		possible for the device in ROM Download Mode to use the Flash Encryption hardware.
+
+		Refer to the Flash Encryption section of the ESP-IDF Programmer's Guide for details:
+		https://docs.espressif.com/projects/esp-idf/en/latest/esp32/security/flash-encryption.html#flash-encryption-configuration
+
+config ESPRESSIF_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+	bool "Development (NOT SECURE)"
+	select ESPRESSIF_SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
+
+config ESPRESSIF_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
+	bool "Release"
+
+endchoice
+
+config ESPRESSIF_SECURE_FLASH_ENC_USE_HOST_KEY
+	bool "Require user provided encryption key for flash encryption"
+	default y
+	---help---
+		This option enables the requirement of a host generated flash encryption key.
+
+		If not selected, a random key will be generated by the bootloader on first boot.
+		In this case, the user will not have access to the key and will be unable to reuse it.
+
+if ESPRESSIF_SECURE_FLASH_ENC_USE_HOST_KEY
+
+config ESPRESSIF_SECURE_FLASH_ENC_HOST_KEY_NAME
+	string "Path to flash encryption key"
+	default "flash_enc_key.bin"
+	---help---
+		Path to the key file used to encrypt the flash.
+
+		This key is in a binary format and is generated by espsecure application.
+
+		Path is evaluated relative to the NuttX root directory.
+
+		You can generate a new signing key by running the following command:
+		$ espsecure.py generate_flash_encryption_key <key_name>
+
+endif # ESPRESSIF_SECURE_FLASH_ENC_USE_HOST_KEY
+
+config ESPRESSIF_SECURE_FLASH_ENC_FLASH_DEVICE_ENCRYPTED
+	bool "Device is already encrypted"
+	default n
+	depends on ESPRESSIF_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+	depends on !ESPRESSIF_EFUSE_VIRTUAL
+	---help---
+		Append --encrypt to esptool.py write_flash command.
+
+		This option is useful when the device already has a flash encryption key,
+		and the user wants to simply flash a new firmware to it, using the key already present.
+		It requires that the DEVELOPMENT mode is set. It is not possible to reflash in RELEASE mode.
+
+endif # ESPRESSIF_SECURE_FLASH_ENC_ENABLED
+
 endmenu # Bootloader and Image Configuration
 
 menu "LP Core (Low-power core) Coprocessor Configuration"
@@ -263,6 +377,465 @@ config ESPRESSIF_ULP_ENABLE_UBSAN
 		application will not fit into RTC RAM
 
 endmenu # LP Core (Low-power core) Coprocessor Configuration
+
+menu "PM Configuration"
+
+if PM
+
+config PM_EXT1_WAKEUP
+	bool "PM EXT1 Wakeup"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+	default n
+	---help---
+		Enable EXT1 wakeup functionality.
+		This allows the system to wake up from PM_STANDBY or PM_SLEEP
+		when a GPIO pin configured as an EXT1 wakeup source is triggered.
+
+menu "PM EXT1 Wakeup Sources"
+	depends on PM_EXT1_WAKEUP
+
+config PM_EXT1_WAKEUP_RTC_GPIO0
+	bool "RTC_GPIO0"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable RTC GPIO0 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO1
+	bool "RTC_GPIO1"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable RTC GPIO1 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO2
+	bool "RTC_GPIO2"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable RTC GPIO2 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO3
+	bool "RTC_GPIO3"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable RTC GPIO3 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO4
+	bool "RTC_GPIO4"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable RTC GPIO4 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO5
+	bool "RTC_GPIO5"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable RTC GPIO5 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO6
+	bool "RTC_GPIO6"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable RTC GPIO6 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO7
+	bool "RTC_GPIO7"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable RTC GPIO7 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO8
+	bool "RTC_GPIO8"
+	depends on ARCH_CHIP_ESP32H2
+	default n
+	---help---
+		Enable RTC GPIO8 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO9
+	bool "RTC_GPIO9"
+	depends on ARCH_CHIP_ESP32H2
+	default n
+	---help---
+		Enable RTC GPIO9 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO10
+	bool "RTC_GPIO10"
+	depends on ARCH_CHIP_ESP32H2
+	default n
+	---help---
+		Enable RTC GPIO10 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO11
+	bool "RTC_GPIO11"
+	depends on ARCH_CHIP_ESP32H2
+	default n
+	---help---
+		Enable RTC GPIO11 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO12
+	bool "RTC_GPIO12"
+	depends on ARCH_CHIP_ESP32H2
+	default n
+	---help---
+		Enable RTC GPIO12 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO13
+	bool "RTC_GPIO13"
+	depends on ARCH_CHIP_ESP32H2
+	default n
+	---help---
+		Enable RTC GPIO13 as an EXT1 wakeup source.
+
+config PM_EXT1_WAKEUP_RTC_GPIO14
+	bool "RTC_GPIO14"
+	depends on ARCH_CHIP_ESP32H2
+	default n
+	---help---
+		Enable RTC GPIO14 as an EXT1 wakeup source.
+
+choice PM_EXT1_WAKEUP_TRIGGER_MODE
+	prompt "PM EXT1 Wakeup Trigger Mode"
+	default PM_EXT1_WAKEUP_TRIGGER_ANY_LOW
+
+config PM_EXT1_WAKEUP_TRIGGER_ANY_LOW
+	bool "Wake the chip when any of the selected GPIOs go low"
+
+config PM_EXT1_WAKEUP_TRIGGER_ANY_HIGH
+	bool "Wake the chip when any of the selected GPIOs go high"
+
+endchoice # PM_EXT1_WAKEUP_TRIGGER_MODE
+
+endmenu # PM_EXT1_WAKEUP_SOURCES
+
+config PM_ULP_WAKEUP
+	bool "PM ULP Wakeup"
+	depends on ARCH_CHIP_ESP32C6 && ESPRESSIF_USE_LP_CORE
+	default n
+	---help---
+		Enable ULP coprocessor wakeup functionality.
+		This allows the system to wake up from PM_STANDBY or PM_SLEEP
+		when ULP app triggers HP core to wakeup with "ulp_lp_core_wakeup_main_processor"
+		call on ULP app.
+
+config PM_GPIO_WAKEUP
+	bool "PM GPIO Wakeup"
+	default n
+	---help---
+		Enable GPIO wakeup functionality.
+		This allows the system to wake up from PM_STANDBY
+		when a GPIO pin configured as wakeup source is triggered.
+
+menu "PM GPIO Wakeup Sources"
+	depends on PM_GPIO_WAKEUP
+
+config PM_GPIO_WAKEUP_GPIO0
+	bool "GPIO0"
+	default n
+	---help---
+		Enable GPIO0 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO1
+	bool "GPIO1"
+	default n
+	---help---
+		Enable GPIO1 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO2
+	bool "GPIO2"
+	default n
+	---help---
+		Enable GPIO2 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO3
+	bool "GPIO3"
+	default n
+	---help---
+		Enable GPIO3 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO4
+	bool "GPIO4"
+	default n
+	---help---
+		Enable GPIO4 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO5
+	bool "GPIO5"
+	default n
+	---help---
+		Enable GPIO5 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO6
+	bool "GPIO6"
+	default n
+	---help---
+		Enable GPIO6 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO7
+	bool "GPIO7"
+	default n
+	---help---
+		Enable GPIO7 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO8
+	bool "GPIO8"
+	default n
+	---help---
+		Enable GPIO8 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO9
+	bool "GPIO9"
+	default n
+	---help---
+		Enable GPIO9 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO10
+	bool "GPIO10"
+	default n
+	---help---
+		Enable GPIO10 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO11
+	bool "GPIO11"
+	default n
+	---help---
+		Enable GPIO11 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO12
+	bool "GPIO12"
+	default n
+	---help---
+		Enable GPIO12 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO13
+	bool "GPIO13"
+	default n
+	---help---
+		Enable GPIO13 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO14
+	bool "GPIO14"
+	default n
+	---help---
+		Enable GPIO14 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO15
+	bool "GPIO15"
+	default n
+	---help---
+		Enable GPIO15 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO16
+	bool "GPIO16"
+	default n
+	---help---
+		Enable GPIO16 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO17
+	bool "GPIO17"
+	default n
+	---help---
+		Enable GPIO17 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO18
+	bool "GPIO18"
+	default n
+	---help---
+		Enable GPIO18 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO19
+	bool "GPIO19"
+	default n
+	---help---
+		Enable GPIO19 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO20
+	bool "GPIO20"
+	default n
+	---help---
+		Enable GPIO20 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO21
+	bool "GPIO21"
+	default n
+	---help---
+		Enable GPIO21 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO22
+	bool "GPIO22"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+	default n
+	---help---
+		Enable GPIO22 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO23
+	bool "GPIO23"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+	default n
+	---help---
+		Enable GPIO23 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO24
+	bool "GPIO24"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+	default n
+	---help---
+		Enable GPIO24 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO25
+	bool "GPIO25"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+	default n
+	---help---
+		Enable GPIO25 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO26
+	bool "GPIO26"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+	default n
+	---help---
+		Enable GPIO26 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO27
+	bool "GPIO27"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+	default n
+	---help---
+		Enable GPIO27 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO28
+	bool "GPIO28"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable GPIO28 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO29
+	bool "GPIO29"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable GPIO29 as an GPIO wakeup source.
+
+config PM_GPIO_WAKEUP_GPIO30
+	bool "GPIO30"
+	depends on ARCH_CHIP_ESP32C6
+	default n
+	---help---
+		Enable GPIO30 as an GPIO wakeup source.
+
+choice PM_GPIO_WAKEUP_TRIGGER_MODE
+	prompt "PM GPIO Wakeup Trigger Mode"
+	default PM_GPIO_WAKEUP_TRIGGER_ANY_LOW
+
+config PM_GPIO_WAKEUP_TRIGGER_ANY_LOW
+	bool "Wake the chip when any of the selected GPIOs go low"
+
+config PM_GPIO_WAKEUP_TRIGGER_ANY_HIGH
+	bool "Wake the chip when any of the selected GPIOs go high"
+
+endchoice # PM_GPIO_WAKEUP_TRIGGER_MODE
+
+endmenu # PM_GPIO_WAKEUP_SOURCES
+
+config PM_UART_WAKEUP
+	bool "PM UART Wakeup"
+	depends on ESPRESSIF_UART0 || ESPRESSIF_UART1
+	default n
+	---help---
+		Enable UART wakeup functionality.
+		This allows the system to wake up from PM_STANDBY
+		when a UART configured as an UART wakeup source is triggered.
+
+menu "PM UART Wakeup Sources"
+	depends on PM_UART_WAKEUP
+
+choice PM_UART_WAKEUP_UART_NUM
+	prompt "PM UART Wakeup UART Number"
+	default PM_UART_WAKEUP_UART0 if ESPRESSIF_UART0
+	default PM_UART_WAKEUP_UART1 if ESPRESSIF_UART1
+
+config PM_UART_WAKEUP_UART0
+	depends on ESPRESSIF_UART0
+	bool "Wake the chip up when UART0 gets a data"
+
+config PM_UART_WAKEUP_UART1
+	depends on ESPRESSIF_UART1
+	bool "Wake the chip up when UART1 gets a data"
+
+endchoice # PM_UART_WAKEUP_UART_NUM
+
+choice PM_UART_WAKEUP_MODE
+	prompt "PM UART Wakeup Mode"
+	default PM_UART_WAKEUP_START_BIT_MODE if !ARCH_CHIP_ESP32C3_GENERIC
+	default PM_UART_WAKEUP_ACTIVE_EDGE_THRESHOLD_MODE if ARCH_CHIP_ESP32C3_GENERIC
+
+config PM_UART_WAKEUP_ACTIVE_EDGE_THRESHOLD_MODE
+	bool "Wake-up triggered by active edge threshold"
+
+config PM_UART_WAKEUP_FIFO_THRESHOLD_MODE
+	bool "Wake-up triggered by the number of bytes received in the RX FIFO"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+
+config PM_UART_WAKEUP_START_BIT_MODE
+	bool "Wake-up triggered by the detection of a start bit"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+
+config PM_UART_WAKEUP_CHAR_SEQ_MODE
+	bool "Wake-up triggered by detecting a specific character sequence"
+	depends on !ARCH_CHIP_ESP32C3_GENERIC
+
+endchoice # PM_UART_WAKEUP_MODE
+
+config PM_UART_WAKEUP_ACTIVE_EDGE_THRESHOLD
+	int "Number of RXD edge changes to to trigger wake-up"
+	depends on PM_UART_WAKEUP_ACTIVE_EDGE_THRESHOLD_MODE
+	default 3
+
+config PM_UART_WAKEUP_FIFO_THRESHOLD
+	int "Number of bytes needed to receive in the RX FIFO to trigger wake-up"
+	depends on PM_UART_WAKEUP_FIFO_THRESHOLD_MODE
+	default 8
+
+config PM_UART_WAKEUP_CHAR_SEQ
+	string "Character sequence to trigger wake-up"
+	depends on PM_UART_WAKEUP_CHAR_SEQ_MODE
+	default "esp"
+
+endmenu # PM UART Wakeup Sources
+
+config PM_ALARM_SEC
+	int "PM_STANDBY delay (seconds)"
+	default 15
+	---help---
+		Number of seconds to wait in PM_STANDBY mode.
+
+config PM_ALARM_NSEC
+	int "PM_STANDBY delay (nanoseconds)"
+	default 0
+	---help---
+		Number of additional nanoseconds to wait in PM_STANDBY mode.
+
+config PM_SLEEP_WAKEUP_SEC
+	int "PM_SLEEP delay (seconds)"
+	default 20
+	---help---
+		Number of seconds to wait in PM_SLEEP.
+
+config PM_SLEEP_WAKEUP_NSEC
+	int "PM_SLEEP delay (nanoseconds)"
+	default 0
+	---help---
+		Number of additional nanoseconds to wait in PM_SLEEP.
+
+endif # PM
+
+endmenu # PM Configuration
 
 menu "Peripheral Support"
 
@@ -325,7 +898,7 @@ config ESPRESSIF_TWAI1
 config ESPRESSIF_USBSERIAL
 	bool "USB-Serial-JTAG Driver"
 	default n
-	select ESPRESSIF_ESPTOOLPY_NO_STUB if ARCH_CHIP_ESP32C3_GENERIC
+	select ESPRESSIF_ESPTOOLPY_NO_STUB if ARCH_CHIP_ESP32C3
 	select OTHER_UART_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 
@@ -473,8 +1046,11 @@ config ESPRESSIF_SPI_BITBANG
 		Software implemented SPI peripheral with GPIOs. Suggested to use if SPI peripheral is already in use.
 
 config ESPRESSIF_SPIFLASH
-	bool "SPI Flash"
+	bool "SPI Flash (User Storage)"
 	default n
+	---help---
+		Enable SPI Flash driver for general storage support. This allows
+		mounting an MTD partition at a configurable region in flash.
 
 config ESPRESSIF_DMA
 	bool "General DMA (GDMA)"
@@ -490,7 +1066,7 @@ config ESPRESSIF_EFUSE
 config ESPRESSIF_EFUSE_VIRTUAL
 	bool "Virtual E-Fuses support"
 	depends on ESPRESSIF_EFUSE
-	default n
+	default y
 	---help---
 		Enable virtual E-Fuse support to simulate E-Fuse operations in RAM.
 		Changes will be reverted each reboot unless enabling ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH.
@@ -498,6 +1074,7 @@ config ESPRESSIF_EFUSE_VIRTUAL
 config ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH
 	bool "Keep E-Fuses in flash"
 	depends on ESPRESSIF_EFUSE_VIRTUAL
+	default y
 	---help---
 		In addition to the "Virtual E-Fuses support" option, this option just adds
 		a feature to keep E-Fuses after reboots in flash memory.
@@ -569,7 +1146,7 @@ config ESPRESSIF_RWDT
 
 config ESPRESSIF_XTWDT
 	bool "XTAL32K Watchdog Timer"
-	depends on ARCH_CHIP_ESP32C3_GENERIC
+	depends on ARCH_CHIP_ESP32C3
 	depends on ESPRESSIF_RTCIO_IRQ
 	depends on ESPRESSIF_RTC_CLK_EXT_OSC || ESPRESSIF_RTC_CLK_EXT_XTAL
 	default n
@@ -639,7 +1216,7 @@ config ESP_WIRELESS
 
 config ESPRESSIF_WIFI
 	bool "Wi-Fi"
-	depends on ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
+	depends on ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
 	default n
 	select ESP_WIRELESS
 	---help---
@@ -647,7 +1224,7 @@ config ESPRESSIF_WIFI
 
 config ESPRESSIF_BLE
 	bool "BLE"
-	depends on ARCH_CHIP_ESP32C3_GENERIC
+	depends on ARCH_CHIP_ESP32C3
 	default n
 	select ESP_WIRELESS
 	---help---
@@ -1144,11 +1721,13 @@ choice ESPRESSIF_WIFI_MGMT_RX_BUFFER
 		If "Dynamic" is selected, each WiFi RX MGMT buffer is allocated as needed when a MGMT data frame is
 		received. The MGMT buffer is freed after the MGMT data frame has been processed by the WiFi driver.
 
-	config ESPRESSIF_WIFI_STATIC_RX_MGMT_BUFFER
-		bool "Static"
-	config ESPRESSIF_WIFI_DYNAMIC_RX_MGMT_BUFFER
-		bool "Dynamic"
-endchoice
+config ESPRESSIF_WIFI_STATIC_RX_MGMT_BUFFER
+	bool "Static"
+
+config ESPRESSIF_WIFI_DYNAMIC_RX_MGMT_BUFFER
+	bool "Dynamic"
+
+endchoice # ESPRESSIF_WIFI_MGMT_RX_BUFFER
 
 config ESPRESSIF_WIFI_DYNAMIC_RX_MGMT_BUFFER_TYPE
 	int
@@ -1206,11 +1785,13 @@ choice ESPRESSIF_WIFI_TX_BUFFER
 
 		TODO: There is a special dependency for Dynamic if SPIRAM is enabled.
 
-	config ESPRESSIF_WIFI_STATIC_TX_BUFFER
-		bool "Static"
-	config ESPRESSIF_WIFI_DYNAMIC_TX_BUFFER
-		bool "Dynamic"
-endchoice
+config ESPRESSIF_WIFI_STATIC_TX_BUFFER
+	bool "Static"
+
+config ESPRESSIF_WIFI_DYNAMIC_TX_BUFFER
+	bool "Dynamic"
+
+endchoice # ESPRESSIF_WIFI_TX_BUFFER
 
 config ESPRESSIF_WIFI_TX_BUFFER_TYPE
 	int
@@ -1414,39 +1995,39 @@ config ESPRESSIF_UART0_RS485_DIR_POLARITY
 
 config ESPRESSIF_UART0_TXPIN
 	int "UART0 TX Pin"
-	default 21 if ARCH_CHIP_ESP32C3_GENERIC
+	default 21 if ARCH_CHIP_ESP32C3
 	default 16 if ARCH_CHIP_ESP32C6
 	default 24 if ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_UART0_RXPIN
 	int "UART0 RX Pin"
-	default 20 if ARCH_CHIP_ESP32C3_GENERIC
+	default 20 if ARCH_CHIP_ESP32C3
 	default 17 if ARCH_CHIP_ESP32C6
 	default 23 if ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_UART0_RTSPIN
 	int "UART0 RTS Pin"
 	depends on SERIAL_IFLOWCONTROL
-	default 16 if ARCH_CHIP_ESP32C3_GENERIC
+	default 16 if ARCH_CHIP_ESP32C3
 	default 15 if ARCH_CHIP_ESP32C6
 	default 22 if ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_UART0_CTSPIN
 	int "UART0 CTS Pin"
 	depends on SERIAL_OFLOWCONTROL
-	default 15 if ARCH_CHIP_ESP32C3_GENERIC
+	default 15 if ARCH_CHIP_ESP32C3
 	default 14 if ARCH_CHIP_ESP32C6
 	default 21 if ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
@@ -1481,25 +2062,25 @@ config ESPRESSIF_UART1_RS485_DIR_POLARITY
 
 config ESPRESSIF_UART1_TXPIN
 	int "UART1 TX Pin"
-	default 8 if ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
+	default 8 if ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_UART1_RXPIN
 	int "UART1 RX Pin"
-	default 9 if ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
+	default 9 if ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_UART1_RTSPIN
 	int "UART1 RTS Pin"
 	depends on SERIAL_IFLOWCONTROL
-	default 1 if ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	default 1 if ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_UART1_CTSPIN
 	int "UART1 CTS Pin"
 	depends on SERIAL_OFLOWCONTROL
-	default 2 if ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	default 2 if ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
@@ -1677,37 +2258,37 @@ config ESPRESSIF_SPI2_SLAVE_BUFSIZE
 
 config ESPRESSIF_SPI2_CSPIN
 	int "SPI2 CS Pin"
-	default 10 if ARCH_CHIP_ESP32C3_GENERIC
+	default 10 if ARCH_CHIP_ESP32C3
 	default 16 if ARCH_CHIP_ESP32C6
 	default 1 if ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_SPI2_CLKPIN
 	int "SPI2 CLK Pin"
-	default 6 if ARCH_CHIP_ESP32C3_GENERIC
+	default 6 if ARCH_CHIP_ESP32C3
 	default 6 if ARCH_CHIP_ESP32C6
 	default 4 if ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_SPI2_MOSIPIN
 	int "SPI2 MOSI Pin"
-	default 7 if ARCH_CHIP_ESP32C3_GENERIC
+	default 7 if ARCH_CHIP_ESP32C3
 	default 7 if ARCH_CHIP_ESP32C6
 	default 5 if ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_SPI2_MISOPIN
 	int "SPI2 MISO Pin"
-	default 2 if ARCH_CHIP_ESP32C3_GENERIC
+	default 2 if ARCH_CHIP_ESP32C3
 	default 2 if ARCH_CHIP_ESP32C6
 	default 0 if ARCH_CHIP_ESP32H2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
@@ -1730,28 +2311,28 @@ endchoice # ESPRESSIF_SPI_BITBANG_OPERATION_MODE
 config ESPRESSIF_SPI_BITBANG_CSPIN
 	int "SPI Bitbang CS Pin"
 	default 0
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_SPI_BITBANG_CLKPIN
 	int "SPI Bitbang CLK Pin"
 	default 1
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_SPI_BITBANG_MOSIPIN
 	int "SPI Bitbang MOSI Pin"
 	default 2
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
 config ESPRESSIF_SPI_BITBANG_MISOPIN
 	int "SPI Bitbang MISO Pin"
 	default 3
-	range 0 21 if ARCH_CHIP_ESP32C3_GENERIC
+	range 0 21 if ARCH_CHIP_ESP32C3
 	range 0 30 if ARCH_CHIP_ESP32C6
 	range 0 27 if ARCH_CHIP_ESP32H2
 
@@ -1823,8 +2404,74 @@ config ESPRESSIF_FLASH_MODE_QOUT
 
 endchoice # ESPRESSIF_FLASH_MODE
 
+choice ESPRESSIF_FLASH_FREQ
+	prompt "SPI Flash frequency"
+	default ESPRESSIF_FLASH_FREQ_80M if ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
+	default ESPRESSIF_FLASH_FREQ_64M if ARCH_CHIP_ESP32H2
+	---help---
+		SPI Flash frequency.
+
+config ESPRESSIF_FLASH_FREQ_80M
+	bool "80 MHz"
+	depends on ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
+
+config ESPRESSIF_FLASH_FREQ_64M
+	bool "64 MHz"
+	depends on ARCH_CHIP_ESP32H2
+
+config ESPRESSIF_FLASH_FREQ_40M
+	bool "40 MHz"
+	depends on ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
+
+config ESPRESSIF_FLASH_FREQ_26M
+	bool "26 MHz"
+	depends on ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
+
+config ESPRESSIF_FLASH_FREQ_20M
+	bool "20 MHz"
+	depends on ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6
+
+endchoice # ESPRESSIF_FLASH_FREQ
+
+config ESPRESSIF_FLASH_FREQ
+	string
+	# On some of the ESP chips, max boot frequency would be equal to (or even lower than) 80m.
+	# We currently define this to `80m`.
+	default '80m' if ESPRESSIF_FLASH_FREQ_120M
+	default '80m' if ESPRESSIF_FLASH_FREQ_80M
+	default '60m' if ESPRESSIF_FLASH_FREQ_60M
+	default '48m' if ESPRESSIF_FLASH_FREQ_64M
+	default '48m' if ESPRESSIF_FLASH_FREQ_48M
+	default '24m' if ESPRESSIF_FLASH_FREQ_32M
+	default '30m' if ESPRESSIF_FLASH_FREQ_30M
+	default '24m' if ESPRESSIF_FLASH_FREQ_24M
+	default '40m' if ESPRESSIF_FLASH_FREQ_40M
+	default '26m' if ESPRESSIF_FLASH_FREQ_26M
+	default '20m' if ESPRESSIF_FLASH_FREQ_20M
+	default '12m' if ESPRESSIF_FLASH_FREQ_16M
+	default '20m' # if no clock can match in bin headers, go with minimal.
+
+config ESPRESSIF_SPI_FLASH_USE_ROM_CODE
+	bool "Use SPI flash driver in ROM"
+	default n
+	depends on ARCH_CHIP_ESP32C3
+	---help---
+		Use functions in ROM for SPI flash driver instead of
+		source code.
+
+config ESPRESSIF_SPI_FLASH_USE_32BIT_ADDRESS
+	bool "SPI flash uses 32-bit address"
+	default n
+	---help---
+		SPI flash driver in ROM only support 24-bit address access,
+		if select the option, it will force to use source code instead
+		of functions in ROM, so that SPI flash driver can access full
+		32-bit address.
+
+endmenu # SPI Flash Configuration
+
 if ESPRESSIF_SPIFLASH
-comment "General storage MTD configuration"
+menu "User Storage MTD Configuration"
 
 config ESPRESSIF_MTD
 	bool "MTD driver"
@@ -1850,71 +2497,6 @@ config ESPRESSIF_STORAGE_MTD_DEBUG
 	---help---
 		If this option is enabled, Storage MTD driver read and write functions
 		will output input parameters and return values (if applicable).
-endif # ESPRESSIF_SPIFLASH
-
-choice ESPRESSIF_FLASH_FREQ
-	prompt "SPI Flash frequency"
-	default ESPRESSIF_FLASH_FREQ_80M if ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
-	default ESPRESSIF_FLASH_FREQ_64M if ARCH_CHIP_ESP32H2
-	---help---
-		SPI Flash frequency.
-
-config ESPRESSIF_FLASH_FREQ_80M
-	bool "80 MHz"
-	depends on ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
-
-config ESPRESSIF_FLASH_FREQ_64M
-	bool "64 MHz"
-	depends on ARCH_CHIP_ESP32H2
-
-config ESPRESSIF_FLASH_FREQ_40M
-	bool "40 MHz"
-	depends on ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
-
-config ESPRESSIF_FLASH_FREQ_26M
-	bool "26 MHz"
-	depends on ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
-
-config ESPRESSIF_FLASH_FREQ_20M
-	bool "20 MHz"
-	depends on ARCH_CHIP_ESP32C3_GENERIC || ARCH_CHIP_ESP32C6
-
-endchoice # ESPRESSIF_FLASH_FREQ
-
-config ESPRESSIF_FLASH_FREQ
-	string
-	# On some of the ESP chips, max boot frequency would be equal to (or even lower than) 80m.
-	# We currently define this to `80m`.
-	default '80m' if ESPRESSIF_FLASH_FREQ_120M
-	default '80m' if ESPRESSIF_FLASH_FREQ_80M
-	default '60m' if ESPRESSIF_FLASH_FREQ_60M
-	default '48m' if ESPRESSIF_FLASH_FREQ_64M
-	default '48m' if ESPRESSIF_FLASH_FREQ_48M
-	default '24m' if ESPRESSIF_FLASH_FREQ_32M
-	default '30m' if ESPRESSIF_FLASH_FREQ_30M
-	default '24m' if ESPRESSIF_FLASH_FREQ_24M
-	default '40m' if ESPRESSIF_FLASH_FREQ_40M
-	default '26m' if ESPRESSIF_FLASH_FREQ_26M
-	default '20m' if ESPRESSIF_FLASH_FREQ_20M
-	default '12m' if ESPRESSIF_FLASH_FREQ_16M
-	default '20m' # if no clock can match in bin headers, go with minimal.
-
-config ESPRESSIF_SPI_FLASH_USE_ROM_CODE
-	bool "Use SPI flash driver in ROM"
-	default n
-	depends on ARCH_CHIP_ESP32C3_GENERIC
-	---help---
-		Use functions in ROM for SPI flash driver instead of
-		source code.
-
-config ESPRESSIF_SPI_FLASH_USE_32BIT_ADDRESS
-	bool "SPI flash uses 32-bit address"
-	default n
-	---help---
-		SPI flash driver in ROM only support 24-bit address access,
-		if select the option, it will force to use source code instead
-		of functions in ROM, so that SPI flash driver can access full
-		32-bit address.
 
 config ESPRESSIF_STORAGE_MTD_OFFSET
 	hex "Storage MTD base address in SPI Flash"
@@ -1931,7 +2513,8 @@ config ESPRESSIF_STORAGE_MTD_SIZE
 	---help---
 		MTD size in SPI Flash.
 
-endmenu # SPI Flash Configuration
+endmenu # User Storage MTD Configuration
+endif # ESPRESSIF_SPIFLASH
 
 menu "RTC Configuration"
 	depends on ESPRESSIF_RTC
@@ -1999,8 +2582,8 @@ config ESPRESSIF_LEDC_TIMER0_CHANNELS
 config ESPRESSIF_LEDC_TIMER0_RESOLUTION
 	int "Timer 0 resolution"
 	default 13
-	range 1 14 if ARCH_CHIP_ESP32C3_GENERIC && !(ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
-	range 1 20 if !ARCH_CHIP_ESP32C3_GENERIC && (ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
+	range 1 14 if ARCH_CHIP_ESP32C3 && !(ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
+	range 1 20 if !ARCH_CHIP_ESP32C3 && (ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
 	---help---
 		Timer resolution in bits. The resolution is the number of bits used to by the timer
 		counter to generate the PWM signal. The duty cycle provided by the upper layers
@@ -2023,8 +2606,8 @@ config ESPRESSIF_LEDC_TIMER1_CHANNELS
 config ESPRESSIF_LEDC_TIMER1_RESOLUTION
 	int "Timer 1 resolution"
 	default 13
-	range 1 14 if ARCH_CHIP_ESP32C3_GENERIC && !(ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
-	range 1 20 if !ARCH_CHIP_ESP32C3_GENERIC && (ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
+	range 1 14 if ARCH_CHIP_ESP32C3 && !(ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
+	range 1 20 if !ARCH_CHIP_ESP32C3 && (ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
 	---help---
 		Timer resolution in bits. The resolution is the number of bits used to by the timer
 		counter to generate the PWM signal. The duty cycle provided by the upper layers
@@ -2047,8 +2630,8 @@ config ESPRESSIF_LEDC_TIMER2_CHANNELS
 config ESPRESSIF_LEDC_TIMER2_RESOLUTION
 	int "Timer 2 resolution"
 	default 13
-	range 1 14 if ARCH_CHIP_ESP32C3_GENERIC && !(ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
-	range 1 20 if !ARCH_CHIP_ESP32C3_GENERIC && (ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
+	range 1 14 if ARCH_CHIP_ESP32C3 && !(ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
+	range 1 20 if !ARCH_CHIP_ESP32C3 && (ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
 	---help---
 		Timer resolution in bits. The resolution is the number of bits used to by the timer
 		counter to generate the PWM signal. The duty cycle provided by the upper layers
@@ -2071,8 +2654,8 @@ config ESPRESSIF_LEDC_TIMER3_CHANNELS
 config ESPRESSIF_LEDC_TIMER3_RESOLUTION
 	int "Timer 3 resolution"
 	default 13
-	range 1 14 if ARCH_CHIP_ESP32C3_GENERIC && !(ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
-	range 1 20 if !ARCH_CHIP_ESP32C3_GENERIC && (ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
+	range 1 14 if ARCH_CHIP_ESP32C3 && !(ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
+	range 1 20 if !ARCH_CHIP_ESP32C3 && (ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2)
 	---help---
 		Timer resolution in bits. The resolution is the number of bits used to by the timer
 		counter to generate the PWM signal. The duty cycle provided by the upper layers

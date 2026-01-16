@@ -163,7 +163,7 @@ static struct st7796_dev_s g_st7796dev;
 #elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE) || \
       defined(CONFIG_LCD_RLANDSCAPE)
 #  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
-#    define ST7796_MADCTL_VALUE 0xE8
+#    define ST7796_MADCTL_VALUE 0xe8
 #  else
 #    define ST7796_MADCTL_VALUE 0xE0
 #  endif
@@ -175,28 +175,153 @@ static struct st7796_dev_s g_st7796dev;
 #  endif
 #endif
 
+/* Initialization sequence data arrays
+ *
+ * ST7796S Register Configuration Reference:
+ *
+ * CSCON (Command Set Control):
+ *   0xc3, 0x96  - Enable extended command access (unlock)
+ *   0x3c, 0x69  - Disable extended command access (lock)
+ *
+ * PIXFMT (Pixel Format):
+ *   0x55 - RGB565 16bpp (0101 0101b: 16-bit RGB + 16-bit MCU)
+ *
+ * INVCTR (Display Inversion):
+ *   0x01 - Column inversion mode
+ *
+ * DFC (Display Function Control):
+ *   0x80 - Source output scan direction
+ *   0x02 - Gate output scan direction
+ *   0x3b - Number of lines (59 * 8 = 472 lines)
+ *
+ * CMD 0xE8 (Undocumented):
+ *   Internal timing adjustment, from manufacturer reference
+ *
+ * PWCTRL2/3 (Power Control):
+ *   0x06 - VGH/VGL voltage setting
+ *   0xa7 - VCOM voltage adjustment
+ *
+ * VCOM:
+ *   0x18 - VCOM voltage for contrast tuning
+ *
+ * GAMMAPOS/GAMMANEG:
+ *   14-byte gamma correction curves for color linearity
+ *
+ * MADCTL values defined by orientation config (see ST7796_MADCTL_VALUE)
+ */
+
+static const uint8_t g_cscon1_data[] =
+{
+  0xc3
+};
+
+static const uint8_t g_cscon2_data[] =
+{
+  0x96
+};
+
+static const uint8_t g_madctl_data[] =
+{
+  ST7796_MADCTL_VALUE
+};
+
+static const uint8_t g_pixfmt_data[] =
+{
+  0x55
+};
+
+static const uint8_t g_invctr_data[] =
+{
+  0x01
+};
+
+static const uint8_t g_dfc_data[] =
+{
+  0x80, 0x02, 0x3b
+};
+
+static const uint8_t g_cmd_e8_data[] =
+{
+  0x40, 0x8a, 0x00, 0x00, 0x29, 0x19, 0xa5, 0x33
+};
+
+static const uint8_t g_pwctrl2_data[] =
+{
+  0x06
+};
+
+static const uint8_t g_pwctrl3_data[] =
+{
+  0xa7
+};
+
+static const uint8_t g_vcom_data[] =
+{
+  0x18
+};
+
+static const uint8_t g_gammapos_data[] =
+{
+  0xf0, 0x09, 0x0b, 0x06, 0x04, 0x15,
+  0x2f, 0x54, 0x42, 0x3c, 0x17, 0x14,
+  0x18, 0x1b
+};
+
+static const uint8_t g_gammaneg_data[] =
+{
+  0xf0, 0x09, 0x0b, 0x06, 0x04, 0x03,
+  0x2d, 0x43, 0x42, 0x3b, 0x16, 0x14,
+  0x17, 0x1b
+};
+
+static const uint8_t g_cscon3_data[] =
+{
+  0x3c
+};
+
+static const uint8_t g_cscon4_data[] =
+{
+  0x69
+};
+
+/* Initialization sequence
+ *
+ * Timing requirements from ST7796S datasheet section 9.16:
+ *
+ *   SWRESET: 120ms minimum recovery time (using 150ms for margin)
+ *   SLPOUT:  120ms minimum for DC-DC and oscillator stabilization
+ *   INVON:   No minimum specified, 10ms for safety
+ *   NORON:   No minimum specified, 10ms for safety
+ *   DISPON:  Frame memory must be written first, 120ms for stabilization
+ *
+ * Sequence follows recommended power-on flow:
+ *   1. Software reset
+ *   2. Exit sleep mode
+ *   3. Unlock extended registers (CSCON)
+ *   4. Configure display parameters
+ *   5. Lock extended registers (CSCON)
+ *   6. Enable inversion and normal mode
+ *   7. Turn on display
+ */
+
 static const struct st7796_cmd_s st7796_init_sequence[] =
 {
   {ST7796_SWRESET, NULL, 0, 150},
   {ST7796_SLPOUT, NULL, 0, 150},
-  {ST7796_CSCON, (const uint8_t[]){0xC3}, 1, 0},
-  {ST7796_CSCON, (const uint8_t[]){0x96}, 1, 0},
-  {ST7796_MADCTL, (const uint8_t[]){ST7796_MADCTL_VALUE}, 1, 0},
-  {ST7796_PIXFMT, (const uint8_t[]){0x55}, 1, 0},
-  {ST7796_INVCTR, (const uint8_t[]){0x01}, 1, 0},
-  {ST7796_DFC, (const uint8_t[]){0x80, 0x02, 0x3B}, 3, 0},
-  {0xE8, (const uint8_t[]){0x40, 0x8A, 0x00, 0x00, 0x29, 0x19, 0xA5, 0x33}, 8, 0},
-  {ST7796_PWCTRL2, (const uint8_t[]){0x06}, 1, 0},
-  {ST7796_PWCTRL3, (const uint8_t[]){0xA7}, 1, 0},
-  {ST7796_VCOM, (const uint8_t[]){0x18}, 1, 0},
-  {ST7796_GAMMAPOS, (const uint8_t[]){0xF0, 0x09, 0x0B, 0x06, 0x04, 0x15,
-                                      0x2F, 0x54, 0x42, 0x3C, 0x17, 0x14,
-                                      0x18, 0x1B}, 14, 0},
-  {ST7796_GAMMANEG, (const uint8_t[]){0xF0, 0x09, 0x0B, 0x06, 0x04, 0x03,
-                                      0x2D, 0x43, 0x42, 0x3B, 0x16, 0x14,
-                                      0x17, 0x1B}, 14, 0},
-  {ST7796_CSCON, (const uint8_t[]){0x3C}, 1, 0},
-  {ST7796_CSCON, (const uint8_t[]){0x69}, 1, 0},
+  {ST7796_CSCON, g_cscon1_data, 1, 0},
+  {ST7796_CSCON, g_cscon2_data, 1, 0},
+  {ST7796_MADCTL, g_madctl_data, 1, 0},
+  {ST7796_PIXFMT, g_pixfmt_data, 1, 0},
+  {ST7796_INVCTR, g_invctr_data, 1, 0},
+  {ST7796_DFC, g_dfc_data, 3, 0},
+  {0xe8, g_cmd_e8_data, 8, 0},
+  {ST7796_PWCTRL2, g_pwctrl2_data, 1, 0},
+  {ST7796_PWCTRL3, g_pwctrl3_data, 1, 0},
+  {ST7796_VCOM, g_vcom_data, 1, 0},
+  {ST7796_GAMMAPOS, g_gammapos_data, 14, 0},
+  {ST7796_GAMMANEG, g_gammaneg_data, 14, 0},
+  {ST7796_CSCON, g_cscon3_data, 1, 0},
+  {ST7796_CSCON, g_cscon4_data, 1, 0},
   {ST7796_INVON, NULL, 0, 10},
   {ST7796_NORON, NULL, 0, 10},
   {ST7796_DISPON, NULL, 0, 120},
@@ -204,6 +329,22 @@ static const struct st7796_cmd_s st7796_init_sequence[] =
 
 /****************************************************************************
  * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: st7796_select
+ *
+ * Description:
+ *   Select the SPI device, locking the bus and configuring SPI parameters.
+ *   This function locks the SPI bus, sets the SPI mode, bit width, and
+ *   frequency, then asserts the chip select signal.
+ *
+ * Input Parameters:
+ *   spi - Reference to the SPI driver structure
+ *
+ * Returned Value:
+ *   None
+ *
  ****************************************************************************/
 
 static void st7796_select(FAR struct spi_dev_s *spi)
@@ -215,11 +356,42 @@ static void st7796_select(FAR struct spi_dev_s *spi)
   SPI_SELECT(spi, SPIDEV_DISPLAY(0), true);
 }
 
+/****************************************************************************
+ * Name: st7796_deselect
+ *
+ * Description:
+ *   Deselect the SPI device, releasing the chip select and unlocking the
+ *   SPI bus for other devices.
+ *
+ * Input Parameters:
+ *   spi - Reference to the SPI driver structure
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
 static void st7796_deselect(FAR struct spi_dev_s *spi)
 {
   SPI_SELECT(spi, SPIDEV_DISPLAY(0), false);
   SPI_LOCK(spi, false);
 }
+
+/****************************************************************************
+ * Name: st7796_sendcmd
+ *
+ * Description:
+ *   Send a command byte to the ST7796 display controller. The D/C (Data/
+ *   Command) line is set to command mode before transmission.
+ *
+ * Input Parameters:
+ *   dev - Reference to the ST7796 device structure
+ *   cmd - Command byte to send
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
 
 static void st7796_sendcmd(FAR struct st7796_dev_s *dev, uint8_t cmd)
 {
@@ -230,6 +402,23 @@ static void st7796_sendcmd(FAR struct st7796_dev_s *dev, uint8_t cmd)
   #error "CONFIG_SPI_CMDDATA must be enabled for ST7796"
 #endif
 }
+
+/****************************************************************************
+ * Name: st7796_senddata
+ *
+ * Description:
+ *   Send data bytes to the ST7796 display controller. The D/C (Data/
+ *   Command) line is set to data mode before transmission.
+ *
+ * Input Parameters:
+ *   dev  - Reference to the ST7796 device structure
+ *   data - Pointer to the data buffer to send
+ *   len  - Number of bytes to send
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
 
 static void st7796_senddata(FAR struct st7796_dev_s *dev,
                             FAR const uint8_t *data, size_t len)
@@ -245,6 +434,25 @@ static void st7796_senddata(FAR struct st7796_dev_s *dev,
     }
 }
 
+/****************************************************************************
+ * Name: st7796_send_sequence
+ *
+ * Description:
+ *   Send a sequence of commands and data to the ST7796 display controller.
+ *   Each entry in the sequence contains a command, optional data, and an
+ *   optional delay. This function is typically used for display
+ *   initialization.
+ *
+ * Input Parameters:
+ *   dev   - Reference to the ST7796 device structure
+ *   seq   - Pointer to an array of command/data sequence entries
+ *   count - Number of entries in the sequence array
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
 static void st7796_send_sequence(FAR struct st7796_dev_s *dev,
                                   FAR const struct st7796_cmd_s *seq,
                                   size_t count)
@@ -259,13 +467,37 @@ static void st7796_send_sequence(FAR struct st7796_dev_s *dev,
         {
           st7796_senddata(dev, seq[i].data, seq[i].len);
         }
+
       if (seq[i].delay_ms > 0)
+
         {
           nxsig_usleep(seq[i].delay_ms * 1000);
         }
     }
+
   lcdinfo("ST7796: Initialization sequence complete\n");
 }
+
+/****************************************************************************
+ * Name: st7796_setarea
+ *
+ * Description:
+ *   Set the active drawing area on the ST7796 display. This defines the
+ *   rectangular region where subsequent pixel data will be written. The
+ *   function sends CASET (Column Address Set) and RASET (Row Address Set)
+ *   commands to define the window boundaries.
+ *
+ * Input Parameters:
+ *   dev - Reference to the ST7796 device structure
+ *   x0  - Start column (left edge)
+ *   y0  - Start row (top edge)
+ *   x1  - End column (right edge, inclusive)
+ *   y1  - End row (bottom edge, inclusive)
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
 
 static void st7796_setarea(FAR struct st7796_dev_s *dev,
                            uint16_t x0, uint16_t y0,
@@ -273,19 +505,36 @@ static void st7796_setarea(FAR struct st7796_dev_s *dev,
 {
   uint8_t data[4];
   st7796_sendcmd(dev, ST7796_CASET);
-  data[0] = (x0 >> 8) & 0xFF;
-  data[1] = x0 & 0xFF;
-  data[2] = (x1 >> 8) & 0xFF;
-  data[3] = x1 & 0xFF;
+  data[0] = (x0 >> 8) & 0xff;
+  data[1] = x0 & 0xff;
+  data[2] = (x1 >> 8) & 0xff;
+  data[3] = x1 & 0xff;
   st7796_senddata(dev, data, 4);
 
   st7796_sendcmd(dev, ST7796_RASET);
-  data[0] = (y0 >> 8) & 0xFF;
-  data[1] = y0 & 0xFF;
-  data[2] = (y1 >> 8) & 0xFF;
-  data[3] = y1 & 0xFF;
+  data[0] = (y0 >> 8) & 0xff;
+  data[1] = y0 & 0xff;
+  data[2] = (y1 >> 8) & 0xff;
+  data[3] = y1 & 0xff;
   st7796_senddata(dev, data, 4);
 }
+
+/****************************************************************************
+ * Name: st7796_getvideoinfo
+ *
+ * Description:
+ *   Get information about the video controller and the configuration of
+ *   the video plane. This is part of the framebuffer interface required
+ *   by NuttX.
+ *
+ * Input Parameters:
+ *   vtable - Reference to the framebuffer virtual table
+ *   vinfo  - Pointer to the video info structure to be filled
+ *
+ * Returned Value:
+ *   OK on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
 
 static int st7796_getvideoinfo(FAR struct fb_vtable_s *vtable,
                                 FAR struct fb_videoinfo_s *vinfo)
@@ -297,6 +546,25 @@ static int st7796_getvideoinfo(FAR struct fb_vtable_s *vtable,
   vinfo->nplanes = 1;
   return OK;
 }
+
+/****************************************************************************
+ * Name: st7796_getplaneinfo
+ *
+ * Description:
+ *   Get information about the framebuffer plane. Returns details about
+ *   the framebuffer memory, stride, bits per pixel, and virtual
+ *   resolution. This is part of the framebuffer interface required by
+ *   NuttX.
+ *
+ * Input Parameters:
+ *   vtable  - Reference to the framebuffer virtual table
+ *   planeno - Plane number (must be 0 for this single-plane display)
+ *   pinfo   - Pointer to the plane info structure to be filled
+ *
+ * Returned Value:
+ *   OK on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
 
 static int st7796_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
                                 FAR struct fb_planeinfo_s *pinfo)
@@ -314,11 +582,31 @@ static int st7796_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
   return OK;
 }
 
+/****************************************************************************
+ * Name: st7796_updatearea
+ *
+ * Description:
+ *   Update a rectangular area of the display from the framebuffer. This
+ *   function transfers pixel data from the in-memory framebuffer to the
+ *   ST7796 display controller via SPI. The pixel data is byte-swapped
+ *   from little-endian (CPU native) to big-endian (display native) format
+ *   during transfer.
+ *
+ * Input Parameters:
+ *   vtable - Reference to the framebuffer virtual table
+ *   area   - Pointer to structure describing the rectangular area to
+ *            update (x, y, width, height)
+ *
+ * Returned Value:
+ *   OK on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
 static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
                               FAR const struct fb_area_s *area)
 {
   FAR struct st7796_dev_s *priv = (FAR struct st7796_dev_s *)vtable;
-  FAR uint16_t *src_fbptr; 
+  FAR uint16_t *src_fbptr;
   size_t row_size_pixels;
   int row;
   int i;
@@ -339,28 +627,48 @@ static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
 
   row_size_pixels = area->w;
   src_fbptr = (FAR uint16_t *)
-              (priv->fbmem + (area->y * ST7796_XRES + area->x) * ST7796_BYTESPP);
+              (priv->fbmem +
+               (area->y * ST7796_XRES + area->x) * ST7796_BYTESPP);
 
   for (row = 0; row < area->h; row++)
     {
       for (i = 0; i < row_size_pixels; i++)
         {
           uint16_t pixel = src_fbptr[i];
-          priv->swap_buf[i] = (pixel << 8) | (pixel >> 8); 
+          priv->swap_buf[i] = (pixel << 8) | (pixel >> 8);
         }
-      
+
       SPI_SNDBLOCK(priv->spi, (FAR const uint8_t *)priv->swap_buf,
                    row_size_pixels * ST7796_BYTESPP);
-      
+
       src_fbptr += ST7796_XRES;
     }
-    
+
   st7796_deselect(priv->spi);
   return OK;
 }
 
 /****************************************************************************
  * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: st7796_fbinitialize
+ *
+ * Description:
+ *   Initialize the ST7796 LCD controller and framebuffer driver. This
+ *   function allocates the framebuffer memory, initializes the driver
+ *   structure, sends the display initialization sequence, and returns
+ *   a pointer to the framebuffer virtual table for use with the NuttX
+ *   framebuffer interface.
+ *
+ * Input Parameters:
+ *   spi - Reference to the SPI driver structure to use for communication
+ *
+ * Returned Value:
+ *   On success, a pointer to the framebuffer virtual table is returned.
+ *   On failure, NULL is returned.
+ *
  ****************************************************************************/
 
 FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi)

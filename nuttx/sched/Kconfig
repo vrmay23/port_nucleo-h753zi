@@ -73,26 +73,6 @@ config SCHED_TICKLESS
 
 if SCHED_TICKLESS
 
-config SCHED_TICKLESS_TICK_ARGUMENT
-	bool "Scheduler use tick argument"
-	default n
-	---help---
-		Enables use of tick argument in scheduler. If enabled, then the
-		board-specific logic must provide the following functions:
-
-			int up_timer_gettick(FAR clock_t *ticks);
-
-		If SCHED_TICKLESS_ALARM is enabled, then these additional interfaces are
-		expected:
-
-			int up_alarm_tick_cancel(FAR clock_t *ticks);
-			int up_alarm_tick_start(clock_t ticks);
-
-		Otherwise, these additional interfaces are expected:
-
-			int up_timer_tick_cancel(FAR clock_t *ticks);
-			int up_timer_tick_start(FAR clock_t ticks);
-
 config SCHED_TICKLESS_ALARM
 	bool "Tickless alarm"
 	default n
@@ -208,13 +188,16 @@ config ARCH_HAVE_ADJTIME
 config CLOCK_ADJTIME
 	bool "Support adjtime function"
 	default n
-	depends on ARCH_HAVE_ADJTIME || RTC_ADJTIME
+	depends on ARCH_HAVE_ADJTIME || RTC_ADJTIME || PTP_CLOCK
 	---help---
 		Enables usage of adjtime() interface used to correct the system time
 		clock. This requires specific architecture support.
 
 		Adjustment can affect system timer period and/or high-resolution RTC.
 		These are implemented by interfaces up_adjtime() and up_rtc_adjtime().
+
+		Enables usage of clock_adjtime() interface used to correct the system
+		and other ptp time clock. This requires ptp clock support.
 
 		This is not a POSIX interface but derives from 4.3BSD, System V.
 		It is also supported for Linux compatibility.
@@ -2020,3 +2003,11 @@ config CUSTOM_SEMAPHORE_MAXVALUE
 	---help---
 		Enable to support custom max value for semaphores.
 		When this option is enabled, the max value of a semaphore can be set
+
+config HRTIMER
+	bool "High resolution timer support"
+	depends on SYSTEM_TIME64
+	default n
+	depends on SYSTEM_TIME64
+	---help---
+		Enable to support high resolution timer

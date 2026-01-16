@@ -36,7 +36,7 @@
 #include <nuttx/clock.h>
 #include <nuttx/queue.h>
 #include <nuttx/wdog.h>
-#include <nuttx/spinlock_type.h>
+#include <nuttx/arch.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -60,7 +60,65 @@ extern "C"
  */
 
 extern struct list_node g_wdactivelist;
-extern spinlock_t g_wdspinlock;
+
+#ifdef CONFIG_SCHED_TICKLESS
+extern bool g_wdtimernested;
+#endif
+
+/****************************************************************************
+ * Inline functions
+ ****************************************************************************/
+
+#ifdef CONFIG_SCHED_TICKLESS
+#  define wd_in_callback() (g_wdtimernested)
+#  define wd_set_nested(f) (g_wdtimernested = (f))
+#else
+#  define wd_in_callback() (false)
+#  define wd_set_nested(f)
+#endif
+
+#ifdef CONFIG_SCHED_TICKLESS
+static inline_function void wd_timer_start(clock_t next_tick)
+{
+#ifdef CONFIG_SCHED_TICKLESS_ALARM
+#  ifndef CONFIG_ALARM_ARCH
+  struct timespec ts;
+  clock_ticks2time(&ts, next_tick);
+  up_alarm_start(&ts);
+#  else
+  up_alarm_tick_start(next_tick);
+#  endif
+#else
+#  ifndef CONFIG_TIMER_ARCH
+  struct timespec ts1;
+  struct timespec ts2;
+  clock_ticks2time(&ts1, next_tick);
+  clock_systime_timespec(&ts2);
+  clock_timespec_subtract(&ts1, &ts2, &ts1);
+  up_timer_start(&ts1);
+#  else
+  up_timer_tick_start(next_tick - clock_systime_ticks());
+#  endif
+#endif
+}
+static inline_function void wd_timer_cancel(void)
+{
+  struct timespec ts;
+#ifdef CONFIG_SCHED_TICKLESS_ALARM
+  up_alarm_cancel(&ts);
+#else
+  up_timer_cancel(&ts);
+#endif
+}
+#else
+#  define wd_timer_start(next_tick)
+#  define wd_timer_cancel()
+#endif
+
+static inline_function clock_t wd_next_expire(void)
+{
+  return list_first_entry(&g_wdactivelist, struct wdog_s, node)->expired;
+}
 
 /****************************************************************************
  * Public Function Prototypes
@@ -92,33 +150,7 @@ extern spinlock_t g_wdspinlock;
  *
  ****************************************************************************/
 
-#ifdef CONFIG_SCHED_TICKLESS
-clock_t wd_timer(clock_t ticks, bool noswitches);
-#else
 void wd_timer(clock_t ticks);
-#endif
-
-/****************************************************************************
- * Name: wd_recover
- *
- * Description:
- *   This function is called from nxtask_recover() when a task is deleted via
- *   task_delete() or via pthread_cancel(). It checks if the deleted task
- *   is waiting for a timed event and if so cancels the timeout
- *
- * Input Parameters:
- *   tcb - The TCB of the terminated task or thread
- *
- * Returned Value:
- *   None.
- *
- * Assumptions:
- *   This function is called from task deletion logic in a safe context.
- *
- ****************************************************************************/
-
-struct tcb_s;
-void wd_recover(FAR struct tcb_s *tcb);
 
 #undef EXTERN
 #ifdef __cplusplus

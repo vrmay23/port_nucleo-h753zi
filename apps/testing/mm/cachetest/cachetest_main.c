@@ -25,6 +25,8 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <nuttx/cache.h>
+
 #include <stdio.h>
 #include <syslog.h>
 
@@ -146,7 +148,7 @@ static void cachetest_parse_commandline(int argc, FAR char **argv,
     }
 
   syslog(LOG_INFO, CACHETEST_PREFIX "waddr:%p, uncacheble addr start:%p,"
-         "size:%u\n", info->waddr,
+         "size:%zu\n", info->waddr,
          (FAR char *)((uintptr_t)info->waddr | info->offset), info->size);
 }
 
@@ -251,7 +253,7 @@ int main(int argc, FAR char *argv[])
         }
       else
         {
-          syslog(LOG_INFO, CACHETEST_PREFIX "comparsion success!\n");
+          syslog(LOG_INFO, CACHETEST_PREFIX "comparison success!\n");
         }
 
       /* To prevent tasks from being occupied all the time, switch

@@ -53,12 +53,16 @@
 #define IFF_IPv6           (1 << 3)  /* Configured for IPv6 packet (vs ARP or IPv4) */
 #define IFF_LOOPBACK       (1 << 5)  /* Is a loopback net */
 #define IFF_POINTOPOINT    (1 << 6)  /* Is point-to-point link */
-#define IFF_NOARP          (1 << 7)  /* ARP is not required for this packet */
+#define IFF_NOARP          (1 << 7)  /* ARP is not required for this interface */
 #define IFF_NAT            (1 << 8)  /* NAT is enabled for this interface */
 #define IFF_SLAVE          (1 << 11) /* Slave of a load balancer. */
 #define IFF_MULTICAST      (1 << 12) /* Supports multicast. */
 #define IFF_BROADCAST      (1 << 13) /* Broadcast address valid. */
 #define IFF_DYNAMIC        (1 << 15) /* Dialup device with changing addresses. */
+#define IFF_DEBUG          (1 << 16) /* Turn on debugging. */
+#define IFF_NOTRAILERS     (1 << 17) /* Avoid use of trailers. */
+#define IFF_PROMISC        (1 << 18) /* Receive all packets. */
+#define IFF_ALLMULTI       (1 << 19) /* Receive all multicast packets. */
 
 /* Interface flag helpers */
 
@@ -236,7 +240,6 @@ struct can_ioctl_state_s
 struct lifreq
 {
   char                         lifr_name[IFNAMSIZ];  /* Network device name (e.g. "eth0") */
-  int16_t                      lifr_ifindex;         /* Interface index */
   union
   {
     struct sockaddr_storage    lifru_addr;           /* IP Address */
@@ -245,6 +248,7 @@ struct lifreq
     struct sockaddr_storage    lifru_netmask;        /* Netmask */
     struct sockaddr            lifru_hwaddr;         /* MAC address */
     int                        lifru_count;          /* Number of devices */
+    int                        lifru_ivalue;         /* Value for ifindex/metric/bandwidth and so on */
     int                        lifru_mtu;            /* MTU size */
     uint32_t                   lifru_flags;          /* Interface flags */
     struct mii_ioctl_notify_s  llfru_mii_notify;     /* PHY event notification */
@@ -260,6 +264,10 @@ struct lifreq
 #define lifr_broadaddr        lifr_ifru.lifru_broadaddr        /* Broadcast address */
 #define lifr_netmask          lifr_ifru.lifru_netmask          /* Interface net mask */
 #define lifr_hwaddr           lifr_ifru.lifru_hwaddr           /* MAC address */
+#define lifr_ifindex          lifr_ifru.lifru_ivalue           /* Interface index */
+#define lifr_metric           lifr_ifru.lifru_ivalue           /* metric */
+#define lifr_bandwidth        lifr_ifru.lifru_ivalue           /* link bandwidth */
+#define lifr_qlen             lifr_ifru.lifru_ivalue           /* Queue length */
 #define lifr_mtu              lifr_ifru.lifru_mtu              /* MTU */
 #define lifr_count            lifr_ifru.lifru_count            /* Number of devices */
 #define lifr_flags            lifr_ifru.lifru_flags            /* interface flags */
@@ -290,7 +298,6 @@ struct lifconf
 struct ifreq
 {
   char                         ifr_name[IFNAMSIZ];  /* Network device name (e.g. "eth0") */
-  int16_t                      ifr_ifindex;         /* Interface index */
   union
   {
     struct sockaddr            ifru_addr;           /* IP Address */
@@ -299,6 +306,7 @@ struct ifreq
     struct sockaddr            ifru_netmask;        /* Netmask */
     struct sockaddr            ifru_hwaddr;         /* MAC address */
     int                        ifru_count;          /* Number of devices */
+    int                        ifru_ivalue;         /* Value for ifindex/metric/bandwidth and so on */
     int                        ifru_mtu;            /* MTU size */
     uint32_t                   ifru_flags;          /* Interface flags */
     struct mii_ioctl_notify_s  ifru_mii_notify;     /* PHY event notification */
@@ -315,6 +323,10 @@ struct ifreq
 #define ifr_broadaddr         ifr_ifru.ifru_broadaddr        /* Broadcast address */
 #define ifr_netmask           ifr_ifru.ifru_netmask          /* Interface net mask */
 #define ifr_hwaddr            ifr_ifru.ifru_hwaddr           /* MAC address */
+#define ifr_ifindex           ifr_ifru.ifru_ivalue           /* Interface index */
+#define ifr_metric            ifr_ifru.ifru_ivalue           /* metric */
+#define ifr_bandwidth         ifr_ifru.ifru_ivalue           /* link bandwidth */
+#define ifr_qlen              ifr_ifru.ifru_ivalue           /* Queue length */
 #define ifr_mtu               ifr_ifru.ifru_mtu              /* MTU */
 #define ifr_count             ifr_ifru.ifru_count            /* Number of devices */
 #define ifr_flags             ifr_ifru.ifru_flags            /* interface flags */

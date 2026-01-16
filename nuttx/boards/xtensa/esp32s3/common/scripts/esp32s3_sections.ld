@@ -291,11 +291,26 @@ SECTIONS
     *libarch.a:*log_write.*(.literal.esp_log_writev .text.esp_log_writev)
     *libarch.a:*cpu_region_protect.*(.text .text.* .literal .literal.*)
     *libarch.a:*mspi_timing_tuning.*(.text .text.* .literal .literal.*)
+    *libarch.a:*mspi_timing_config.*(.text .text.* .literal .literal.*)
     *libarch.a:*esp_rom_cache_esp32s2_esp32s3.*(.literal .text .literal.* .text.*)
     *libarch.a:*flash_qio_mode.*(.text .text.* .literal .literal.*)
     *libarch.a:*spi_flash_wrap.*(.text .text.* .literal .literal.*)
     *libarch.a:*spi_flash_oct_flash_init.*(.text .text.* .literal .literal.*)
     *libarch.a:*spi_flash_hpm_enable.*(.text .text.* .literal .literal.*)
+    *libarch.a:esp_spiflash.*(.literal .text .literal.* .text.*)
+    *libarch.a:esp_flash_api.*(.text .text.* .literal .literal.*)
+    *libarch.a:esp_flash_spi_init.*(.text .text.* .literal .literal.*)
+    *libarch.a:spi_flash_hal_iram.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_encrypt_hal_iram.*(.text .text.* .literal .literal.*)
+    *libarch.a:spi_flash_hal_gpspi.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_chip*.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
+    *libarch.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
+    *libarch.a:esp_cache.*(.literal .literal.* .text .text.*)
+    *libarch.a:cache_utils.*(.literal .literal.* .text .text.*)
+    *libarch.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
 
     *libc.a:*lib_instrument.*(.text .text.* .literal .literal.*)
 
@@ -433,6 +448,7 @@ SECTIONS
     *libsched.a:*sched_get_stackinfo.*(.rodata .rodata.*)
     *libarch.a:*esp_loader.*(.rodata .rodata.*)
     *libarch.a:esp32s3_spiflash.*(.rodata .rodata.*)
+    *libarch.a:esp_spiflash.*(.rodata .rodata.*)
     *libarch.a:*brownout.*(.rodata .rodata.*)
     *libarch.a:*cpu.*(.rodata .rodata.*)
     *libarch.a:*gpio_hal.*(.rodata .rodata.*)
@@ -485,6 +501,7 @@ SECTIONS
     *libarch.a:*log_noos.*(.rodata .rodata.*)
     *libarch.a:*cpu_region_protect.*(.rodata .rodata.*)
     *libarch.a:*mspi_timing_tuning.*(.rodata .rodata.*)
+    *libarch.a:*mspi_timing_config.*(.rodata .rodata.*)
 #ifdef CONFIG_ESP32S3_SPIRAM_MODE_QUAD
     *libarch.a:esp32s3_psram_quad.*(.rodata .rodata.*)
 #endif
@@ -495,6 +512,19 @@ SECTIONS
     *libarch.a:*spi_flash_wrap.*(.rodata .rodata.*)
     *libarch.a:*spi_flash_oct_flash_init.*(.rodata .rodata.*)
     *libarch.a:*spi_flash_hpm_enable.*(.rodata .rodata.*)
+    *libarch.a:esp_flash_api.*(.rodata .rodata.*)
+    *libarch.a:esp_flash_spi_init.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_hal_iram.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_hal_gpspi.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_chip*.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_wrap.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_os_func_noos.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_os_func_app.*(.rodata .rodata.*)
+    *libarch.a:flash_brownout_hook.*(.rodata .rodata.*)
+    *libarch.a:esp_cache.*(.rodata .rodata.*)
+    *libarch.a:cache_utils.*(.rodata .rodata.*)
+    *libarch.a:memspi_host_driver.*(.rodata .rodata.*)
 
     . = ALIGN(4);
     _edata = ABSOLUTE(.);
@@ -735,7 +765,10 @@ SECTIONS
   .rtc.text :
   {
     . = ALIGN(4);
+    _rtc_fast_start = ABSOLUTE(.);
+    _rtc_text_start = ABSOLUTE(.);
     *(.rtc.literal .rtc.text)
+    _rtc_text_end = ABSOLUTE(.);
   } >rtc_iram_seg AT>ROM
 
   .rtc.dummy (NOLOAD) :
@@ -753,6 +786,21 @@ SECTIONS
   {
     *(.rtc.bss)
   } >rtc_slow_seg
+
+
+  /* This section located in RTC FAST Memory area.
+   * It holds data marked with RTC_FAST_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc.force_fast :
+  {
+    . = ALIGN(4);
+    _rtc_force_fast_start = ABSOLUTE(.);
+    *(.rtc.force_fast .rtc.force_fast.*)
+    . = ALIGN(4);
+    _rtc_force_fast_end = ABSOLUTE(.);
+  } >rtc_slow_seg AT>ROM
+
 
   .rtc.data :
   {

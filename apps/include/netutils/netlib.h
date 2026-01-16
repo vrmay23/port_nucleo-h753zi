@@ -52,6 +52,7 @@
 
 #include <net/if.h>
 #include <netinet/in.h>
+#include <nuttx/mm/iob.h>
 #include <nuttx/net/netdev.h>
 #include <nuttx/net/netconfig.h>
 
@@ -328,6 +329,11 @@ int netlib_getessid(FAR const char *ifname, FAR char *essid, size_t idlen);
 int netlib_setessid(FAR const char *ifname, FAR const char *essid);
 #endif
 
+#ifdef CONFIG_NET_VLAN
+int netlib_add_vlan(FAR const char *ifname, int vlanid, int prio);
+int netlib_del_vlan(FAR const char *vlanif);
+#endif
+
 #ifdef CONFIG_NET_ARP
 /* ARP Table Support */
 
@@ -477,15 +483,21 @@ void netlib_server(uint16_t portno, pthread_startroutine_t handler,
 int netlib_getifstatus(FAR const char *ifname, FAR uint8_t *flags);
 int netlib_ifup(FAR const char *ifname);
 int netlib_ifdown(FAR const char *ifname);
+int netlib_ifarp(const char *ifname);
+int netlib_ifnoarp(const char *ifname);
 
 /* DNS server addressing */
 
 #if defined(CONFIG_NET_IPv4) && defined(CONFIG_NETDB_DNSCLIENT)
 int netlib_set_ipv4dnsaddr(FAR const struct in_addr *inaddr);
+int netlib_del_ipv4dnsaddr(FAR const struct in_addr *inaddr);
+int netlib_del_ipv4dnsaddr_by_index(int index);
 #endif
 
 #if defined(CONFIG_NET_IPv6) && defined(CONFIG_NETDB_DNSCLIENT)
 int netlib_set_ipv6dnsaddr(FAR const struct in6_addr *inaddr);
+int netlib_del_ipv6dnsaddr(FAR const struct in6_addr *inaddr);
+int netlib_del_ipv6dnsaddr_by_index(int index);
 #endif
 
 int netlib_set_mtu(FAR const char *ifname, int mtu);
@@ -493,6 +505,25 @@ int netlib_set_mtu(FAR const char *ifname, int mtu);
 #if defined(CONFIG_NETDEV_STATISTICS)
 int netlib_getifstatistics(FAR const char *ifname,
                            FAR struct netdev_statistics_s *stat);
+#endif
+
+/* Network check support */
+
+#ifdef CONFIG_NET_ARP_ACD
+int netlib_check_ifconflict(FAR const char *ifname);
+#endif
+
+#ifdef CONFIG_NETUTILS_PING
+int netlib_check_ipconnectivity(FAR const char *ip, int timeout, int retry);
+int netlib_check_ifconnectivity(FAR const char *ifname,
+                                int timeout, int retry);
+#else
+#define netlib_check_ipconnectivity(i, t, r) 1
+#define netlib_check_ifconnectivity(i, t, r) 1
+#endif
+
+#ifdef CONFIG_MM_IOB
+int netlib_get_iobinfo(FAR struct iob_stats_s *iob);
 #endif
 
 #undef EXTERN

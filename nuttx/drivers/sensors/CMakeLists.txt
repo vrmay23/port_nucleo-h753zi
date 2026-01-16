@@ -29,6 +29,10 @@ if(CONFIG_SENSORS)
     list(APPEND SRCS usensor.c)
   endif()
 
+  if(CONFIG_SENSORS_MONITOR)
+    list(APPEND SRCS sensor_monitor.c)
+  endif()
+
   if(CONFIG_SENSORS_RPMSG)
     list(APPEND SRCS sensor_rpmsg.c)
   endif()
@@ -342,6 +346,12 @@ if(CONFIG_SENSORS)
 
     if(CONFIG_SENSORS_TMP112)
       list(APPEND SRCS tmp112.c)
+    endif()
+
+    # QMI8658 6-axis IMU
+
+    if(CONFIG_SENSORS_QMI8658)
+      list(APPEND SRCS qmi8658_uorb.c)
     endif()
 
   endif() # CONFIG_I2C

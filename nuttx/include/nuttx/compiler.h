@@ -113,10 +113,6 @@
 #      warning requires compiling with optimization (-O2 or higher)
 #    endif
 #    if CONFIG_FORTIFY_SOURCE == 3
-#      if __GNUC__ < 12 || (defined(__clang__) && __clang_major__ < 12)
-#        error compiler version less than 12 does not support dynamic object size
-#      endif
-
 #      define fortify_size(__o, type) __builtin_dynamic_object_size(__o, type)
 #    else
 #      define fortify_size(__o, type) __builtin_object_size(__o, type)
@@ -131,12 +127,21 @@
                                         } \
                                       while (0)
 
-#    define fortify_va_arg_pack __builtin_va_arg_pack
+#    if !defined(__clang__)
+#      define fortify_va_arg_pack __builtin_va_arg_pack
+#    endif
 #    define fortify_real(fn) __typeof__(fn) __real_##fn __asm__(#fn)
 #    define fortify_function(fn) fortify_real(fn); \
                                  extern __inline__ no_builtin(#fn) \
                                  __attribute__((__always_inline__, \
                                                 __gnu_inline__, __artificial__))
+#  elif defined(__OPTIMIZE__) && __OPTIMIZE__ > 0 && defined(__has_builtin)
+#    define builtin_original(fn)  __typeof__(fn)  __orig_##fn __asm__(#fn)
+#    define builtin_function(fn)  builtin_original(fn); \
+                                  extern __inline__ no_builtin(#fn) \
+                                  __attribute__((__always_inline__, \
+                                                 __gnu_inline__, __artificial__))
+#    define CONFIG_HAVE_BUILTIN 1 /* Use built-in functions */
 #  endif
 
 /* Pre-processor */
@@ -170,6 +175,14 @@
 #  define offsetof(a, b) __builtin_offsetof(a, b)
 #  define return_address(x) __builtin_return_address(x)
 
+#  define PRAGMA(x)         _Pragma(#x)
+
+#  if defined(__clang__)
+#    define unroll_loop(n)  PRAGMA(clang loop unroll_count(n))
+#  else
+#    define unroll_loop(n)  PRAGMA(GCC unroll n)
+#  endif
+
 /* Attributes
  *
  * GCC supports weak symbols which can be used to reduce code size because
@@ -198,6 +211,13 @@
 
 #  define noreturn_function __attribute__((noreturn))
 
+/* The pure function attribute informs the compiler that
+ * the function is pure or const.
+ */
+
+#  define pure_function  __attribute__((pure))
+#  define const_function __attribute__((const))
+
 /* The farcall_function attribute informs GCC that is should use long calls
  * (even though -mlong-calls does not appear in the compilation options)
  */
@@ -212,6 +232,25 @@
 
 #  define predict_true(x)  __builtin_expect(!!(x), 1)
 #  define predict_false(x) __builtin_expect(!!(x), 0)
+
+/* `x` can be evaluated at compile time */
+
+#  define is_constexpr(x) __builtin_constant_p(x)
+
+/* Assume the condition is satisfied.
+ * We can use this to perform more aggressive compiler optimizations.
+ * Please use this with caution, as it may cause runtime errors if you fail
+ * to ensure that the condition is satisfied.
+ */
+
+#  if defined(__clang__)
+#    define compiler_assume(x) __builtin_assume(x)
+#  elif __GNUC__ >= 13 /* The assume(x) is supported since GCC 13. */
+#    define compiler_assume(x) __attribute__((assume(x)))
+#  else
+#    define compiler_assume(x) \
+     do { if (!(x)) { __builtin_unreachable(); } } while(0)
+#  endif
 
 /* Code locate */
 
@@ -608,6 +647,10 @@
 
 #  define deprecated_function  __attribute__((deprecated))
 
+/* Memory barrier. */
+
+#  define memory_barrier()  __asm__ __volatile__ ("" : : : "memory")
+
 /* SDCC-specific definitions ************************************************/
 
 #elif defined(SDCC) || defined(__SDCC)
@@ -654,8 +697,12 @@
  */
 
 #  define noreturn_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define locate_code(n)
 #  define aligned_data(n)
 #  define locate_data(n)
@@ -775,11 +822,18 @@
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
 
 /* Warning about usage of deprecated features. */
 
 #  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
 
 /* Zilog-specific definitions ***********************************************/
 
@@ -823,8 +877,12 @@
  */
 
 #  define noreturn_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define aligned_data(n)
 #  define locate_code(n)
 #  define locate_data(n)
@@ -932,11 +990,18 @@
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
 
 /* Warning about usage of deprecated features. */
 
 #  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
 
 /* ICCARM-specific definitions **********************************************/
 
@@ -948,8 +1013,12 @@
 #  define weak_const_function
 #  define noreturn_function
 #  define farcall_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define locate_code(n)
 #  define aligned_data(n)
 #  define locate_data(n)
@@ -1018,11 +1087,18 @@
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
 
 /* Warning about usage of deprecated features. */
 
 #  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
 
 /* MSVC(Microsoft Visual C++)-specific definitions **************************/
 
@@ -1053,8 +1129,12 @@
 #  define restrict
 #  define noreturn_function
 #  define farcall_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x) __assume(x)
 #  define aligned_data(n)
 #  define locate_code(n)
 #  define locate_data(n)
@@ -1112,11 +1192,18 @@
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
 
 /* Warning about usage of deprecated features. */
 
 #  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
 
 /* TASKING (Infineon AURIX C/C++)-specific definitions **********************/
 
@@ -1147,8 +1234,12 @@
 #  define restrict
 #  define noreturn_function
 #  define farcall_function              __attribute__((long_call))
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define aligned_data(n)               __attribute__((aligned(n)))
 #  define locate_code(n)                __attribute__((section(n)))
 #  define locate_data(n)                __attribute__((section(n)))
@@ -1205,11 +1296,18 @@
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
 
 /* Warning about usage of deprecated features. */
 
 #  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()  __asm__ __volatile__ ("" : : : "memory")
 
 /* Unknown compiler *********************************************************/
 
@@ -1227,8 +1325,12 @@
 #  define restrict
 #  define noreturn_function
 #  define farcall_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define aligned_data(n)
 #  define locate_code(n)
 #  define locate_data(n)
@@ -1289,11 +1391,18 @@
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
 
 /* Warning about usage of deprecated features. */
 
 #  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
 
 #endif
 
@@ -1305,6 +1414,8 @@
 #  undef CONFIG_HAVE_FLOAT
 #  undef CONFIG_HAVE_DOUBLE
 #  undef CONFIG_HAVE_LONG_DOUBLE
+#  define float  int
+#  define double long
 #endif
 
 /* Decorators */

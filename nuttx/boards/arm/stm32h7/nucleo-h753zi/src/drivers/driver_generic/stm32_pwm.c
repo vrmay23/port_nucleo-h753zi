@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_pwm.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_generic/stm32_pwm.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *

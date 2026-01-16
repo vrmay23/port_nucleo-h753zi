@@ -28,9 +28,9 @@
  * Based on the following documents:
  * - Schematics: 19250.pdf
  *
- * |----------------------------------------------------------------------|
+ * |---------------------------------------------------------------------|
  * |Function/Peripheral | Logical Name | STM32 Pin | A.F   | Notes       |
- * |----------------------------------------------------------------------|
+ * |---------------------------------------------------------------------|
  * | User Button        | B1_USER      | PC13      | -     |             |
  * | LED1 (Green)       | LD1          | PB0       | -     |             |
  * | LED2 (Orange)      | LD2          | PE1       | -     |             |
@@ -162,12 +162,12 @@
  *
  * CORRECTED: Input range (was 4-8 MHz, needs 8-16 MHz) and FDCAN clock
  *
- *   PLL2_input = 25 MHz / 2 = 12.5 MHz (within 8-16 MHz range)
- *   PLL2_VCO   = 12.5 MHz * 48 = 600 MHz (within 192-836 MHz)
+ *  PLL2_input = 25 MHz / 2 = 12.5 MHz (within 8-16 MHz range)
+ *  PLL2_VCO   = 12.5 MHz * 48 = 600 MHz (within 192-836 MHz)
  *
- *   PLL2P = PLL2_VCO/8  = 600 MHz / 8  = 75 MHz (ADC, SPI45)
- *   PLL2Q = PLL2_VCO/24 = 600 MHz / 24 = 25 MHz (FDCAN - not used, HSE direct)
- *   PLL2R = PLL2_VCO/3  = 600 MHz / 3  = 200 MHz
+ *  PLL2P = PLL2_VCO/8  = 600 MHz / 8  = 75 MHz (ADC, SPI45)
+ *  PLL2Q = PLL2_VCO/24 = 600 MHz / 24 = 25 MHz (FDCAN - not usedHSE direct)
+ *  PLL2R = PLL2_VCO/3  = 600 MHz / 3  = 200 MHz
  *
  * Note: FDCAN uses HSE directly (25 MHz) for this configuration,
  *       but PLL2Q is configured to 25 MHz for consistency
@@ -282,7 +282,7 @@
 #define STM32_PLL2Q_FREQUENCY    (STM32_VCO2_FREQUENCY / 24)
 #define STM32_PLL2R_FREQUENCY    (STM32_VCO2_FREQUENCY / 3)
 
- /* PLL3 - 8 MHz HSE input, enable DIVP, DIVQ, DIVR
+/* PLL3 - 8 MHz HSE input, enable DIVP, DIVQ, DIVR
  *
  * NOTE: PLL3 is not used for 8 MHz HSE configuration
  *       FDCAN clock is provided by PLL2Q (25 MHz) instead
@@ -386,28 +386,28 @@
  * Note: Refer to Table 54 in STM32H7 Reference Manual (RM0433)
  */
 
-/* 
-   According to the STM32H753ZI is recommended to use PCLK for I2C bus.
-
-   I2C123 clock source - PCLK1 (100 MHz)
-   #define STM32_RCC_D2CCIP2R_I2C123SRC RCC_D2CCIP2R_I2C123SEL_PCLK1
-
-   I2C4 clock source - PCLK4 (100 MHz)
-   #define STM32_RCC_D3CCIPR_I2C4SRC    RCC_D3CCIPR_I2C4SEL_PCLK4
-
-   However, it seems NuttX has a bug in the I2C driver that only allow I2C
-   using HSI as clock source and it has to be configured at 16 MHz.
-   
-   Hence, this board will use the following workaround until the NuttX
-   I2C driver is fixed.
-*/
+/* According to the STM32H753ZI is recommended to use PCLK for I2C bus.
+ * I2C123 clock source - PCLK1 (100 MHz)
+ * #define STM32_RCC_D2CCIP2R_I2C123SRC RCC_D2CCIP2R_I2C123SEL_PCLK1
+ *
+ * I2C4 clock source - PCLK4 (100 MHz)
+ * #define STM32_RCC_D3CCIPR_I2C4SRC    RCC_D3CCIPR_I2C4SEL_PCLK4
+ *
+ * However, it seems NuttX has a bug in the I2C driver that only allow I2C
+ * using HSI as clock source and it has to be configured at 16 MHz.
+ *
+ * Hence, this board will use the following workaround until the NuttX
+ * I2C driver is fixed.
+ */
 
 #define STM32_HSI_FREQUENCY  16000000ul    /* 64MHz / 4 = 16MHz */
 
 /* I2C123 clock source - HSI (16 MHz) - Required by NuttX I2C driver */
+
 #define STM32_RCC_D2CCIP2R_I2C123SRC RCC_D2CCIP2R_I2C123SEL_HSI
 
 /* I2C4 clock source - HSI (16 MHz) - Required by NuttX I2C driver */
+
 #define STM32_RCC_D3CCIPR_I2C4SRC    RCC_D3CCIPR_I2C4SEL_HSI
 
 /* SPI123 clock source - PLL1Q */
@@ -724,7 +724,6 @@
 
 #endif /* CONFIG_NUCLEO_H753ZI_I2C4_ENABLE */
 
-
 /****************************************************************************
  * I3C Configuration (Placeholder)
  ****************************************************************************/
@@ -761,10 +760,10 @@
 
 /* PIN CONFLICTS
  *
- * ---------------------------------------------------------------------------
+ * --------------------------------------------------------------------------
  * |   PB13   |    RMII      |  JP6: ON   |  I2S_A_CK                       |
  * |          |    TXD1      |            |                                 |
- * ---------------------------------------------------------------------------
+ * --------------------------------------------------------------------------
  */
 
 /* UM2407 REV 4, page 28/49
@@ -773,58 +772,58 @@
  * MCU pins are already connected to Ethernet connector.
  * Hence, no connection for these pins from ST Zio or Morpho connectors
  *
- * ---------------------------------------------------------------------------
- * |          |              |            |            |                     |
- * | pin_name |   function   |   Config   |  conflict  |  config when using  |
- * |          |              | ST ZIO CON | ST ZIO CON | ST ZIO or morpho    |
- * ---------------------------------------------------------------------------
- * |   PA1    |   RMII ref.  |  SB57: ON  |     NO     |  SB57: OFF          |
- * |          |    clock     |            |            |                     |
- * ---------------------------------------------------------------------------
- * |   PA2    |     RMII     |  SB72: ON  |     NO     |  SB72: OFF          |
- * |          |     MDIO     |            |            |                     |
- * ---------------------------------------------------------------------------
- * |   PC1    |     RMII     |  SB64: ON  |     NO     |  SB64: OFF          |
- * |          |     MDC      |            |            |                     |
- * ---------------------------------------------------------------------------
- * |   PA7    |   RMII RX    |  SB31: ON  |     NO     |  SB31: OFF          |
- * |          |  data valid  |            |            |                     |
- * ---------------------------------------------------------------------------
- * |   PC4    |    RMII      |  SB36: ON  |     NO     |  SB36: OFF          |
- * |          |    RXD0      |            |            |                     |
- * ---------------------------------------------------------------------------
- * |   PC5    |    RMII      |  SB29: ON  |     NO     |  SB29: OFF          |
- * |          |    RXD1      |            |            |                     |
- * ---------------------------------------------------------------------------
- * |   PG11   |    RMII      |  SB27: ON  |     NO     |  SB27: OFF          |
- * |          |  TX enable   |            |            |                     |
- * ---------------------------------------------------------------------------
- * |   PG13   |    RMII      |  SB30: ON  |     NO     |  SB30: OFF          |
- * |          |    TXD0      |            |            |                     |
- * ---------------------------------------------------------------------------
- * |   PB13   |    RMII      |  JP6: ON   |   I2S_A_CK |  JP6: OFF           |
- * |          |    TXD1      |            |            |                     |
- * ---------------------------------------------------------------------------
+ * -------------------------------------------------------------------------
+ * |          |              |            |            |                   |
+ * | pin_name |   function   |   Config   |  conflict  |  config when using|
+ * |          |              | ST ZIO CON | ST ZIO CON | ST ZIO or morpho  |
+ * -------------------------------------------------------------------------
+ * |   PA1    |   RMII ref.  |  SB57: ON  |     NO     |  SB57: OFF        |
+ * |          |    clock     |            |            |                   |
+ * -------------------------------------------------------------------------
+ * |   PA2    |     RMII     |  SB72: ON  |     NO     |  SB72: OFF        |
+ * |          |     MDIO     |            |            |                   |
+ * -------------------------------------------------------------------------
+ * |   PC1    |     RMII     |  SB64: ON  |     NO     |  SB64: OFF        |
+ * |          |     MDC      |            |            |                   |
+ * -------------------------------------------------------------------------
+ * |   PA7    |   RMII RX    |  SB31: ON  |     NO     |  SB31: OFF        |
+ * |          |  data valid  |            |            |                   |
+ * -------------------------------------------------------------------------
+ * |   PC4    |    RMII      |  SB36: ON  |     NO     |  SB36: OFF        |
+ * |          |    RXD0      |            |            |                   |
+ * -------------------------------------------------------------------------
+ * |   PC5    |    RMII      |  SB29: ON  |     NO     |  SB29: OFF        |
+ * |          |    RXD1      |            |            |                   |
+ * -------------------------------------------------------------------------
+ * |   PG11   |    RMII      |  SB27: ON  |     NO     |  SB27: OFF        |
+ * |          |  TX enable   |            |            |                   |
+ * -------------------------------------------------------------------------
+ * |   PG13   |    RMII      |  SB30: ON  |     NO     |  SB30: OFF        |
+ * |          |    TXD0      |            |            |                   |
+ * -------------------------------------------------------------------------
+ * |   PB13   |    RMII      |  JP6: ON   |   I2S_A_CK |  JP6: OFF         |
+ * |          |    TXD1      |            |            |                   |
+ * -------------------------------------------------------------------------
  */
 
 #define GPIO_ETH_RMII_REF_CLK \
-  (GPIO_ETH_RMII_REF_CLK_0|GPIO_SPEED_100MHz) /* PA1*/
+  (GPIO_ETH_RMII_REF_CLK_0|GPIO_SPEED_100MHz)                        /* PA1*/
 #define GPIO_ETH_RMII_CRS_DV  \
-  (GPIO_ETH_RMII_CRS_DV_0 |GPIO_SPEED_100MHz) /* PA7*/
+  (GPIO_ETH_RMII_CRS_DV_0 |GPIO_SPEED_100MHz)                        /* PA7*/
 #define GPIO_ETH_RMII_TX_EN   \
-  (GPIO_ETH_RMII_TX_EN_2  |GPIO_SPEED_100MHz) /* PG11*/
+  (GPIO_ETH_RMII_TX_EN_2  |GPIO_SPEED_100MHz)                        /* PG11*/
 #define GPIO_ETH_RMII_TXD0    \
-  (GPIO_ETH_RMII_TXD0_2   |GPIO_SPEED_100MHz) /* PG13*/
+  (GPIO_ETH_RMII_TXD0_2   |GPIO_SPEED_100MHz)                        /* PG13*/
 #define GPIO_ETH_RMII_TXD1    \
-  (GPIO_ETH_RMII_TXD1_1   |GPIO_SPEED_100MHz) /* PB13*/
+  (GPIO_ETH_RMII_TXD1_1   |GPIO_SPEED_100MHz)                        /* PB13*/
 #define GPIO_ETH_RMII_RXD0    \
-  (GPIO_ETH_RMII_RXD0_0   |GPIO_SPEED_100MHz) /* PC4*/
+  (GPIO_ETH_RMII_RXD0_0   |GPIO_SPEED_100MHz)                        /* PC4*/
 #define GPIO_ETH_RMII_RXD1    \
-  (GPIO_ETH_RMII_RXD1_0   |GPIO_SPEED_100MHz) /* PC5*/
+  (GPIO_ETH_RMII_RXD1_0   |GPIO_SPEED_100MHz)                        /* PC5*/
 #define GPIO_ETH_MDIO         \
-  (GPIO_ETH_MDIO_0        |GPIO_SPEED_100MHz) /* PA2*/
+  (GPIO_ETH_MDIO_0        |GPIO_SPEED_100MHz)                        /* PA2*/
 #define GPIO_ETH_MDC          \
-  (GPIO_ETH_MDC_0         |GPIO_SPEED_100MHz) /* PC1*/
+  (GPIO_ETH_MDC_0         |GPIO_SPEED_100MHz)                        /* PC1*/
 
 /* TODO: Add Ethernet PHY control pins (reset, interrupt, etc) */
 
@@ -979,15 +978,15 @@
  *   ----------------------  ---------------------- ----- ------ ------
  */
 
-#define LED_STARTED        0 /* NuttX has been started OFF   OFF    OFF  */
-#define LED_HEAPALLOCATE   1 /* Heap allocated         OFF   OFF    ON   */
-#define LED_IRQSENABLED    2 /* Interrupts enabled     OFF   ON     OFF  */
-#define LED_STACKCREATED   3 /* Idle stack created     OFF   ON     ON   */
-#define LED_INIRQ          4 /* In an interrupt        N/C   N/C    GLOW */
-#define LED_SIGNAL         5 /* In a signal handler    N/C   GLOW   N/C  */
-#define LED_ASSERTION      6 /* An assertion failed    GLOW  N/C    GLOW */
-#define LED_PANIC          7 /* System has crashed     Blink OFF    N/C  */
-#define LED_IDLE           8 /* MCU is in sleep mode   ON    OFF    OFF  */
+#define LED_STARTED        0   /* NuttX has been started OFF   OFF    OFF  */
+#define LED_HEAPALLOCATE   1   /* Heap allocated         OFF   OFF    ON   */
+#define LED_IRQSENABLED    2   /* Interrupts enabled     OFF   ON     OFF  */
+#define LED_STACKCREATED   3   /* Idle stack created     OFF   ON     ON   */
+#define LED_INIRQ          4   /* In an interrupt        N/C   N/C    GLOW */
+#define LED_SIGNAL         5   /* In a signal handler    N/C   GLOW   N/C  */
+#define LED_ASSERTION      6   /* An assertion failed    GLOW  N/C    GLOW */
+#define LED_PANIC          7   /* System has crashed     Blink OFF    N/C  */
+#define LED_IDLE           8   /* MCU is in sleep mode   ON    OFF    OFF  */
 
 /* TODO: Add support for additional GPIO outputs (relays, external LEDs,
  * etc)
@@ -997,8 +996,11 @@
  * Digital Input - Buttons
  ****************************************************************************/
 
-/*
- * Dynamic Button Configuration with EXTI Conflict Prevention
+/* Dynamic Button Configuration with EXTI Conflict Prevention
+ *
+ * Nucleo-H753ZI has only one User-Button. However, might be good to keep
+ * the system ready to support until 32 buttons. This is what will be done
+ * here.
  *
  * CRITICAL: STM32 EXTI lines are shared across ports!
  * Only ONE pin NUMBER can be used as interrupt source at a time.
@@ -1006,11 +1008,11 @@
  * PG3 + PE3 (both use EXTI3 -> only last one works)
  * PG3 + PE4 (EXTI3 and EXTI4 -> both work)
  *
- * Valid configuration for 10 buttons:
- *        PC13,  PB1, PB2, PD0, PD4, PD5, PE6, PE7, PF8, PF9
- *   EXTI:  13,    1,   2,   0,   4,   5,   6,   7,   8,   9
+ * Example for a configuration for 10 buttons:
+ *        PC13, PB1, PB2, PD0, PD4, PD5, PE6, PE7, PF8, PF9
+ *   EXTI:  13,   1,   2,   0,   4,   5,   6,   7,   8,   9
  *
- *                 NO EXTERNAL INTERRUPTION CONFLICTS!
+ *           NO EXTERNAL INTERRUPTION CONFLICTS!
  */
 
 /* Define NUM_BUTTONS FIRST */
@@ -1216,8 +1218,8 @@
 
 /* TIM1 */
 
-#define GPIO_TIM1_CH1OUT  (GPIO_TIM1_CH1OUT_2  | GPIO_SPEED_50MHz) /* PE9 */
-#define GPIO_TIM1_CH1NOUT (GPIO_TIM1_CH1NOUT_3 | GPIO_SPEED_50MHz) /* PE8 */
+#define GPIO_TIM1_CH1OUT  (GPIO_TIM1_CH1OUT_2  | GPIO_SPEED_50MHz) /*  PE9 */
+#define GPIO_TIM1_CH1NOUT (GPIO_TIM1_CH1NOUT_3 | GPIO_SPEED_50MHz) /*  PE8 */
 #define GPIO_TIM1_CH2OUT  (GPIO_TIM1_CH2OUT_2  | GPIO_SPEED_50MHz) /* PE11 */
 #define GPIO_TIM1_CH2NOUT (GPIO_TIM1_CH2NOUT_3 | GPIO_SPEED_50MHz) /* PE10 */
 #define GPIO_TIM1_CH3OUT  (GPIO_TIM1_CH3OUT_2  | GPIO_SPEED_50MHz) /* PE13 */

@@ -516,11 +516,16 @@ config MTD_AT25EE
 	default n
 	select SPI
 	select MTD_BYTE_WRITE
+	select EEPROM
+	select SPI_EE_25XX
 	---help---
 		Build support for SPI-based AT25xx type EEPROMs. MTD on EEPROM can
 		perform poorly, so it is possible only usable if the EEPROM has a
 		clock speed 10MHz or higher. EEPROMs that use the same commands as
 		the 25AA160 should work OK.
+
+		This is a convenience wrapper around the eeprom/spi_xx25xx driver.
+		It can be configured from the "EEPROM support" menu.
 
 if MTD_AT25EE
 
@@ -563,46 +568,6 @@ config AT25EE_ENABLE_BLOCK_ERASE
 		applications (e.g if an erase verify is wanted, or if a particular
 		file system requires this) block erase (i.e. writing each byte to
 		0xff) can be enabled here.
-
-config AT25EE_SPIMODE
-	int "AT25EE SPI Mode"
-	default 0
-
-config AT25EE_SPIFREQUENCY
-	int "AT25EE SPI Frequency"
-	default 10000000
-
-config AT25EE_START_DELAY
-	int "AT25EE startdelay"
-	---help---
-		The delay between CS active and first CLK. In ns.
-	depends on SPI_DELAY_CONTROL
-	range 0 1000000
-	default 5000
-
-config AT25EE_STOP_DELAY
-	int "AT25EE stopdelay"
-	---help---
-		The delay between last CLK and CS inactive. In ns.
-	depends on SPI_DELAY_CONTROL
-	range 0 1000000
-	default 5000
-
-config AT25EE_CS_DELAY
-	int "AT25EE csdelay"
-	---help---
-		The delay between CS inactive and CS active again. In ns.
-	depends on SPI_DELAY_CONTROL
-	range 0 1000000
-	default 5000
-
-config AT25EE_IFDELAY
-	int "AT25EE ifdelay"
-	---help---
-		The delay between frames. In ns.
-	depends on SPI_DELAY_CONTROL
-	range 0 1000000
-	default 5000
 
 endif # MTD_AT25EE
 
@@ -1352,6 +1317,38 @@ config W25_SPIFREQUENCY
 	int "W25 SPI Frequency"
 	default 20000000
 
+config W25_START_DELAY
+	int "W25 SPI start delay"
+	depends on SPI_DELAY_CONTROL
+	range 0 1000000
+	default 0
+	---help---
+		The delay between CS active and first CLK. In ns.
+
+config W25_STOP_DELAY
+	int "W25 SPI stop delay"
+	depends on SPI_DELAY_CONTROL
+	range 0 1000000
+	default 0
+	---help---
+		The delay between last CLK and CS inactive. In ns.
+
+config W25_CS_DELAY
+	int "W25 SPI chip select delay"
+	depends on SPI_DELAY_CONTROL
+	range 0 1000000
+	default 0
+	---help---
+		The delay between CS inactive and CS active again. In ns.
+
+config W25_IFDELAY
+	int "W25 SPI frames delay"
+	depends on SPI_DELAY_CONTROL
+	range 0 1000000
+	default 0
+	---help---
+		The delay between consecutive frames. In ns.
+
 config W25_READONLY
 	bool "W25 Read-Only FLASH"
 	default n
@@ -1443,6 +1440,28 @@ config GD5F_SPIFREQUENCY
 	default 20000000
 
 endif # MTD_GD5F
+
+config MTD_W25N
+	bool "SPI-based W25N NAND FLASH"
+	default n
+	select SPI
+	---help---
+		Enable support for Winbond W25N SPI NAND flash.
+		Currently only W25N01GV (1Gbit/128MB) is supported.
+
+if MTD_W25N
+
+config W25N_SPIMODE
+	int "W25N SPI Mode"
+	default 0
+
+config W25N_SPIFREQUENCY
+	int "W25N SPI Frequency"
+	default 20000000
+	---help---
+		W25N01GV supports up to 104 MHz.
+
+endif # MTD_W25N
 
 config MTD_DHARA
 	bool "MTD Nandflash use dhara map"

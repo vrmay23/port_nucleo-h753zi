@@ -1,6 +1,8 @@
 /****************************************************************************
  * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_bus/stm32_i2c.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -8,7 +10,7 @@
  * "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -27,8 +29,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
-#include <debug.h>
 #include <syslog.h>
+#include <stdio.h>
 
 #include "stm32_i2c.h"
 #include <nuttx/i2c/i2c_master.h>
@@ -43,7 +45,7 @@
  ****************************************************************************/
 
 #define MAX_I2C_DEVICES_PER_BUS 16
-#define INVALID_I2C_ADDR 0xFF
+#define INVALID_I2C_ADDR 0xff
 
 /****************************************************************************
  * Private Types
@@ -108,16 +110,20 @@ static struct i2c_master_s **get_i2c_master_ptr(int i2c_bus)
   switch (i2c_bus)
     {
 #ifdef CONFIG_STM32H7_I2C1
-      case 1: return &g_i2c1_master;
+      case 1:
+        return &g_i2c1_master;
 #endif
 #ifdef CONFIG_STM32H7_I2C2
-      case 2: return &g_i2c2_master;
+      case 2:
+        return &g_i2c2_master;
 #endif
 #ifdef CONFIG_STM32H7_I2C3
-      case 3: return &g_i2c3_master;
+      case 3:
+        return &g_i2c3_master;
 #endif
 #ifdef CONFIG_STM32H7_I2C4
-      case 4: return &g_i2c4_master;
+      case 4:
+        return &g_i2c4_master;
 #endif
       default:
         return NULL;
@@ -143,16 +149,20 @@ static struct i2c_device_s *get_i2c_devices_array(int i2c_bus)
   switch (i2c_bus)
     {
 #ifdef CONFIG_STM32H7_I2C1
-      case 1: return g_i2c1_devices;
+      case 1:
+        return g_i2c1_devices;
 #endif
 #ifdef CONFIG_STM32H7_I2C2
-      case 2: return g_i2c2_devices;
+      case 2:
+        return g_i2c2_devices;
 #endif
 #ifdef CONFIG_STM32H7_I2C3
-      case 3: return g_i2c3_devices;
+      case 3:
+        return g_i2c3_devices;
 #endif
 #ifdef CONFIG_STM32H7_I2C4
-      case 4: return g_i2c4_devices;
+      case 4:
+        return g_i2c4_devices;
 #endif
       default:
         return NULL;
@@ -237,57 +247,57 @@ static int find_device_slot(struct i2c_device_s *devices)
 
 int stm32_i2c_initialize(void)
 {
-  i2cinfo("Initializing I2C interfaces\n");
+  syslog(LOG_INFO, "Initializing I2C interfaces\n");
 
 #ifdef CONFIG_NUCLEO_H753ZI_I2C1_ENABLE
   g_i2c1_master = stm32_i2cbus_initialize(1);
   if (!g_i2c1_master)
     {
-      i2cerr("ERROR: Failed to initialize I2C1\n");
+      syslog(LOG_ERR, "ERROR: Failed to initialize I2C1\n");
       return -ENODEV;
     }
 
   memset(g_i2c1_devices, 0, sizeof(g_i2c1_devices));
-  i2cinfo("I2C1 initialized successfully\n");
+  syslog(LOG_INFO, "I2C1 initialized successfully\n");
 #endif
 
 #ifdef CONFIG_NUCLEO_H753ZI_I2C2_ENABLE
   g_i2c2_master = stm32_i2cbus_initialize(2);
   if (!g_i2c2_master)
     {
-      i2cerr("ERROR: Failed to initialize I2C2\n");
+      syslog(LOG_ERR, "ERROR: Failed to initialize I2C2\n");
       return -ENODEV;
     }
 
   memset(g_i2c2_devices, 0, sizeof(g_i2c2_devices));
-  i2cinfo("I2C2 initialized successfully\n");
+  syslog(LOG_INFO, "I2C2 initialized successfully\n");
 #endif
 
 #ifdef CONFIG_NUCLEO_H753ZI_I2C3_ENABLE
   g_i2c3_master = stm32_i2cbus_initialize(3);
   if (!g_i2c3_master)
     {
-      i2cerr("ERROR: Failed to initialize I2C3\n");
+      syslog(LOG_ERR, "ERROR: Failed to initialize I2C3\n");
       return -ENODEV;
     }
 
   memset(g_i2c3_devices, 0, sizeof(g_i2c3_devices));
-  i2cinfo("I2C3 initialized successfully\n");
+  syslog(LOG_INFO, "I2C3 initialized successfully\n");
 #endif
 
 #ifdef CONFIG_NUCLEO_H753ZI_I2C4_ENABLE
   g_i2c4_master = stm32_i2cbus_initialize(4);
   if (!g_i2c4_master)
     {
-      i2cerr("ERROR: Failed to initialize I2C4\n");
+      syslog(LOG_ERR, "ERROR: Failed to initialize I2C4\n");
       return -ENODEV;
     }
 
   memset(g_i2c4_devices, 0, sizeof(g_i2c4_devices));
-  i2cinfo("I2C4 initialized successfully\n");
+  syslog(LOG_INFO, "I2C4 initialized successfully\n");
 #endif
 
-  i2cinfo("I2C initialization completed\n");
+  syslog(LOG_INFO, "I2C initialization completed\n");
   return OK;
 }
 
@@ -323,7 +333,7 @@ int stm32_i2c_register_device(int i2c_bus, uint8_t addr,
   devices = get_i2c_devices_array(i2c_bus);
   if (!devices)
     {
-      i2cerr("ERROR: Invalid I2C bus %d\n", i2c_bus);
+      syslog(LOG_ERR, "ERROR: Invalid I2C bus %d\n", i2c_bus);
       return -EINVAL;
     }
 
@@ -331,9 +341,10 @@ int stm32_i2c_register_device(int i2c_bus, uint8_t addr,
 
   if (!validate_i2c_addr(addr))
     {
-      i2cerr("ERROR: Invalid I2C address 0x%02X (reserved or out of range)\n",
-             addr);
-      i2cerr("       Valid range: 0x08-0x77\n");
+      syslog(LOG_ERR,
+             "ERROR: Invalid I2C address 0x%02x "
+             "(reserved or out of range)\n", addr);
+      syslog(LOG_ERR, "       Valid range: 0x08-0x77\n");
       return -EINVAL;
     }
 
@@ -343,10 +354,12 @@ int stm32_i2c_register_device(int i2c_bus, uint8_t addr,
     {
       if (devices[i].in_use && devices[i].addr == addr)
         {
-          i2cwarn("WARNING: Address 0x%02X already registered on I2C%d "
-                  "as '%s'\n",
-                  addr, i2c_bus, devices[i].name);
-          i2cwarn("         Allowing duplicate (multi-function device?)\n");
+          syslog(LOG_WARNING,
+                 "WARNING: Address 0x%02x already registered on I2C%d "
+                 "as '%s'\n", addr, i2c_bus, devices[i].name);
+          syslog(LOG_WARNING,
+                 "         Allowing duplicate (multi-function device?)\n");
+
           /* Continue anyway - might be multi-function device like LSM303 */
         }
     }
@@ -356,7 +369,8 @@ int stm32_i2c_register_device(int i2c_bus, uint8_t addr,
   slot = find_device_slot(devices);
   if (slot < 0)
     {
-      i2cerr("ERROR: No free slots for I2C%d devices "
+      syslog(LOG_ERR,
+             "ERROR: No free slots for I2C%d devices "
              "(max %d devices per bus)\n",
              i2c_bus, MAX_I2C_DEVICES_PER_BUS);
       return -ENOMEM;
@@ -376,11 +390,11 @@ int stm32_i2c_register_device(int i2c_bus, uint8_t addr,
     }
   else
     {
-      snprintf(device->name, sizeof(device->name), "dev_0x%02X", addr);
+      snprintf(device->name, sizeof(device->name), "dev_0x%02x", addr);
     }
 
-  i2cinfo("Registered I2C%d device [%d]: '%s' @ 0x%02X, %lu Hz\n",
-          i2c_bus, slot, device->name, addr, (unsigned long)frequency);
+  syslog(LOG_INFO, "Registered I2C%d device [%d]: '%s' @ 0x%02x, %lu Hz\n",
+         i2c_bus, slot, device->name, addr, (unsigned long)frequency);
 
   return OK;
 }
@@ -417,15 +431,17 @@ int stm32_i2c_unregister_device(int i2c_bus, uint8_t addr)
     {
       if (devices[i].in_use && devices[i].addr == addr)
         {
-          i2cinfo("Unregistered I2C%d device [%d]: '%s' @ 0x%02X\n",
-                  i2c_bus, i, devices[i].name, addr);
+          syslog(LOG_INFO,
+                 "Unregistered I2C%d device [%d]: '%s' @ 0x%02x\n",
+                 i2c_bus, i, devices[i].name, addr);
 
           memset(&devices[i], 0, sizeof(struct i2c_device_s));
           return OK;
         }
     }
 
-  i2cwarn("WARNING: Device 0x%02X not found on I2C%d\n", addr, i2c_bus);
+  syslog(LOG_WARNING, "WARNING: Device 0x%02x not found on I2C%d\n",
+         addr, i2c_bus);
   return -ENOENT;
 }
 
@@ -452,13 +468,13 @@ struct i2c_master_s *stm32_i2c_get_master(int i2c_bus)
   master_ptr = get_i2c_master_ptr(i2c_bus);
   if (!master_ptr)
     {
-      i2cerr("ERROR: Invalid I2C bus %d\n", i2c_bus);
+      syslog(LOG_ERR, "ERROR: Invalid I2C bus %d\n", i2c_bus);
       return NULL;
     }
 
   if (!(*master_ptr))
     {
-      i2cerr("ERROR: I2C%d not initialized\n", i2c_bus);
+      syslog(LOG_ERR, "ERROR: I2C%d not initialized\n", i2c_bus);
       return NULL;
     }
 
@@ -496,14 +512,16 @@ int stm32_i2c_scan_bus(int i2c_bus)
       return -ENODEV;
     }
 
-  syslog(LOG_INFO, "Scanning I2C%d bus (addresses 0x08-0x77)...\n", i2c_bus);
-  syslog(LOG_INFO, "     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
+  syslog(LOG_INFO, "Scanning I2C%d bus (addresses 0x08-0x77)...\n",
+         i2c_bus);
+  syslog(LOG_INFO,
+         "     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
 
-  for (addr = 0x00; addr <= 0x7F; addr++)
+  for (addr = 0x00; addr <= 0x7f; addr++)
     {
-      if ((addr & 0x0F) == 0)
+      if ((addr & 0x0f) == 0)
         {
-          syslog(LOG_INFO, "%02X: ", addr);
+          syslog(LOG_INFO, "%02x: ", addr);
         }
 
       /* Skip reserved addresses */
@@ -525,7 +543,7 @@ int stm32_i2c_scan_bus(int i2c_bus)
           ret = I2C_TRANSFER(i2c, &msg, 1);
           if (ret == OK)
             {
-              syslog(LOG_INFO, "%02X ", addr);
+              syslog(LOG_INFO, "%02x ", addr);
               found++;
             }
           else
@@ -534,7 +552,7 @@ int stm32_i2c_scan_bus(int i2c_bus)
             }
         }
 
-      if ((addr & 0x0F) == 0x0F)
+      if ((addr & 0x0f) == 0x0f)
         {
           syslog(LOG_INFO, "\n");
         }
@@ -604,7 +622,8 @@ int stm32_i2c_list_devices(int i2c_bus)
         {
           if (devices[i].in_use)
             {
-              syslog(LOG_INFO, "I2C%-2d %-4d %-12s 0x%02X     %-10lu\n",
+              syslog(LOG_INFO,
+                     "I2C%-2d %-4d %-12s 0x%02x     %-10lu\n",
                      bus, i, devices[i].name, devices[i].addr,
                      (unsigned long)devices[i].frequency);
               total++;

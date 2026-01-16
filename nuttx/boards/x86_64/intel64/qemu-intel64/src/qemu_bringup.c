@@ -34,7 +34,7 @@
 #include <nuttx/board.h>
 #include <nuttx/fs/fs.h>
 
-#ifdef CONFIG_ONESHOT
+#ifdef CONFIG_INTEL64_ONESHOT
 #  include <nuttx/timers/oneshot.h>
 #endif
 
@@ -71,7 +71,7 @@
 
 int qemu_bringup(void)
 {
-#ifdef CONFIG_ONESHOT
+#ifdef CONFIG_INTEL64_ONESHOT
   struct oneshot_lowerhalf_s *os = NULL;
 #endif
 
@@ -93,7 +93,18 @@ int qemu_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_ONESHOT
+#ifdef CONFIG_FS_TMPFS
+  /* Mount the tmpfs file system */
+
+  ret = nx_mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to mount tmpfs at %s: %d\n",
+             CONFIG_LIBC_TMPDIR, ret);
+    }
+#endif
+
+#ifdef CONFIG_INTEL64_ONESHOT
   os = oneshot_initialize(ONESHOT_TIMER, 10);
   if (os)
     {

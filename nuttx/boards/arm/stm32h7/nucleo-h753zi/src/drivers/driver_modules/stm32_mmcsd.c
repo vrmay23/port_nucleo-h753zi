@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_mmcsd.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_modules/stm32_mmcsd.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
