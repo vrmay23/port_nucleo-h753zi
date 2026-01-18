@@ -1,0 +1,111 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "configure",
+            "command": "cp ./.config ./.config.keep && make distclean && ./tools/configure.sh nucleo-h753zi:nsh",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/nuttx"
+            },
+            "problemMatcher": []
+        },
+                {
+            "label": "reconfigure",
+            "command": "mv .config.keep .config",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/nuttx"
+            },
+            "dependsOn": [
+                "configure"
+            ],
+            "problemMatcher": []
+        },
+         {
+            "label": "Build",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-j",
+                "$(nproc)"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/nuttx"
+            },
+            "problemMatcher": [],
+            "icon": {
+                "id": "flame",
+                "color": "terminal.ansiRed"
+            },
+            "group": "build"
+        },
+        {
+            "label": "run-ctags",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "${command:embeddedLinuxDev.regenerateCTags}"
+            ],
+            "problemMatcher": [],
+            "icon": {
+                "color": "terminal.ansiGreen",
+                "id": "variable"
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "J-Link Flash",
+            "command": "JLinkExe",
+            "type": "shell",
+            "args": [
+                "-device",
+                "STM32H753ZI",
+                // "stm32f401RC",
+                // "STM32L475VG",
+                // "rp2040",
+                // "STM32H743VI",
+                "-if",
+                "SWD",
+                "-speed",
+                "4000",
+                "-commanderscript",
+                "linum.jlink"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            },
+            "icon": {
+                "id": "list-selection",
+                "color": "terminal.ansiBlue"
+            },
+            "group": "build"
+        },
+        {
+            "label": "ST-Link Flash",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "st-flash --format ihex --freq=4000 write ${workspaceFolder}/nuttx/nuttx.hex && st-flash reset"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "clear": true,
+                "panel": "shared"
+            },
+            "icon": {
+                "id": "debug-start",
+                "color": "terminal.ansiGreen"
+            },
+            "group": "build"
+        },
+
+    ]
+}

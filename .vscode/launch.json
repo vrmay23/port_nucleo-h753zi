@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "stlinkgdbtarget",
+            "request": "launch",
+            "name": "STM32Cube: STM32 Launch ST-Link GDB Server",
+            "origin": "snippet",
+            "cwd": "${workspaceFolder}/nuttx",
+            "preBuild": "build",
+            "runEntry": "main",
+            "deviceName": "STM32H753ZIT6",
+            "deviceCore": "Cortex-M7",
+            "imagesAndSymbols": [
+                {
+                    "imageFileName": "${workspaceFolder}/nuttx/nuttx"
+                }
+            ]
+        }
+    ]
+}

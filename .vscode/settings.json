@@ -1,0 +1,32 @@
+{
+    "terminal.integrated.scrollback": 50000,
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.enhancedColorization": "enabled",
+    "C_Cpp.dimInactiveRegions": true,
+    "C_Cpp.inactiveRegionOpacity": 1,
+    "C_Cpp.default.forcedInclude": [
+        "${workspaceFolder}/nuttx/include/nuttx/config.h",
+    ],
+    "C_Cpp.inactiveRegionBackgroundColor": "#000000",//"#793d1c",
+    "C_Cpp.inactiveRegionForegroundColor": "#FFFFFF",
+    "ctags.languages": [
+        "Kconfig",
+        "Make"
+    ],
+    "cortex-debug.variableUseNaturalFormat": true,
+    // "cortex-debug.stlinkPath": "/usr/bin/st-util",
+    "cortex-debug.gdbPath": "gdb-multiarch",
+    "nuttx.checkPatch": false,
+    "nuttx.checkPatchPath": "${workspaceFolder}/nuttx/tools/checkpatch.sh",
+    "nuttx.configureScriptPath": "${workspaceFolder}/nuttx/tools/configure.sh",
+    "files.associations": {
+        "xedge.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "ranges": "c"
+    },
+    "restructuredtext.syntaxHighlighting.disabled": true,
+    "cmake.configureOnOpen": false,
+    "stm32cube-ide-build-cmake.intellisense.enableAutomaticConfiguration": false,
+}

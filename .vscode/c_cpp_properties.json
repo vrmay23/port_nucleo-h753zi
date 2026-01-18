@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "STM32",
+            "includePath": [
+                "${workspaceFolder}/nuttx/**",
+                "${workspaceFolder}/nuttx/include/**",
+                "${workspaceFolder}/apps/**"
+            ],
+            "defines": [
+                "FAR=",
+                "ERROR=-1",
+                "OK=0"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/nuttx",
+                    "${workspaceFolder}/apps"
+                ]
+            },
+            "cStandard": "c11",
+           "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+            "dotConfig": "${workspaceFolder}/nuttx/.config",
+            "compileCommands": "${workspaceFolder}/nuttx/compile_commands.json"
+        }
+    ],
+    "version": 4
+}
