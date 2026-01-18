@@ -12,14 +12,31 @@
                 "ERROR=-1",
                 "OK=0"
             ],
+            "cStandard": "c11",
+            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+            "dotConfig": "${workspaceFolder}/nuttx/.config",
+            "intelliSenseMode": "linux-gcc-arm",
+            "mergeConfigurations": false,
+            "compileCommands": [
+                "${workspaceFolder}/nuttx/compile_commands.json"
+            ],
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/nuttx/include",
+                "${workspaceFolder}/nuttx/arch/arm/src/common",
+                "${workspaceFolder}/nuttx/arch/arm/include/stm32h7",
+                "${workspaceFolder}/nuttx/arch/arm/src/stm32h7"
+            ]
+        },
+        {
+            "name": "LinuxXcompSTM32ARM",
             "browse": {
                 "path": [
                     "${workspaceFolder}/nuttx",
                     "${workspaceFolder}/apps"
                 ]
             },
-            "cStandard": "c11",
-           "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
             "dotConfig": "${workspaceFolder}/nuttx/.config",
             "compileCommands": "${workspaceFolder}/nuttx/compile_commands.json"
         }

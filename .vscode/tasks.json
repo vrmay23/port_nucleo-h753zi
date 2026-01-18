@@ -42,6 +42,39 @@
             },
             "group": "build"
         },
+         {
+            "label": "Flash and run",
+            "type": "shell",
+            "command": "openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c \"init\" -c \"reset halt\" -c \"flash write_image erase nuttx.bin 0x08000000\" -c \"reset run\"",
+            "args": [
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/nuttx"
+            },
+            "problemMatcher": [],
+            "icon": {
+                "id": "flame",
+                "color": "terminal.ansiRed"
+            },
+            "group": "build"
+        },
+        // {
+        //     "label": "DistClean",
+        //     "type": "shell",
+        //     "command": "make",
+        //     "args": [
+        //         "distclean"
+        //     ],
+        //     "options": {
+        //         "cwd": "${workspaceFolder}/nuttx"
+        //     },
+        //     "problemMatcher": [],
+        //     "icon": {
+        //         "id": "flame",
+        //         "color": "terminal.ansiRed"
+        //     },
+        //     "group": "build"
+        // },
         {
             "label": "run-ctags",
             "type": "shell",
@@ -88,11 +121,17 @@
         },
         {
             "label": "ST-Link Flash",
-            "type": "shell",
-            "command": "bash",
+            "command": "STM32_Programmer_CLI",
             "args": [
                 "-c",
-                "st-flash --format ihex --freq=4000 write ${workspaceFolder}/nuttx/nuttx.hex && st-flash reset"
+                "port=SWD",
+                "reset=HWrst",
+                "-e all",
+                "-w",
+                "${workspaceFolder}/nuttx/nuttx.bin",
+                "0x08000000",
+                "-v",
+                "--go"
             ],
             "problemMatcher": [],
             "presentation": {
@@ -100,12 +139,21 @@
                 "clear": true,
                 "panel": "shared"
             },
+
             "icon": {
                 "id": "debug-start",
                 "color": "terminal.ansiGreen"
             },
             "group": "build"
         },
-
+        {
+            "label": "ST-Link Flash",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "st-flash --format ihex --freq=4000 write ${workspaceFolder}/nuttx/nuttx.hex && st-flash reset"
+            ]   
+        }
     ]
 }

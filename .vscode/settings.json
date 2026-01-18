@@ -13,9 +13,12 @@
         "Kconfig",
         "Make"
     ],
-    "cortex-debug.variableUseNaturalFormat": true,
+    "cortex-debug.variableUseNaturalFormat": false,
     // "cortex-debug.stlinkPath": "/usr/bin/st-util",
+    //"cortex-debug.gdbPath": "/opt/st/stm32cubeclt_1.20.0/STLink-gdb-server/bin/ST-LINK_gdbserver",
     "cortex-debug.gdbPath": "gdb-multiarch",
+    "cortex-debug.stm32cubeprogrammer": "/opt/st/stm32cubeclt_1.20.0/STM32CubeProgrammer/bin",
+    "cortex-debug.armToolchainPath": "/opt/st/stm32cubeclt_1.20.0/GNU-tools-for-STM32/bin",
     "nuttx.checkPatch": false,
     "nuttx.checkPatchPath": "${workspaceFolder}/nuttx/tools/checkpatch.sh",
     "nuttx.configureScriptPath": "${workspaceFolder}/nuttx/tools/configure.sh",
@@ -26,7 +29,9 @@
         "string_view": "c",
         "ranges": "c"
     },
-    "restructuredtext.syntaxHighlighting.disabled": true,
-    "cmake.configureOnOpen": false,
     "stm32cube-ide-build-cmake.intellisense.enableAutomaticConfiguration": false,
+    "cmake.sourceDirectory": "/home/vinicius/embedded_sys/nuttxspace/stm32h753zi_clean/apps",
+    "restructuredtext.syntaxHighlighting.disabled": true,
+    "cmake.configureOnOpen": true,
+    "C_Cpp.default.compilerPath": "/usr/bin/arm-none-eabi-gcc",
 }
