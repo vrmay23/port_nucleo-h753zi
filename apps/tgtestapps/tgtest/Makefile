@@ -1,0 +1,14 @@
+include $(APPDIR)/Make.defs
+
+# Tgtest built-in application info
+
+PROGNAME = $(CONFIG_TGTEST_APPS_TGTEST_PROGNAME)
+PRIORITY = $(CONFIG_TGTEST_APPS_TGTEST_PRIORITY)
+STACKSIZE = $(CONFIG_TGTEST_APPS_TGTEST_STACKSIZE)
+MODULE = $(CONFIG_TGTEST_APPS_TGTEST)
+
+# Custom Hello
+
+MAINSRC = tgtest_main.c
+
+include $(APPDIR)/Application.mk

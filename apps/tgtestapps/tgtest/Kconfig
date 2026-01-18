@@ -1,0 +1,23 @@
+config TGTEST_APPS_TGTEST
+        tristate "Tgtest App"
+        default n
+        ---help---
+                Enable the Tgtest App
+
+if TGTEST_APPS_TGTEST
+
+config TGTEST_APPS_TGTEST_PROGNAME
+        string "Program name"
+        default "tgtest_app"
+        ---help---
+                This is the name of the program that will be used when the NSH ELF
+                program is installed.
+
+config TGTEST_APPS_TGTEST_PRIORITY
+        int "tgtest task priority"
+        default 100
+
+config TGTEST_APPS_TGTEST_STACKSIZE
+        int "Custom Hello stack size"
+        default DEFAULT_TASK_STACKSIZE
+endif

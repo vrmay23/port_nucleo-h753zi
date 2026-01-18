@@ -1,0 +1,3 @@
+ifneq ($(CONFIG_TGTEST_APPS_TGTEST),)
+CONFIGURED_APPS += $(APPDIR)/tgtestapps/tgtest
+endif
