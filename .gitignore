@@ -1,0 +1,5 @@
+nuttx/.config.old
+nuttx/.config.orig
+nuttx/nuttx
+nuttx/nuttx.map
+nuttx/System.map
