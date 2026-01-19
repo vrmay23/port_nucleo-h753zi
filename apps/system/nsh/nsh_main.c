@@ -70,6 +70,21 @@ int main(int argc, FAR char *argv[])
 
   nsh_initialize();
 
+  //task_create("tgtest_app",100,2048,tgtest_main,NULL);
+  char *tgtest_app = "tgtest_app";
+  struct nsh_param_s tgtest_params =
+    {
+      .fd_in      = 0,
+      .fd_out     = 0,
+      .oflags_in  = 0,
+      .oflags_out = 0,
+      .file_in    = NULL,
+      .file_out   = NULL
+    };
+  //tgtest_params.
+
+  exec_builtin(tgtest_app, NULL, &tgtest_params);
+
 #ifdef CONFIG_NSH_CONSOLE
   /* If the serial console front end is selected, run it on this thread */
 
