@@ -106,8 +106,6 @@ int main(int argc, char *argv[])
 			msg.msg_flags = 0;
 
 			nbytes = recvmsg(sock, &msg, 0);
-			frame.can_id;
-			frame.data[]
 			/* code */
 			/* Receive CAN frame */
 			// recv(sock, &frame, sizeof(frame), 0);
