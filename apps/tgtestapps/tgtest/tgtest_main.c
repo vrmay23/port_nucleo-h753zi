@@ -110,6 +110,6 @@ int main(int argc, char *argv[])
 			/* Receive CAN frame */
 			// recv(sock, &frame, sizeof(frame), 0);
 		}
-		nxsched_msleep(2);
+		//nxsched_msleep(2);
 	}
 }
