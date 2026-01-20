@@ -26,7 +26,7 @@ void sigterm_tgtest(int signo)
 
 void readCan(struct canfd_frame *frame)
 {
-	switch (frame->can_id & 0x0FFFFFFF)
+	switch (frame->can_id & CAN_EFF_MASK)
 	{
 	case CAR_CAN_INVERTER_QD_CURRENTS_FRAME_ID:
 		car_can_inverter_qd_currents_unpack( &inverter_qd_currents_msg, frame->data, CAR_CAN_INVERTER_QD_CURRENTS_LENGTH);
