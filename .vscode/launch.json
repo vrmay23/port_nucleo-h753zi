@@ -20,7 +20,11 @@
                     "imageFileName": "${workspaceFolder}/nuttx/nuttx"
                 }
             ],
-            "preLaunchTask": "Build"
+            "preLaunchTask": "Build",
+            "liveWatch": {
+                "enabled": true,
+                 "samplesPerSecond": "4"
+            }
         },
         // Need J-Link 
         // Not tested yet
