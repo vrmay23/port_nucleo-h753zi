@@ -10,5 +10,6 @@ MODULE = $(CONFIG_TGTEST_APPS_TGTEST)
 # Custom Hello
 
 MAINSRC = tgtest_main.c
+CSRCS = car_can.c
 
 include $(APPDIR)/Application.mk

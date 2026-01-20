@@ -5,12 +5,40 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <nuttx/net/netdev.h>
+#include "car_can.h"
+
+// Allocate all CAN RX msg
+struct car_can_inverter_qd_currents_t  inverter_qd_currents_msg;
+struct car_can_inverter_rms_currents_t tnverter_rms_currents_msg;
+struct car_can_system_voltages_t system_voltages_msg;
+struct car_can_inverter_info_t inverter_info_msg;
+struct car_can_inverter_faults_t inverter_faults_msg;
+struct car_can_inverter_temp_t inverter_temp_msg;
+struct car_can_foc_vars_t foc_vars_msg;
+
 
 const int tgtest_canfd_on = 1;
 
 void sigterm_tgtest(int signo)
 {
 	
+}
+
+void readCan(struct canfd_frame *frame)
+{
+	switch (frame->can_id & 0x0FFFFFFF)
+	{
+	case CAR_CAN_INVERTER_QD_CURRENTS_FRAME_ID:
+		car_can_inverter_qd_currents_unpack( &inverter_qd_currents_msg, frame->data, CAR_CAN_INVERTER_QD_CURRENTS_LENGTH);
+		break;
+	case CAR_CAN_INVERTER_RMS_CURRENTS_FRAME_ID:
+	    car_can_inverter_qd_currents_unpack( &inverter_qd_currents_msg, frame->data, CAR_CAN_INVERTER_RMS_CURRENTS_LENGTH);
+		break;
+	default:
+		break;
+	}
+
+
 }
 
 int main(int argc, char *argv[])
@@ -106,6 +134,7 @@ int main(int argc, char *argv[])
 			msg.msg_flags = 0;
 
 			nbytes = recvmsg(sock, &msg, 0);
+			readCan(&frame);
 			/* code */
 			/* Receive CAN frame */
 			// recv(sock, &frame, sizeof(frame), 0);
