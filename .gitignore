@@ -3,3 +3,4 @@ nuttx/.config.orig
 nuttx/nuttx
 nuttx/nuttx.map
 nuttx/System.map
+.vscode-ctags

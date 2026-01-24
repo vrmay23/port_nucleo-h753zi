@@ -26,6 +26,8 @@ void sigterm_tgtest(int signo)
 {
 }
 
+
+/* This it the can read processing */
 void readCan(struct canfd_frame *frame)
 {
 	switch (frame->can_id & CAN_EFF_MASK)
