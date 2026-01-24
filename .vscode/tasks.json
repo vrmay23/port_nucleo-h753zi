@@ -24,6 +24,15 @@
             ],
             "problemMatcher": []
         },
+        {
+            "label": "configure socketcan_example_canio",
+            "command": "rm -rf .config && ./tools/configure.sh nucleo-h753zi:socketcan_example_canio",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/nuttx"
+            },
+            "problemMatcher": []
+        },
          {
             "label": "Build",
             "type": "shell",
