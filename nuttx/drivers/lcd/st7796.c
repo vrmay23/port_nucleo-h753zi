@@ -27,6 +27,7 @@
 #include <nuttx/config.h>
 
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -50,60 +51,16 @@
 
 /* Force SPI MODE 0 (CPOL=0, CPHA=0) - Standard for ST7796 */
 
-#define CONFIG_LCD_ST7796_SPIMODE SPIDEV_MODE0
+#define ST7796_SPIMODE SPIDEV_MODE0
 
-/* SPI Frequency Resolution: Board configuration takes precedence */
+/* Bytes per pixel based on BPP */
 
-#ifdef CONFIG_LCD_ST7796_FREQUENCY
-#  undef CONFIG_LCD_ST7796_FREQUENCY
-#endif
+#define ST7796_BYTESPP(bpp)     (((bpp) == 18) ? 3 : 2)
 
-#ifdef CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY
-#  define CONFIG_LCD_ST7796_FREQUENCY CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY
-#else
-#  define CONFIG_LCD_ST7796_FREQUENCY 40000000
-#endif
+/* Color format based on BPP */
 
-/* Display dimensions */
-
-#define ST7796_XRES_RAW    320
-#define ST7796_YRES_RAW    480
-
-/* Determine orientation based on configuration */
-
-#if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE) || \
-    defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE) || \
-    defined(CONFIG_LCD_LANDSCAPE) || defined(CONFIG_LCD_RLANDSCAPE)
-#  define ST7796_XRES       ST7796_YRES_RAW
-#  define ST7796_YRES       ST7796_XRES_RAW
-#else
-#  define ST7796_XRES       ST7796_XRES_RAW
-#  define ST7796_YRES       ST7796_YRES_RAW
-#endif
-
-/* Color format configuration */
-
-#ifdef CONFIG_LCD_ST7796_BPP
-#  if (CONFIG_LCD_ST7796_BPP == 16)
-#    define ST7796_BPP           16
-#    define ST7796_COLORFMT      FB_FMT_RGB16_565
-#    define ST7796_BYTESPP       2
-#  elif (CONFIG_LCD_ST7796_BPP == 18)
-#    define ST7796_BPP           18
-#    define ST7796_COLORFMT      FB_FMT_RGB24
-#    define ST7796_BYTESPP       3
-#  else
-#    define ST7796_BPP           16
-#    define ST7796_COLORFMT      FB_FMT_RGB16_565
-#    define ST7796_BYTESPP       2
-#  endif
-#else
-#  define ST7796_BPP           16
-#  define ST7796_COLORFMT      FB_FMT_RGB16_565
-#  define ST7796_BYTESPP       2
-#endif
-
-#define ST7796_FBSIZE  (ST7796_XRES * ST7796_YRES * ST7796_BYTESPP)
+#define ST7796_COLORFMT(bpp)    (((bpp) == 18) ? FB_FMT_RGB24 : \
+                                 FB_FMT_RGB16_565)
 
 /****************************************************************************
  * Private Types
@@ -114,7 +71,9 @@ struct st7796_dev_s
   struct fb_vtable_s vtable;
   FAR struct spi_dev_s *spi;
   FAR uint8_t *fbmem;
-  FAR uint16_t *swap_buf; /* Persistent buffer for byte-swapping */
+  FAR uint16_t *swap_buf;             /* Persistent buffer for byte-swapping */
+  struct st7796_config_s config;      /* Board-provided configuration */
+  uint16_t rotation;                  /* Current rotation in degrees */
   bool power;
 };
 
@@ -123,57 +82,31 @@ struct st7796_dev_s
  ****************************************************************************/
 
 static int st7796_getvideoinfo(FAR struct fb_vtable_s *vtable,
-                                FAR struct fb_videoinfo_s *vinfo);
+                               FAR struct fb_videoinfo_s *vinfo);
 static int st7796_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
-                                FAR struct fb_planeinfo_s *pinfo);
+                               FAR struct fb_planeinfo_s *pinfo);
 static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
-                              FAR const struct fb_area_s *area);
-static void st7796_select(FAR struct spi_dev_s *spi);
-static void st7796_deselect(FAR struct spi_dev_s *spi);
-static void st7796_sendcmd(FAR struct st7796_dev_s *dev, uint8_t cmd);
-static void st7796_senddata(FAR struct st7796_dev_s *dev,
+                             FAR const struct fb_area_s *area);
+static int st7796_ioctl(FAR struct fb_vtable_s *vtable, int cmd,
+                        unsigned long arg);
+static void st7796_select(FAR struct st7796_dev_s *priv);
+static void st7796_deselect(FAR struct st7796_dev_s *priv);
+static void st7796_sendcmd(FAR struct st7796_dev_s *priv, uint8_t cmd);
+static void st7796_senddata(FAR struct st7796_dev_s *priv,
                             FAR const uint8_t *data, size_t len);
-static void st7796_send_sequence(FAR struct st7796_dev_s *dev,
-                                  FAR const struct st7796_cmd_s *seq,
-                                  size_t count);
-static void st7796_setarea(FAR struct st7796_dev_s *dev,
+static void st7796_send_sequence(FAR struct st7796_dev_s *priv,
+                                 FAR const struct st7796_cmd_s *seq,
+                                 size_t count);
+static void st7796_setarea(FAR struct st7796_dev_s *priv,
                            uint16_t x0, uint16_t y0,
                            uint16_t x1, uint16_t y1);
+static void st7796_apply_rotation(FAR struct st7796_dev_s *priv);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
 static struct st7796_dev_s g_st7796dev;
-
-#if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE) || \
-    defined(CONFIG_LCD_LANDSCAPE)
-#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
-#    define ST7796_MADCTL_VALUE 0x28
-#  else
-#    define ST7796_MADCTL_VALUE 0x20
-#  endif
-#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RPORTRAIT) || \
-      defined(CONFIG_LCD_RPORTRAIT)
-#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
-#    define ST7796_MADCTL_VALUE 0x88
-#  else
-#    define ST7796_MADCTL_VALUE 0x80
-#  endif
-#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE) || \
-      defined(CONFIG_LCD_RLANDSCAPE)
-#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
-#    define ST7796_MADCTL_VALUE 0xe8
-#  else
-#    define ST7796_MADCTL_VALUE 0xE0
-#  endif
-#else
-#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
-#    define ST7796_MADCTL_VALUE 0x48
-#  else
-#    define ST7796_MADCTL_VALUE 0x40
-#  endif
-#endif
 
 /* Initialization sequence data arrays
  *
@@ -207,7 +140,7 @@ static struct st7796_dev_s g_st7796dev;
  * GAMMAPOS/GAMMANEG:
  *   14-byte gamma correction curves for color linearity
  *
- * MADCTL values defined by orientation config (see ST7796_MADCTL_VALUE)
+ * MADCTL values provided by board configuration
  */
 
 static const uint8_t g_cscon1_data[] =
@@ -218,11 +151,6 @@ static const uint8_t g_cscon1_data[] =
 static const uint8_t g_cscon2_data[] =
 {
   0x96
-};
-
-static const uint8_t g_madctl_data[] =
-{
-  ST7796_MADCTL_VALUE
 };
 
 static const uint8_t g_pixfmt_data[] =
@@ -284,49 +212,6 @@ static const uint8_t g_cscon4_data[] =
   0x69
 };
 
-/* Initialization sequence
- *
- * Timing requirements from ST7796S datasheet section 9.16:
- *
- *   SWRESET: 120ms minimum recovery time (using 150ms for margin)
- *   SLPOUT:  120ms minimum for DC-DC and oscillator stabilization
- *   INVON:   No minimum specified, 10ms for safety
- *   NORON:   No minimum specified, 10ms for safety
- *   DISPON:  Frame memory must be written first, 120ms for stabilization
- *
- * Sequence follows recommended power-on flow:
- *   1. Software reset
- *   2. Exit sleep mode
- *   3. Unlock extended registers (CSCON)
- *   4. Configure display parameters
- *   5. Lock extended registers (CSCON)
- *   6. Enable inversion and normal mode
- *   7. Turn on display
- */
-
-static const struct st7796_cmd_s st7796_init_sequence[] =
-{
-  {ST7796_SWRESET, NULL, 0, 150},
-  {ST7796_SLPOUT, NULL, 0, 150},
-  {ST7796_CSCON, g_cscon1_data, 1, 0},
-  {ST7796_CSCON, g_cscon2_data, 1, 0},
-  {ST7796_MADCTL, g_madctl_data, 1, 0},
-  {ST7796_PIXFMT, g_pixfmt_data, 1, 0},
-  {ST7796_INVCTR, g_invctr_data, 1, 0},
-  {ST7796_DFC, g_dfc_data, 3, 0},
-  {0xe8, g_cmd_e8_data, 8, 0},
-  {ST7796_PWCTRL2, g_pwctrl2_data, 1, 0},
-  {ST7796_PWCTRL3, g_pwctrl3_data, 1, 0},
-  {ST7796_VCOM, g_vcom_data, 1, 0},
-  {ST7796_GAMMAPOS, g_gammapos_data, 14, 0},
-  {ST7796_GAMMANEG, g_gammaneg_data, 14, 0},
-  {ST7796_CSCON, g_cscon3_data, 1, 0},
-  {ST7796_CSCON, g_cscon4_data, 1, 0},
-  {ST7796_INVON, NULL, 0, 10},
-  {ST7796_NORON, NULL, 0, 10},
-  {ST7796_DISPON, NULL, 0, 120},
-};
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -340,20 +225,20 @@ static const struct st7796_cmd_s st7796_init_sequence[] =
  *   frequency, then asserts the chip select signal.
  *
  * Input Parameters:
- *   spi - Reference to the SPI driver structure
+ *   priv - Reference to the ST7796 device structure
  *
  * Returned Value:
  *   None
  *
  ****************************************************************************/
 
-static void st7796_select(FAR struct spi_dev_s *spi)
+static void st7796_select(FAR struct st7796_dev_s *priv)
 {
-  SPI_LOCK(spi, true);
-  SPI_SETMODE(spi, CONFIG_LCD_ST7796_SPIMODE);
-  SPI_SETBITS(spi, 8);
-  SPI_SETFREQUENCY(spi, CONFIG_LCD_ST7796_FREQUENCY);
-  SPI_SELECT(spi, SPIDEV_DISPLAY(0), true);
+  SPI_LOCK(priv->spi, true);
+  SPI_SETMODE(priv->spi, ST7796_SPIMODE);
+  SPI_SETBITS(priv->spi, 8);
+  SPI_SETFREQUENCY(priv->spi, priv->config.frequency);
+  SPI_SELECT(priv->spi, SPIDEV_DISPLAY(0), true);
 }
 
 /****************************************************************************
@@ -364,17 +249,17 @@ static void st7796_select(FAR struct spi_dev_s *spi)
  *   SPI bus for other devices.
  *
  * Input Parameters:
- *   spi - Reference to the SPI driver structure
+ *   priv - Reference to the ST7796 device structure
  *
  * Returned Value:
  *   None
  *
  ****************************************************************************/
 
-static void st7796_deselect(FAR struct spi_dev_s *spi)
+static void st7796_deselect(FAR struct st7796_dev_s *priv)
 {
-  SPI_SELECT(spi, SPIDEV_DISPLAY(0), false);
-  SPI_LOCK(spi, false);
+  SPI_SELECT(priv->spi, SPIDEV_DISPLAY(0), false);
+  SPI_LOCK(priv->spi, false);
 }
 
 /****************************************************************************
@@ -385,21 +270,21 @@ static void st7796_deselect(FAR struct spi_dev_s *spi)
  *   Command) line is set to command mode before transmission.
  *
  * Input Parameters:
- *   dev - Reference to the ST7796 device structure
- *   cmd - Command byte to send
+ *   priv - Reference to the ST7796 device structure
+ *   cmd  - Command byte to send
  *
  * Returned Value:
  *   None
  *
  ****************************************************************************/
 
-static void st7796_sendcmd(FAR struct st7796_dev_s *dev, uint8_t cmd)
+static void st7796_sendcmd(FAR struct st7796_dev_s *priv, uint8_t cmd)
 {
 #ifdef CONFIG_SPI_CMDDATA
-  SPI_CMDDATA(dev->spi, SPIDEV_DISPLAY(0), true);
-  SPI_SEND(dev->spi, cmd);
+  SPI_CMDDATA(priv->spi, SPIDEV_DISPLAY(0), true);
+  SPI_SEND(priv->spi, cmd);
 #else
-  #error "CONFIG_SPI_CMDDATA must be enabled for ST7796"
+#  error "CONFIG_SPI_CMDDATA must be enabled for ST7796"
 #endif
 }
 
@@ -411,7 +296,7 @@ static void st7796_sendcmd(FAR struct st7796_dev_s *dev, uint8_t cmd)
  *   Command) line is set to data mode before transmission.
  *
  * Input Parameters:
- *   dev  - Reference to the ST7796 device structure
+ *   priv - Reference to the ST7796 device structure
  *   data - Pointer to the data buffer to send
  *   len  - Number of bytes to send
  *
@@ -420,16 +305,16 @@ static void st7796_sendcmd(FAR struct st7796_dev_s *dev, uint8_t cmd)
  *
  ****************************************************************************/
 
-static void st7796_senddata(FAR struct st7796_dev_s *dev,
+static void st7796_senddata(FAR struct st7796_dev_s *priv,
                             FAR const uint8_t *data, size_t len)
 {
   if (len > 0 && data != NULL)
     {
 #ifdef CONFIG_SPI_CMDDATA
-      SPI_CMDDATA(dev->spi, SPIDEV_DISPLAY(0), false);
-      SPI_SNDBLOCK(dev->spi, data, len);
+      SPI_CMDDATA(priv->spi, SPIDEV_DISPLAY(0), false);
+      SPI_SNDBLOCK(priv->spi, data, len);
 #else
-      #error "CONFIG_SPI_CMDDATA must be enabled for ST7796"
+#  error "CONFIG_SPI_CMDDATA must be enabled for ST7796"
 #endif
     }
 }
@@ -444,7 +329,7 @@ static void st7796_senddata(FAR struct st7796_dev_s *dev,
  *   initialization.
  *
  * Input Parameters:
- *   dev   - Reference to the ST7796 device structure
+ *   priv  - Reference to the ST7796 device structure
  *   seq   - Pointer to an array of command/data sequence entries
  *   count - Number of entries in the sequence array
  *
@@ -453,23 +338,23 @@ static void st7796_senddata(FAR struct st7796_dev_s *dev,
  *
  ****************************************************************************/
 
-static void st7796_send_sequence(FAR struct st7796_dev_s *dev,
-                                  FAR const struct st7796_cmd_s *seq,
-                                  size_t count)
+static void st7796_send_sequence(FAR struct st7796_dev_s *priv,
+                                 FAR const struct st7796_cmd_s *seq,
+                                 size_t count)
 {
   size_t i;
+
   lcdinfo("ST7796: Sending initialization sequence (%zu commands)\n", count);
 
   for (i = 0; i < count; i++)
     {
-      st7796_sendcmd(dev, seq[i].cmd);
+      st7796_sendcmd(priv, seq[i].cmd);
       if (seq[i].data != NULL && seq[i].len > 0)
         {
-          st7796_senddata(dev, seq[i].data, seq[i].len);
+          st7796_senddata(priv, seq[i].data, seq[i].len);
         }
 
       if (seq[i].delay_ms > 0)
-
         {
           nxsig_usleep(seq[i].delay_ms * 1000);
         }
@@ -488,35 +373,111 @@ static void st7796_send_sequence(FAR struct st7796_dev_s *dev,
  *   commands to define the window boundaries.
  *
  * Input Parameters:
- *   dev - Reference to the ST7796 device structure
- *   x0  - Start column (left edge)
- *   y0  - Start row (top edge)
- *   x1  - End column (right edge, inclusive)
- *   y1  - End row (bottom edge, inclusive)
+ *   priv - Reference to the ST7796 device structure
+ *   x0   - Start column (left edge)
+ *   y0   - Start row (top edge)
+ *   x1   - End column (right edge, inclusive)
+ *   y1   - End row (bottom edge, inclusive)
  *
  * Returned Value:
  *   None
  *
  ****************************************************************************/
 
-static void st7796_setarea(FAR struct st7796_dev_s *dev,
+static void st7796_setarea(FAR struct st7796_dev_s *priv,
                            uint16_t x0, uint16_t y0,
                            uint16_t x1, uint16_t y1)
 {
   uint8_t data[4];
-  st7796_sendcmd(dev, ST7796_CASET);
+
+  st7796_sendcmd(priv, ST7796_CASET);
   data[0] = (x0 >> 8) & 0xff;
   data[1] = x0 & 0xff;
   data[2] = (x1 >> 8) & 0xff;
   data[3] = x1 & 0xff;
-  st7796_senddata(dev, data, 4);
+  st7796_senddata(priv, data, 4);
 
-  st7796_sendcmd(dev, ST7796_RASET);
+  st7796_sendcmd(priv, ST7796_RASET);
   data[0] = (y0 >> 8) & 0xff;
   data[1] = y0 & 0xff;
   data[2] = (y1 >> 8) & 0xff;
   data[3] = y1 & 0xff;
-  st7796_senddata(dev, data, 4);
+  st7796_senddata(priv, data, 4);
+}
+
+/****************************************************************************
+ * Name: st7796_apply_rotation
+ *
+ * Description:
+ *   Apply rotation by modifying the MADCTL register. This function
+ *   calculates the appropriate MADCTL value based on the base orientation
+ *   and the requested rotation angle, then sends it to the display.
+ *
+ * Input Parameters:
+ *   priv - Reference to the ST7796 device structure
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static void st7796_apply_rotation(FAR struct st7796_dev_s *priv)
+{
+  uint8_t madctl;
+  uint8_t data[1];
+
+  /* Start with base MADCTL from config */
+
+  madctl = priv->config.madctl;
+
+  /* Apply rotation by modifying MX/MY bits */
+
+  switch (priv->rotation)
+    {
+      case 0:
+
+      /* No rotation - use base MADCTL as-is */
+
+        break;
+
+      case 90:
+
+      /* 90 degrees: swap MV and toggle MX */
+
+        madctl ^= (ST7796_MADCTL_MV | ST7796_MADCTL_MX);
+        break;
+
+      case 180:
+
+      /* 180 degrees: toggle both MX and MY */
+
+        madctl ^= (ST7796_MADCTL_MX | ST7796_MADCTL_MY);
+        break;
+
+      case 270:
+
+      /* 270 degrees: swap MV and toggle MY */
+
+        madctl ^= (ST7796_MADCTL_MV | ST7796_MADCTL_MY);
+        break;
+
+      default:
+        lcdwarn("ST7796: Invalid rotation %d, using 0\n", priv->rotation);
+        priv->rotation = 0;
+        break;
+    }
+
+  /* Send MADCTL command */
+
+  data[0] = madctl;
+
+  st7796_select(priv);
+  st7796_sendcmd(priv, ST7796_MADCTL);
+  st7796_senddata(priv, data, 1);
+  st7796_deselect(priv);
+
+  lcdinfo("ST7796: Applied rotation %d (MADCTL=0x%02x)\n",
+          priv->rotation, madctl);
 }
 
 /****************************************************************************
@@ -537,13 +498,17 @@ static void st7796_setarea(FAR struct st7796_dev_s *dev,
  ****************************************************************************/
 
 static int st7796_getvideoinfo(FAR struct fb_vtable_s *vtable,
-                                FAR struct fb_videoinfo_s *vinfo)
+                               FAR struct fb_videoinfo_s *vinfo)
 {
+  FAR struct st7796_dev_s *priv = (FAR struct st7796_dev_s *)vtable;
+
   lcdinfo("ST7796: getvideoinfo\n");
-  vinfo->fmt     = ST7796_COLORFMT;
-  vinfo->xres    = ST7796_XRES;
-  vinfo->yres    = ST7796_YRES;
+
+  vinfo->fmt     = ST7796_COLORFMT(priv->config.bpp);
+  vinfo->xres    = priv->config.xres;
+  vinfo->yres    = priv->config.yres;
   vinfo->nplanes = 1;
+
   return OK;
 }
 
@@ -567,18 +532,26 @@ static int st7796_getvideoinfo(FAR struct fb_vtable_s *vtable,
  ****************************************************************************/
 
 static int st7796_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
-                                FAR struct fb_planeinfo_s *pinfo)
+                               FAR struct fb_planeinfo_s *pinfo)
 {
   FAR struct st7796_dev_s *priv = (FAR struct st7796_dev_s *)vtable;
+  size_t fbsize;
+  uint8_t bytespp;
+
   lcdinfo("ST7796: getplaneinfo - plane %d\n", planeno);
-  pinfo->fbmem   = priv->fbmem;
-  pinfo->fblen   = ST7796_FBSIZE;
-  pinfo->stride  = ST7796_XRES * ST7796_BYTESPP;
-  pinfo->bpp     = ST7796_BPP;
-  pinfo->xres_virtual = ST7796_XRES;
-  pinfo->yres_virtual = ST7796_YRES;
-  pinfo->xoffset = 0;
-  pinfo->yoffset = 0;
+
+  bytespp = ST7796_BYTESPP(priv->config.bpp);
+  fbsize = priv->config.xres * priv->config.yres * bytespp;
+
+  pinfo->fbmem        = priv->fbmem;
+  pinfo->fblen        = fbsize;
+  pinfo->stride       = priv->config.xres * bytespp;
+  pinfo->bpp          = priv->config.bpp;
+  pinfo->xres_virtual = priv->config.xres;
+  pinfo->yres_virtual = priv->config.yres;
+  pinfo->xoffset      = 0;
+  pinfo->yoffset      = 0;
+
   return OK;
 }
 
@@ -603,18 +576,21 @@ static int st7796_getplaneinfo(FAR struct fb_vtable_s *vtable, int planeno,
  ****************************************************************************/
 
 static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
-                              FAR const struct fb_area_s *area)
+                             FAR const struct fb_area_s *area)
 {
   FAR struct st7796_dev_s *priv = (FAR struct st7796_dev_s *)vtable;
   FAR uint16_t *src_fbptr;
   size_t row_size_pixels;
+  uint8_t bytespp;
   int row;
   int i;
 
   lcdinfo("ST7796: updatearea - x=%d y=%d w=%d h=%d\n",
           area->x, area->y, area->w, area->h);
 
-  st7796_select(priv->spi);
+  bytespp = ST7796_BYTESPP(priv->config.bpp);
+
+  st7796_select(priv);
   st7796_setarea(priv, area->x, area->y,
                  area->x + area->w - 1,
                  area->y + area->h - 1);
@@ -628,7 +604,7 @@ static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
   row_size_pixels = area->w;
   src_fbptr = (FAR uint16_t *)
               (priv->fbmem +
-               (area->y * ST7796_XRES + area->x) * ST7796_BYTESPP);
+               (area->y * priv->config.xres + area->x) * bytespp);
 
   for (row = 0; row < area->h; row++)
     {
@@ -639,13 +615,188 @@ static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
         }
 
       SPI_SNDBLOCK(priv->spi, (FAR const uint8_t *)priv->swap_buf,
-                   row_size_pixels * ST7796_BYTESPP);
+                   row_size_pixels * bytespp);
 
-      src_fbptr += ST7796_XRES;
+      src_fbptr += priv->config.xres;
     }
 
-  st7796_deselect(priv->spi);
+  st7796_deselect(priv);
+
   return OK;
+}
+
+/****************************************************************************
+ * Name: st7796_ioctl
+ *
+ * Description:
+ *   Handle framebuffer ioctl commands. Supports rotation control via
+ *   FBIOSET_ROTATION and FBIOGET_ROTATION commands.
+ *
+ * Input Parameters:
+ *   vtable - Reference to the framebuffer virtual table
+ *   cmd    - ioctl command
+ *   arg    - ioctl argument
+ *
+ * Returned Value:
+ *   OK on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int st7796_ioctl(FAR struct fb_vtable_s *vtable, int cmd,
+                        unsigned long arg)
+{
+  FAR struct st7796_dev_s *priv = (FAR struct st7796_dev_s *)vtable;
+  int ret = OK;
+
+  switch (cmd)
+    {
+      case FBIOSET_ROTATION:
+        {
+          uint16_t rotation = (uint16_t)arg;
+
+          /* Validate rotation value */
+
+          if (rotation != 0 && rotation != 90 &&
+              rotation != 180 && rotation != 270)
+            {
+              lcderr("ERROR: Invalid rotation %d\n", rotation);
+              ret = -EINVAL;
+              break;
+            }
+
+          priv->rotation = rotation;
+          st7796_apply_rotation(priv);
+        }
+        break;
+
+      case FBIOGET_ROTATION:
+        {
+          FAR uint16_t *rotation = (FAR uint16_t *)arg;
+
+          if (rotation == NULL)
+            {
+              ret = -EINVAL;
+              break;
+            }
+
+          *rotation = priv->rotation;
+        }
+        break;
+
+      case FBIO_UPDATE:
+        {
+          FAR struct fb_area_s *area = (FAR struct fb_area_s *)arg;
+          ret = st7796_updatearea(vtable, area);
+        }
+        break;
+
+      default:
+        ret = -ENOTTY;
+        break;
+    }
+
+  return ret;
+}
+
+/****************************************************************************
+ * Name: st7796_init_display
+ *
+ * Description:
+ *   Initialize the ST7796 display hardware with the provided configuration.
+ *   This sends the initialization sequence and configures MADCTL based on
+ *   board-provided settings.
+ *
+ * Input Parameters:
+ *   priv - Reference to the ST7796 device structure
+ *
+ * Returned Value:
+ *   None
+ *
+ * Timing requirements from ST7796S datasheet section 9.16:
+ *
+ *   SWRESET: 120ms minimum recovery time (using 150ms for margin)
+ *   SLPOUT:  120ms minimum for DC-DC and oscillator stabilization
+ *   INVON:   No minimum specified, 10ms for safety
+ *   NORON:   No minimum specified, 10ms for safety
+ *   DISPON:  Frame memory must be written first, 120ms for stabilization
+ *
+ * Sequence follows recommended power-on flow:
+ *   1. Software reset
+ *   2. Exit sleep mode
+ *   3. Unlock extended registers (CSCON)
+ *   4. Configure display parameters (including board-provided MADCTL)
+ *   5. Lock extended registers (CSCON)
+ *   6. Enable inversion and normal mode
+ *   7. Turn on display
+ *
+ ****************************************************************************/
+
+static void st7796_init_display(FAR struct st7796_dev_s *priv)
+{
+  uint8_t madctl_data[1];
+
+  /* MADCTL value from board configuration */
+
+  madctl_data[0] = priv->config.madctl;
+
+  /* Initialization sequence - Part 1: Reset and wake */
+
+  static const struct st7796_cmd_s init_seq_part1[] =
+  {
+    { ST7796_SWRESET, NULL,           0, 150 },
+    { ST7796_SLPOUT,  NULL,           0, 150 },
+    { ST7796_CSCON,   g_cscon1_data,  1, 0   },
+    { ST7796_CSCON,   g_cscon2_data,  1, 0   },
+  };
+
+  /* Initialization sequence - Part 2: Configuration (after MADCTL) */
+
+  static const struct st7796_cmd_s init_seq_part2[] =
+  {
+    { ST7796_PIXFMT,   g_pixfmt_data,   1,  0   },
+    { ST7796_INVCTR,   g_invctr_data,   1,  0   },
+    { ST7796_DFC,      g_dfc_data,      3,  0   },
+    { 0xe8,            g_cmd_e8_data,   8,  0   },
+    { ST7796_PWCTRL2,  g_pwctrl2_data,  1,  0   },
+    { ST7796_PWCTRL3,  g_pwctrl3_data,  1,  0   },
+    { ST7796_VCOM,     g_vcom_data,     1,  0   },
+    { ST7796_GAMMAPOS, g_gammapos_data, 14, 0   },
+    { ST7796_GAMMANEG, g_gammaneg_data, 14, 0   },
+    { ST7796_CSCON,    g_cscon3_data,   1,  0   },
+    { ST7796_CSCON,    g_cscon4_data,   1,  0   },
+    { ST7796_INVON,    NULL,            0,  10  },
+    { ST7796_NORON,    NULL,            0,  10  },
+    { ST7796_DISPON,   NULL,            0,  120 },
+  };
+
+  st7796_select(priv);
+
+  /* Send part 1: Reset and unlock */
+
+  st7796_send_sequence(priv, init_seq_part1,
+                       sizeof(init_seq_part1) / sizeof(struct st7796_cmd_s));
+
+  /* Send MADCTL with board-provided value */
+
+  st7796_sendcmd(priv, ST7796_MADCTL);
+  st7796_senddata(priv, madctl_data, 1);
+
+  /* Send part 2: Configuration and enable */
+
+  st7796_send_sequence(priv, init_seq_part2,
+                       sizeof(init_seq_part2) / sizeof(struct st7796_cmd_s));
+
+  st7796_deselect(priv);
+
+  lcdinfo("ST7796: Display initialized (MADCTL=0x%02x)\n",
+          priv->config.madctl);
+
+  /* Apply initial rotation if configured */
+
+  if (priv->rotation != 0)
+    {
+      st7796_apply_rotation(priv);
+    }
 }
 
 /****************************************************************************
@@ -663,7 +814,8 @@ static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
  *   framebuffer interface.
  *
  * Input Parameters:
- *   spi - Reference to the SPI driver structure to use for communication
+ *   spi    - Reference to the SPI driver structure to use for communication
+ *   config - Board-specific configuration (frequency, resolution, etc.)
  *
  * Returned Value:
  *   On success, a pointer to the framebuffer virtual table is returned.
@@ -671,29 +823,50 @@ static int st7796_updatearea(FAR struct fb_vtable_s *vtable,
  *
  ****************************************************************************/
 
-FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi)
+FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi,
+                                            FAR const struct st7796_config_s
+                                            *config)
 {
   FAR struct st7796_dev_s *priv = &g_st7796dev;
+  size_t fbsize;
+  uint8_t bytespp;
+
+  DEBUGASSERT(spi != NULL && config != NULL);
 
   lcdinfo("ST7796: Initializing framebuffer driver\n");
   lcdinfo("ST7796: Resolution: %dx%d @ %d bpp\n",
-          ST7796_XRES, ST7796_YRES, ST7796_BPP);
-  lcdinfo("ST7796: SPI Frequency: %d Hz\n", CONFIG_LCD_ST7796_FREQUENCY);
+          config->xres, config->yres, config->bpp);
+  lcdinfo("ST7796: SPI Frequency: %lu Hz\n",
+          (unsigned long)config->frequency);
+  lcdinfo("ST7796: MADCTL: 0x%02x, Rotation: %d\n",
+          config->madctl, config->rotation);
+
+  /* Copy configuration */
+
+  memcpy(&priv->config, config, sizeof(struct st7796_config_s));
+
+  /* Set initial rotation from config */
+
+  priv->rotation = config->rotation;
+
+  /* Calculate sizes */
+
+  bytespp = ST7796_BYTESPP(config->bpp);
+  fbsize = config->xres * config->yres * bytespp;
 
   /* Allocate framebuffer memory */
 
-  priv->fbmem = (FAR uint8_t *)kmm_zalloc(ST7796_FBSIZE);
-  if (!priv->fbmem)
+  priv->fbmem = (FAR uint8_t *)kmm_zalloc(fbsize);
+  if (priv->fbmem == NULL)
     {
-      lcderr("ERROR: Failed to allocate framebuffer (%d bytes)\n",
-             ST7796_FBSIZE);
+      lcderr("ERROR: Failed to allocate framebuffer (%zu bytes)\n", fbsize);
       return NULL;
     }
 
   /* Allocate persistent row swap buffer to avoid malloc in updatearea */
 
-  priv->swap_buf = (FAR uint16_t *)kmm_malloc(ST7796_XRES * ST7796_BYTESPP);
-  if (!priv->swap_buf)
+  priv->swap_buf = (FAR uint16_t *)kmm_malloc(config->xres * bytespp);
+  if (priv->swap_buf == NULL)
     {
       lcderr("ERROR: Failed to allocate swap buffer\n");
       kmm_free(priv->fbmem);
@@ -702,24 +875,62 @@ FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi)
 
   /* Initialize driver structure */
 
-  priv->vtable.getvideoinfo  = st7796_getvideoinfo;
-  priv->vtable.getplaneinfo  = st7796_getplaneinfo;
-  priv->vtable.updatearea    = st7796_updatearea;
-  priv->spi                  = spi;
-  priv->power                = false;
+  priv->vtable.getvideoinfo = st7796_getvideoinfo;
+  priv->vtable.getplaneinfo = st7796_getplaneinfo;
+  priv->vtable.updatearea   = st7796_updatearea;
+  priv->vtable.ioctl        = st7796_ioctl;
+  priv->spi                 = spi;
+  priv->power               = false;
 
-  /* Send initialization sequence */
+  /* Initialize display hardware */
 
-  st7796_select(priv->spi);
-  st7796_send_sequence(priv, st7796_init_sequence,
-                        sizeof(st7796_init_sequence) /
-                        sizeof(struct st7796_cmd_s));
-  st7796_deselect(priv->spi);
+  st7796_init_display(priv);
 
   priv->power = true;
   lcdinfo("ST7796: Display ready\n");
 
   return &priv->vtable;
+}
+
+/****************************************************************************
+ * Name: st7796_setrotation
+ *
+ * Description:
+ *   Set display rotation at runtime. This function can be called directly
+ *   by board code or applications that have access to the vtable pointer.
+ *
+ * Input Parameters:
+ *   vtable   - Reference to the framebuffer virtual table
+ *   rotation - Rotation angle in degrees (0, 90, 180, or 270)
+ *
+ * Returned Value:
+ *   OK on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int st7796_setrotation(FAR struct fb_vtable_s *vtable, uint16_t rotation)
+{
+  return st7796_ioctl(vtable, FBIOSET_ROTATION, (unsigned long)rotation);
+}
+
+/****************************************************************************
+ * Name: st7796_getrotation
+ *
+ * Description:
+ *   Get current display rotation.
+ *
+ * Input Parameters:
+ *   vtable - Reference to the framebuffer virtual table
+ *
+ * Returned Value:
+ *   Current rotation in degrees (0, 90, 180, or 270).
+ *
+ ****************************************************************************/
+
+uint16_t st7796_getrotation(FAR struct fb_vtable_s *vtable)
+{
+  FAR struct st7796_dev_s *priv = (FAR struct st7796_dev_s *)vtable;
+  return priv->rotation;
 }
 
 #endif /* CONFIG_LCD_ST7796 */

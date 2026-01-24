@@ -492,8 +492,7 @@ static void spi_dc_control(int spi_bus, uint32_t devid, bool cmd)
 
   stm32_gpiowrite(device->gpio_config, !cmd);
 
-  
-  /* DEBUG SESSION 
+  /* DEBUG SESSION
    * spiinfo("SPI%d DC%lu: %s (pin %s)\n",
    *       spi_bus, (unsigned long)actual_devid,
    *       cmd ? "COMMAND" : "DATA",

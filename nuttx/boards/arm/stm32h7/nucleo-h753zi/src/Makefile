@@ -106,3 +106,6 @@ endif
 
 include $(TOPDIR)/boards/Board.mk
 
+# Clean up garbage in subdirectories
+clean::
+	$(Q) rm -f drivers/*/*.o drivers/*/*.d drivers/*/*~

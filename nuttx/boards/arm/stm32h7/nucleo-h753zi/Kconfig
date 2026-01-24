@@ -626,7 +626,7 @@ endif
 
 endmenu
 
-menu "SPI Sensors"
+menu "SPI MODULES"
 	depends on STM32H7_SPI
 
 menu "MFRC522 RFID Reader Configuration"
@@ -1066,7 +1066,7 @@ endmenu
 
 endmenu
 
-menu "I2C Sensors"
+menu "I2C MODULES"
 	depends on STM32H7_I2C
 
 menu "SSD1306 OLED Display Configuration"
