@@ -35208,6 +35208,10 @@ CONFIG_TFLITEMICRO_SYSLOG_LEVEL	apps/mlearning/tflite-micro/Kconfig	/^config TFL
 CONFIG_TFLITEMICRO_TOOL	apps/mlearning/tflite-micro/Kconfig	/^config TFLITEMICRO_TOOL$/;"	c
 CONFIG_TFLITEMICRO_TOOL_PRIORITY	apps/mlearning/tflite-micro/Kconfig	/^config TFLITEMICRO_TOOL_PRIORITY$/;"	c
 CONFIG_TFLITEMICRO_TOOL_STACKSIZE	apps/mlearning/tflite-micro/Kconfig	/^config TFLITEMICRO_TOOL_STACKSIZE$/;"	c
+CONFIG_TGTEST_APPS_TGTEST	apps/tgtestapps/tgtest/Kconfig	/^config TGTEST_APPS_TGTEST$/;"	c
+CONFIG_TGTEST_APPS_TGTEST_PRIORITY	apps/tgtestapps/tgtest/Kconfig	/^config TGTEST_APPS_TGTEST_PRIORITY$/;"	c
+CONFIG_TGTEST_APPS_TGTEST_PROGNAME	apps/tgtestapps/tgtest/Kconfig	/^config TGTEST_APPS_TGTEST_PROGNAME$/;"	c
+CONFIG_TGTEST_APPS_TGTEST_STACKSIZE	apps/tgtestapps/tgtest/Kconfig	/^config TGTEST_APPS_TGTEST_STACKSIZE$/;"	c
 CONFIG_THERMAL	nuttx/drivers/thermal/Kconfig	/^menuconfig THERMAL$/;"	c
 CONFIG_THERMAL_CDEV_CPUFREQ	nuttx/drivers/thermal/Kconfig	/^config THERMAL_CDEV_CPUFREQ$/;"	c
 CONFIG_THERMAL_DEFAULT_GOVERNOR	nuttx/drivers/thermal/Kconfig	/^config THERMAL_DEFAULT_GOVERNOR$/;"	c
@@ -37327,6 +37331,7 @@ CSRCS	apps/testing/ltp/Makefile	/^CSRCS        := $(LTP_CSRCS)$/;"	m
 CSRCS	apps/testing/nist-sts/Makefile	/^CSRCS     = $(shell find nist-sts\/sts\/src -name "*.c" ! -name "assess.c")$/;"	m
 CSRCS	apps/testing/ostest/Makefile	/^CSRCS   = getopt.c libc_memmem.c restart.c sigprocmask.c sighand.c \\$/;"	m
 CSRCS	apps/testing/unity/Makefile	/^CSRCS = $(UNITY_SRCDIR)$(DELIM)unity.c$/;"	m
+CSRCS	apps/tgtestapps/tgtest/Makefile	/^CSRCS = car_can.c$/;"	m
 CSRCS	apps/videoutils/x264/Makefile	/^CSRCS := $(addprefix $(SRCPATH)$(DELIM), $(SRCS) $(SRCS_X))$/;"	m
 CSRCS	apps/wireless/bluetooth/btsak/Makefile	/^CSRCS   = btsak_advertise.c btsak_features.c btsak_gatt.c btsak_info.c$/;"	m
 CSRCS	apps/wireless/ieee802154/i8sak/Makefile	/^CSRCS = i8sak_acceptassoc.c i8sak_assoc.c i8sak_scan.c i8sak_blaster.c i8sak_poll.c$/;"	m
@@ -47824,6 +47829,7 @@ MAINSRC	apps/testing/ostest/Makefile	/^MAINSRC = ostest_main.c$/;"	m
 MAINSRC	apps/testing/sched/getprime/Makefile	/^MAINSRC = getprime_main.c$/;"	m
 MAINSRC	apps/testing/sched/smp/Makefile	/^MAINSRC = smp_main.c$/;"	m
 MAINSRC	apps/testing/sched/timerjitter/Makefile	/^MAINSRC = timerjitter.c$/;"	m
+MAINSRC	apps/tgtestapps/tgtest/Makefile	/^MAINSRC = tgtest_main.c$/;"	m
 MAINSRC	apps/wireless/bluetooth/btsak/Makefile	/^MAINSRC = btsak_main.c$/;"	m
 MAINSRC	apps/wireless/gs2200m/Makefile	/^MAINSRC = gs2200m_main.c$/;"	m
 MAINSRC	apps/wireless/ieee802154/i8sak/Makefile	/^MAINSRC = i8sak_main.c$/;"	m
@@ -48307,6 +48313,7 @@ MENUDESC	apps/testing/fs/Makefile	/^MENUDESC = "fs"$/;"	m
 MENUDESC	apps/testing/libc/Makefile	/^MENUDESC = "libc"$/;"	m
 MENUDESC	apps/testing/mm/Makefile	/^MENUDESC = "mm"$/;"	m
 MENUDESC	apps/testing/sched/Makefile	/^MENUDESC = "sched"$/;"	m
+MENUDESC	apps/tgtestapps/Makefile	/^MENUDESC = "Tgtest Apps"$/;"	m
 MENUDESC	apps/videoutils/Makefile	/^MENUDESC = "Video Utility libraries"$/;"	m
 MENUDESC	apps/wireless/Makefile	/^MENUDESC = "Wireless Libraries and NSH Add-Ons"$/;"	m
 MENUDESC	apps/wireless/bluetooth/Makefile	/^MENUDESC = "Bluetooth applications"$/;"	m
@@ -48905,6 +48912,7 @@ MODULE	apps/testing/sched/getprime/Makefile	/^MODULE = $(CONFIG_TESTING_GETPRIME
 MODULE	apps/testing/sched/smp/Makefile	/^MODULE = $(CONFIG_TESTING_SMP)$/;"	m
 MODULE	apps/testing/sched/timerjitter/Makefile	/^MODULE    = $(CONFIG_TESTING_TIMERJITTER)$/;"	m
 MODULE	apps/testing/testsuites/Makefile	/^MODULE = $(CONFIG_TESTS_TESTSUITES)$/;"	m
+MODULE	apps/tgtestapps/tgtest/Makefile	/^MODULE = $(CONFIG_TGTEST_APPS_TGTEST)$/;"	m
 MODULE	apps/wireless/bluetooth/btsak/Makefile	/^MODULE = $(CONFIG_BTSAK)$/;"	m
 MODULE	apps/wireless/gs2200m/Makefile	/^MODULE = $(CONFIG_WIRELESS_GS2200M)$/;"	m
 MODULE	apps/wireless/ieee802154/i8sak/Makefile	/^MODULE = $(CONFIG_IEEE802154_I8SAK)$/;"	m
@@ -52666,6 +52674,7 @@ PRIORITY	apps/testing/sched/getprime/Makefile	/^PRIORITY = $(CONFIG_TESTING_GETP
 PRIORITY	apps/testing/sched/smp/Makefile	/^PRIORITY = $(CONFIG_TESTING_SMP_PRIORITY)$/;"	m
 PRIORITY	apps/testing/sched/timerjitter/Makefile	/^PRIORITY  = $(CONFIG_TESTING_TIMERJITTER_PRIORITY)$/;"	m
 PRIORITY	apps/testing/testsuites/Makefile	/^PRIORITY = $(CONFIG_TESTS_TESTSUITES_PRIORITY)$/;"	m
+PRIORITY	apps/tgtestapps/tgtest/Makefile	/^PRIORITY = $(CONFIG_TGTEST_APPS_TGTEST_PRIORITY)$/;"	m
 PRIORITY	apps/tools/Wasm.mk	/^PRIORITY            ?= SCHED_PRIORITY_DEFAULT$/;"	m
 PRIORITY	apps/wireless/bluetooth/btsak/Makefile	/^PRIORITY = $(CONFIG_BTSAK_PRIORITY)$/;"	m
 PRIORITY	apps/wireless/bluetooth/nimble/Makefile	/^PRIORITY  = 255$/;"	m
@@ -53072,6 +53081,7 @@ PROGNAME	apps/testing/ostest/Makefile	/^PROGNAME = ostest$/;"	m
 PROGNAME	apps/testing/sched/getprime/Makefile	/^PROGNAME = $(CONFIG_TESTING_GETPRIME_PROGNAME)$/;"	m
 PROGNAME	apps/testing/sched/smp/Makefile	/^PROGNAME = $(CONFIG_TESTING_SMP_PROGNAME)$/;"	m
 PROGNAME	apps/testing/sched/timerjitter/Makefile	/^PROGNAME  = timerjitter$/;"	m
+PROGNAME	apps/tgtestapps/tgtest/Makefile	/^PROGNAME = $(CONFIG_TGTEST_APPS_TGTEST_PROGNAME)$/;"	m
 PROGNAME	apps/wireless/bluetooth/btsak/Makefile	/^PROGNAME = $(CONFIG_BTSAK_PROGNAME)$/;"	m
 PROGNAME	apps/wireless/gs2200m/Makefile	/^PROGNAME = $(CONFIG_WIRELESS_GS2200M_PROGNAME)$/;"	m
 PROGNAME	apps/wireless/ieee802154/i8sak/Makefile	/^PROGNAME = $(CONFIG_IEEE802154_I8SAK_PROGNAME)$/;"	m
@@ -58031,6 +58041,7 @@ STACKSIZE	apps/testing/sched/getprime/Makefile	/^STACKSIZE = $(CONFIG_TESTING_GE
 STACKSIZE	apps/testing/sched/smp/Makefile	/^STACKSIZE = $(CONFIG_TESTING_SMP_STACKSIZE)$/;"	m
 STACKSIZE	apps/testing/sched/timerjitter/Makefile	/^STACKSIZE = $(CONFIG_TESTING_TIMERJITTER_STACKSIZE)$/;"	m
 STACKSIZE	apps/testing/testsuites/Makefile	/^STACKSIZE = $(CONFIG_TESTS_TESTSUITES_STACKSIZE)$/;"	m
+STACKSIZE	apps/tgtestapps/tgtest/Makefile	/^STACKSIZE = $(CONFIG_TGTEST_APPS_TGTEST_STACKSIZE)$/;"	m
 STACKSIZE	apps/tools/Wasm.mk	/^STACKSIZE           ?= $(CONFIG_DEFAULT_TASK_STACKSIZE)$/;"	m
 STACKSIZE	apps/wireless/bluetooth/btsak/Makefile	/^STACKSIZE = $(CONFIG_BTSAK_STACKSIZE)$/;"	m
 STACKSIZE	apps/wireless/bluetooth/nimble/Makefile	/^STACKSIZE = $(CONFIG_NIMBLE_PORTING_EXAMPLE_STACKSIZE)$/;"	m
@@ -65646,6 +65657,10 @@ TFLITEMICRO_TOOL_STACKSIZE	apps/mlearning/tflite-micro/Kconfig	/^config TFLITEMI
 TFLM_DIR	apps/mlearning/tflite-micro/Makefile	/^TFLM_DIR     := $(APPDIR)\/mlearning\/tflite-micro\/$(TFLM_UNPACK)$/;"	m
 TFLM_UNPACK	apps/mlearning/tflite-micro/Makefile	/^TFLM_UNPACK  := tflite-micro$/;"	m
 TFLM_VER	apps/mlearning/tflite-micro/Makefile	/^TFLM_VER     := cfa4c91d1b36c37c7c104b9c664615e59f1abfe3$/;"	m
+TGTEST_APPS_TGTEST	apps/tgtestapps/tgtest/Kconfig	/^config TGTEST_APPS_TGTEST$/;"	c
+TGTEST_APPS_TGTEST_PRIORITY	apps/tgtestapps/tgtest/Kconfig	/^config TGTEST_APPS_TGTEST_PRIORITY$/;"	c
+TGTEST_APPS_TGTEST_PROGNAME	apps/tgtestapps/tgtest/Kconfig	/^config TGTEST_APPS_TGTEST_PROGNAME$/;"	c
+TGTEST_APPS_TGTEST_STACKSIZE	apps/tgtestapps/tgtest/Kconfig	/^config TGTEST_APPS_TGTEST_STACKSIZE$/;"	c
 THERMAL	nuttx/drivers/thermal/Kconfig	/^menuconfig THERMAL$/;"	c
 THERMAL_CDEV_CPUFREQ	nuttx/drivers/thermal/Kconfig	/^config THERMAL_CDEV_CPUFREQ$/;"	c
 THERMAL_DEFAULT_GOVERNOR	nuttx/drivers/thermal/Kconfig	/^config THERMAL_DEFAULT_GOVERNOR$/;"	c
@@ -66215,6 +66230,7 @@ Telink TLSR8278ADK80D board	nuttx/boards/arm/tlsr82/tlsr8278adk80d/Kconfig	/^men
 Telnet Configuration	apps/nshlib/Kconfig	/^menu "Telnet Configuration"$/;"	m	menu:NSH Library
 Testing	apps/testing/Kconfig	/^menu "Testing"$/;"	m
 Text Settings	apps/graphics/lvgl/Kconfig	/^	menu "Text Settings"$/;"	m	menu:LVGL configuration
+Tgtest Apps	apps/tgtestapps/Kconfig	/^menu "Tgtest Apps"$/;"	m
 Themes	apps/graphics/lvgl/Kconfig	/^	menu "Themes"$/;"	m	menu:LVGL configuration
 Thread Local Storage (TLS)	nuttx/libs/libc/tls/Kconfig	/^menu "Thread Local Storage (TLS)"$/;"	m
 Time/Time Zone Support	nuttx/libs/libc/time/Kconfig	/^menu "Time\/Time Zone Support"$/;"	m
