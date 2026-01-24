@@ -28,9 +28,10 @@
  *   2. When button is pressed, sends a CAN message
  *
  * CAN codes (bytes 4 and 5):
- *   BE 01 = GREEN LED
- *   BE 02 = ORANGE LED
- *   BE 03 = RED LED
+ *     BE 01 = GREEN LED
+ *     BE 02 = ORANGE LED
+ *     BE 03 = RED LED
+ *
  *
  ****************************************************************************/
 
