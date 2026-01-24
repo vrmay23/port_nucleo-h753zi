@@ -1,4 +1,3 @@
-
 /* The NUCLEO-H753ZI board provides the following clock sources:
  *
  *   MCO: 8 MHz from MCO output of ST-LINK (default)
@@ -93,7 +92,7 @@
  *   Input  = HSE / DIVM3    = 8 MHz / 2   = 4 MHz
  *   Range  = RGE_2_4_MHZ    (2-4 MHz input range)
  *   VCO    = Input * DIVN3  = 4 MHz * 100 = 400 MHz
- *   PLL3P  = VCO / DIVP3    = 400 MHz / 2 = 200 MHz
+ *   PLL3P  = VCO / DIVP3    = 400 MHz / 2  = 200 MHz
  *   PLL3Q  = VCO / DIVQ3    = 400 MHz / 16 = 25 MHz
  *   PLL3R  = VCO / DIVR3    = 400 MHz / 10 = 40 MHz
  *
@@ -107,7 +106,7 @@
  *   PCLK4  = HCLK / D3PPRE                = 100 MHz (APB4 peripherals)
  *
  * Peripheral Clock Sources (RM0433 Table 54):
- *   I2C1/2/3/4:  HSI        = 64 MHz
+ *   I2C1/2/3/4:  HSI        = 16 MHz (workaround for NuttX I2C driver)
  *   SPI1/2/3:    PLL1Q      = 200 MHz (kernel clock, prescaled for SCK)
  *   SPI4/5:      PLL2P      = 75 MHz
  *   SPI6:        PCLK4      = 100 MHz
@@ -175,7 +174,7 @@
  *   PCLK:    100 MHz = 100 MHz (identical)
  *
  * Peripheral Clocks:
- *   I2C:     64 MHz  = 64 MHz  (identical)
+ *   I2C:     16 MHz  = 16 MHz  (identical)
  *   SPI123:  200 MHz = 200 MHz (identical, kernel clock)
  *   SPI45:   75 MHz  = 75 MHz  (identical)
  *   SPI6:    100 MHz = 100 MHz (identical)
@@ -198,10 +197,11 @@
 
 /* Peripheral Clock Selection Rationale
  *
- * I2C (HSI 64 MHz):
- *   - Independent from HSE, continues operation if HSE fails
+ * I2C (HSI 16 MHz):
+ *   - NuttX I2C driver requires HSI at 16 MHz (workaround for driver bug)
+ *   - Recommended: PCLK, but not supported by current NuttX driver
  *   - I2C timing programmable via TIMINGR register
- *   - 64 MHz provides adequate resolution for all I2C speeds
+ *   - 16 MHz provides adequate resolution for all I2C speeds
  *   - Supports: Standard (100 kHz), Fast (400 kHz), Fast Plus (1 MHz)
  *
  * SPI1/2/3 (PLL1Q 200 MHz):
@@ -263,10 +263,11 @@
  *   - No software changes needed when switching HSE sources
  *   - Both configurations validated against same specifications
  *
- * Why HSI for I2C instead of HSE?
- *   - Provides clock source independence (HSE failure tolerance)
+ * Why HSI for I2C instead of PCLK?
+ *   - NuttX I2C driver currently requires HSI at 16 MHz
+ *   - This is a known limitation/bug in the NuttX driver
+ *   - Future NuttX versions may support PCLK for I2C
  *   - I2C timing is programmable, not dependent on exact frequency
- *   - Simplifies clock tree (one less HSE dependency)
  *
  * Why separate PLLs for SPI123 and SPI45?
  *   - Prevents clock domain interference
@@ -313,7 +314,7 @@
  * Clock accuracy:
  *   HSE (8 MHz):   ±50 ppm typical (ST-LINK MCO)
  *   HSE (25 MHz):  ±30 ppm typical (crystal dependent)
- *   HSI (64 MHz):  ±1% (factory trimmed)
+ *   HSI (16 MHz):  ±1% (factory trimmed, prescaled from 64 MHz)
  *   LSE (32768 Hz): ±20 ppm typical (crystal dependent)
  *   HSI48 (48 MHz): ±0.25% (USB compliant)
  */

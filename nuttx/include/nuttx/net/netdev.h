@@ -335,6 +335,8 @@ struct net_driver_s
   char d_ifname[IFNAMSIZ];
 #endif
 
+  rmutex_t d_lock;
+
   /* Drivers interface flags.  See IFF_* definitions in include/net/if.h */
 
   uint32_t d_flags;
@@ -409,6 +411,10 @@ struct net_driver_s
 
   net_ipv6addr_t d_ipv6draddr;  /* Default router IPv6 address */
 #endif /* CONFIG_NET_IPv6 */
+  uint32_t d_polltype;          /* The collection of protocols that need to
+                                 * be processed in devif_poll
+                                 */
+
   /* This is a new design that uses d_iob as packets input and output
    * buffer which used by some NICs such as celluler net driver. Case for
    * data input, note that d_iob maybe a linked chain only when using
@@ -427,7 +433,11 @@ struct net_driver_s
   /* Remember the outgoing fragments waiting to be sent */
 
 #ifdef CONFIG_NET_IPFRAG
-  FAR struct iob_queue_s d_fragout;
+  struct iob_queue_s d_fragout;
+#endif
+
+#ifdef CONFIG_NET_ARP_SEND_QUEUE
+  struct iob_queue_s d_arpout;
 #endif
 
   /* The d_buf array is used to hold incoming and outgoing packets. The
@@ -1160,10 +1170,10 @@ void netdev_iob_prepare_dynamic(FAR struct net_driver_s *dev, uint16_t size);
 #endif
 
 /****************************************************************************
- * Name: netdev_iob_replace
+ * Name: netdev_iob_replace / netdev_iob_replace_l2
  *
  * Description:
- *   Replace buffer resources for a given NIC
+ *   Replace IOB for a given NIC, used by net stack (l3-4) / net driver (l2).
  *
  * Assumptions:
  *   The caller has locked the network and new iob is prepared with
@@ -1172,6 +1182,8 @@ void netdev_iob_prepare_dynamic(FAR struct net_driver_s *dev, uint16_t size);
  ****************************************************************************/
 
 void netdev_iob_replace(FAR struct net_driver_s *dev, FAR struct iob_s *iob);
+void netdev_iob_replace_l2(FAR struct net_driver_s *dev,
+                           FAR struct iob_s *iob);
 
 /****************************************************************************
  * Name: netdev_iob_clear

@@ -122,6 +122,7 @@ config ARCH_CHIP_BCM2711
 	select ARCH_HAVE_MULTICPU
 	select ARCH_USE_MMU # Required for up_testset
 	select ARMV8A_HAVE_GICv2
+	select ARCH_HAVE_SDIO
 	---help---
 		Broadcom BCM2711 quad-core ARM Cortex A72
 
@@ -331,6 +332,7 @@ config ARCH_CORTEX_R82
 	bool
 	default n
 	select ARCH_ARMV8R
+	select ARCH_HAVE_TRUSTZONE
 	select ARCH_DCACHE
 	select ARCH_ICACHE
 	select ARCH_HAVE_MPU

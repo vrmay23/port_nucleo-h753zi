@@ -1,0 +1,7 @@
+##############################################################################
+# apps/examples/bev_cluster/Make.defs
+##############################################################################
+
+ifneq ($(CONFIG_EXAMPLES_BEV_CLUSTER),)
+CONFIGURED_APPS += $(APPDIR)/examples/bev_cluster
+endif

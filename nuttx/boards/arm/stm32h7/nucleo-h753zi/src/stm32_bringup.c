@@ -58,7 +58,7 @@
 #endif
 
 #ifdef CONFIG_STM32H7_SPI
-#  include "stm32_spi.h" 
+#  include "stm32_spi.h"
 #endif
 
 /* Display includes */
@@ -128,8 +128,6 @@
 #  include "drivers/driver_middleware/stm32_romfs.h"
 #endif
 
-
-
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -160,11 +158,6 @@ static int nucleo_adc_initialize(void);
   static int nucleo_capture_initialize(void);
 #endif
 
-
-/* Initialization functions organized by name length (longest to shortest) */
-
-static int nucleo_automotive_initialize(void);
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -192,20 +185,27 @@ static int nucleo_led_initialize(void)
   ret = userled_lower_initialize("/dev/userleds");
   if (ret < 0)
     {
-      syslog(LOG_ERR, "[ERROR: BRINGUP] - userled_lower_initialize() failed: %d\n", ret);
+      syslog(LOG_ERR,
+             "[ERROR: BRINGUP] - userled_lower_initialize() "
+             "failed: %d\n", ret);
     }
   else
     {
-      syslog(LOG_INFO, "[INFO: BRINGUP] - User LEDs initialized at /dev/userleds\n");
+      syslog(LOG_INFO,
+             "[INFO: BRINGUP] - User LEDs initialized at "
+             "/dev/userleds\n");
     }
 
 #elif defined(CONFIG_NUCLEO_H753ZI_LEDS_AUTO)
 
-  syslog(LOG_INFO, "[INFO: BRINGUP] - Auto LEDs enabled for system status indication\n");
+    syslog(LOG_INFO,
+          "[INFO: BRINGUP] - Auto LEDs enabled for system status "
+          "indication\n");
 
 #elif defined(CONFIG_NUCLEO_H753ZI_LEDS_DISABLED)
 
-  syslog(LOG_INFO, "[INFO: BRINGUP] - LEDs disabled by configuration\n");
+     syslog(LOG_INFO,
+            "[INFO: BRINGUP] - LEDs disabled by configuration\n");
 
 #endif
 
@@ -243,7 +243,8 @@ static int nucleo_filesystem_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "PROCFS mounted at %s\n", STM32_PROCFS_MOUNTPOINT);
+      syslog(LOG_INFO,
+             "PROCFS mounted at %s\n", STM32_PROCFS_MOUNTPOINT);
     }
 
 #endif /* CONFIG_FS_PROCFS */
@@ -254,7 +255,8 @@ static int nucleo_filesystem_initialize(void)
   if (local_ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to mount ROMFS at %s: %d\n",
-             CONFIG_STM32_ROMFS_MOUNTPOINT, local_ret);
+          CONFIG_STM32_ROMFS_MOUNTPOINT, local_ret);
+
       if (ret == OK)
         {
           ret = local_ret;
@@ -262,7 +264,8 @@ static int nucleo_filesystem_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "ROMFS mounted at %s\n", CONFIG_STM32_ROMFS_MOUNTPOINT);
+      syslog(LOG_INFO,
+             "ROMFS mounted at %s\n", CONFIG_STM32_ROMFS_MOUNTPOINT);
     }
 #endif
 
@@ -288,23 +291,27 @@ static int nucleo_rtc_initialize(void)
   int ret = OK;
 
 #ifdef HAVE_RTC_DRIVER
+
   struct rtc_lowerhalf_s *lower;
 
   lower = stm32_rtc_lowerhalf();
   if (!lower)
     {
-      syslog(LOG_ERR, "ERROR: Failed to instantiate RTC lower-half driver\n");
+      syslog(LOG_ERR,
+             "ERROR: Failed to instantiate RTC lower-half driver\n");
       return -ENOMEM;
     }
 
   ret = rtc_initialize(0, lower);
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to bind/register RTC driver: %d\n", ret);
+      syslog(LOG_ERR,
+             "ERROR: Failed to bind/register RTC driver: %d\n", ret);
     }
   else
     {
-      syslog(LOG_INFO, "RTC driver registered as /dev/rtc0\n");
+      syslog(LOG_INFO,
+             "RTC driver registered as /dev/rtc0\n");
     }
 #endif
 
@@ -330,14 +337,17 @@ static int nucleo_gpio_initialize(void)
   int ret = OK;
 
 #ifdef CONFIG_DEV_GPIO
+
   ret = stm32_gpio_initialize();
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to initialize GPIO driver: %d\n", ret);
+      syslog(LOG_ERR,
+             "ERROR: Failed to initialize GPIO driver: %d\n", ret);
     }
   else
     {
-      syslog(LOG_INFO, "GPIO driver initialized\n");
+     syslog(LOG_INFO,
+            "GPIO driver initialized\n");
     }
 #endif
 
@@ -361,17 +371,21 @@ static int nucleo_gpio_initialize(void)
 static int nucleo_automotive_initialize(void)
 {
   int ret = OK;
-  
+
 #ifdef CONFIG_STM32H7_FDCAN1
-  syslog(LOG_INFO, "[FDCAN1] Starting initialization...\n");
-  
+
+  /* syslog(LOG_INFO,
+   * "[FDCAN1] Starting initialization...\n");
+   */
+
   /* Initialize FDCAN1 driver FIRST */
-  
+
   int local_ret = stm32_fdcansockinitialize(0);
   if (local_ret < 0)
     {
-      syslog(LOG_ERR, "[FDCAN1] ERROR: Failed to initialize: %d\n", 
-             local_ret);
+      syslog(LOG_ERR,
+             "[FDCAN1] ERROR: Failed to initialize: %d\n", local_ret);
+
       if (ret == OK)
         {
           ret = local_ret;
@@ -379,77 +393,92 @@ static int nucleo_automotive_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "[FDCAN1] Driver initialized as /dev/can0\n");
-      
-      /* NOW force GPIO configuration AFTER driver init */
-      
-      syslog(LOG_INFO, "[FDCAN1] Forcing GPIO reconfiguration...\n");
-      
-      stm32_configgpio(GPIO_CAN1_RX);  /* PB8 */
-      stm32_configgpio(GPIO_CAN1_TX);  /* PB9 */
-      
-      syslog(LOG_INFO, "[FDCAN1] GPIO_CAN1_RX: 0x%08lX\n", 
-             (unsigned long)GPIO_CAN1_RX);
-      syslog(LOG_INFO, "[FDCAN1] GPIO_CAN1_TX: 0x%08lX\n", 
-             (unsigned long)GPIO_CAN1_TX);
-      
-      /* Verify GPIO and RCC configuration */
-      
-      uint32_t rcc_apb1henr = getreg32(STM32_RCC_APB1HENR);
-      uint32_t rcc_d2ccip1r = getreg32(STM32_RCC_D2CCIP1R);
-      uint32_t gpiob_moder = getreg32(STM32_GPIOB_MODER);
-      uint32_t gpiob_afrh = getreg32(STM32_GPIOB_AFRH);
-      uint32_t gpiob_otyper = getreg32(STM32_GPIOB_OTYPER);
-      
-      syslog(LOG_INFO, "[FDCAN1] POST-CONFIG:\n");
-      syslog(LOG_INFO, "[FDCAN1]   RCC_APB1HENR: 0x%08lX (bit 8=%d)\n",
-             (unsigned long)rcc_apb1henr,
-             (int)((rcc_apb1henr >> 8) & 1));
-      syslog(LOG_INFO, "[FDCAN1]   RCC_D2CCIP1R: 0x%08lX (clk_sel=%lu)\n",
-             (unsigned long)rcc_d2ccip1r,
-             (unsigned long)((rcc_d2ccip1r >> 28) & 0x3));
-      syslog(LOG_INFO, "[FDCAN1]   GPIOB_MODER: 0x%08lX "
-             "(PB8[17:16]=%lu, PB9[19:18]=%lu)\n",
-             (unsigned long)gpiob_moder,
-             (unsigned long)((gpiob_moder >> 16) & 0x3),
-             (unsigned long)((gpiob_moder >> 18) & 0x3));
-      syslog(LOG_INFO, "[FDCAN1]   GPIOB_AFRH: 0x%08lX "
-             "(PB8[3:0]=%lu, PB9[7:4]=%lu)\n",
-             (unsigned long)gpiob_afrh,
-             (unsigned long)(gpiob_afrh & 0xF),
-             (unsigned long)((gpiob_afrh >> 4) & 0xF));
-      syslog(LOG_INFO, "[FDCAN1]   GPIOB_OTYPER: 0x%08lX "
-             "(PB8[8]=%d, PB9[9]=%d)\n",
-             (unsigned long)gpiob_otyper,
-             (int)((gpiob_otyper >> 8) & 1),
-             (int)((gpiob_otyper >> 9) & 1));
-      
-      /* Expected values:
+      syslog(LOG_INFO,
+             "[FDCAN1] Driver initialized as /dev/can0\n");
+
+      /* DEBUG 
+       *
+       * NOW force GPIO configuration AFTER driver init
+       * syslog(LOG_INFO,
+       * "[FDCAN1] Forcing GPIO reconfiguration...\n");
+       *
+       * syslog(LOG_INFO,
+       * "[FDCAN1] GPIO_CAN1_RX: 0x%08lx\n",
+       *      (unsigned long)GPIO_CAN1_RX);
+       *
+       * syslog(LOG_INFO,
+       *  "[FDCAN1] GPIO_CAN1_TX: 0x%08lx\n",
+       *      (unsigned long)GPIO_CAN1_TX);
+       *
+       *
+       * Verify GPIO and RCC configuration     
+       * syslog(LOG_INFO,
+       * 
+       *  uint32_t rcc_apb1henr = getreg32(STM32_RCC_APB1HENR);
+       *  uint32_t rcc_d2ccip1r = getreg32(STM32_RCC_D2CCIP1R);
+       *  
+       *  uint32_t gpiob_otyper = getreg32(STM32_GPIOB_OTYPER);
+       *   
+       * "[FDCAN1] POST-CONFIG:\n");
+       * syslog(LOG_INFO,
+       * "[FDCAN1]   RCC_APB1HENR: 0x%08lx (bit 8=%d)\n",
+       *      (unsigned long)rcc_apb1henr,
+       *      (int)((rcc_apb1henr >> 8) & 1));
+       * syslog(LOG_INFO, "[FDCAN1]   RCC_D2CCIP1R: 0x%08lx (clk_sel=%lu)\n",
+       *      (unsigned long)rcc_d2ccip1r,
+       *      (unsigned long)((rcc_d2ccip1r >> 28) & 0x3));
+       * syslog(LOG_INFO, "[FDCAN1]   GPIOB_MODER: 0x%08lx "
+       *      "(PB8[17:16]=%lu, PB9[19:18]=%lu)\n",
+       *      (unsigned long)gpiob_moder,
+       *      (unsigned long)((gpiob_moder >> 16) & 0x3),
+       *      (unsigned long)((gpiob_moder >> 18) & 0x3));
+       * syslog(LOG_INFO, "[FDCAN1]   GPIOB_AFRH: 0x%08lx "
+       *      "(PB8[3:0]=%lu, PB9[7:4]=%lu)\n",
+       *      (unsigned long)gpiob_afrh,
+       *      (unsigned long)(gpiob_afrh & 0xf),
+       *      (unsigned long)((gpiob_afrh >> 4) & 0xf));
+       * syslog(LOG_INFO, "[FDCAN1]   GPIOB_OTYPER: 0x%08lx "
+       *      "(PB8[8]=%d, PB9[9]=%d)\n",
+       *      (unsigned long)gpiob_otyper,
+       *      (int)((gpiob_otyper >> 8) & 1),
+       *      (int)((gpiob_otyper >> 9) & 1));
+       *
+       *
+       * Expected values:
        * MODER: PB8=10b (AF), PB9=10b (AF)
        * AFRH: PB8=9 (AF9), PB9=9 (AF9)
        * OTYPER: PB8=0 (push-pull), PB9=0 (push-pull)
        */
+       
+      stm32_configgpio(GPIO_CAN1_RX);  /* PB8 */
+      stm32_configgpio(GPIO_CAN1_TX);  /* PB9 */
+
+      uint32_t gpiob_moder = getreg32(STM32_GPIOB_MODER);
+      uint32_t gpiob_afrh = getreg32(STM32_GPIOB_AFRH);
       
       if (((gpiob_moder >> 16) & 0x3) != 0x2 ||
           ((gpiob_moder >> 18) & 0x3) != 0x2)
         {
-          syslog(LOG_ERR, "[FDCAN1] ERROR: GPIO not in AF mode!\n");
+          syslog(LOG_ERR,
+                 "[FDCAN1] ERROR: GPIO not in AF mode!\n");
         }
-      
-      if ((gpiob_afrh & 0xF) != 9 || ((gpiob_afrh >> 4) & 0xF) != 9)
+
+      if ((gpiob_afrh & 0xf) != 9 || ((gpiob_afrh >> 4) & 0xf) != 9)
         {
-          syslog(LOG_ERR, "[FDCAN1] ERROR: GPIO not set to AF9!\n");
+          syslog(LOG_ERR,
+                 "[FDCAN1] ERROR: GPIO not set to AF9!\n");
         }
     }
 #endif
 
 #ifdef CONFIG_STM32H7_FDCAN2
+
   /* Initialize FDCAN2 and register as /dev/can1 */
-  
+
   int local_ret = stm32_fdcansockinitialize(1);
   if (local_ret < 0)
     {
-      syslog(LOG_ERR, "[FDCAN2] ERROR: Failed to initialize: %d\n", 
+      syslog(LOG_ERR, "[FDCAN2] ERROR: Failed to initialize: %d\n",
              local_ret);
       if (ret == OK)
         {
@@ -458,12 +487,13 @@ static int nucleo_automotive_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "[FDCAN2] Initialized as /dev/can1\n");
+      syslog(LOG_INFO,
+             "[FDCAN2] Initialized as /dev/can1\n");
     }
 #endif
 
   /* Future: LIN, FlexRay initialization here */
-  
+
   return ret;
 }
 
@@ -471,13 +501,13 @@ static int nucleo_automotive_initialize(void)
  * Name: nucleo_communication_initialize
  *
  * Description:
- * Initialize general-purpose communication bus drivers (SPI, I2C)
- * Priority: HIGH (required by sensors and other peripherals)
+ *   Initialize general-purpose communication bus drivers (SPI, I2C)
+ *   Priority: HIGH (required by sensors and other peripherals)
  *
  * Dependencies: GPIO
  *
  * Returned Value:
- * Zero (OK) on success; a negated errno value on failure.
+ *   Zero (OK) on success; a negated errno value on failure.
  *
  ****************************************************************************/
 
@@ -486,11 +516,14 @@ static int nucleo_communication_initialize(void)
   int ret = OK;
   int local_ret;
 
+  UNUSED(local_ret);
+
 #ifdef CONFIG_STM32H7_SPI
   local_ret = stm32_spi_initialize();
   if (local_ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: stm32_spi_initialize failed: %d\n", local_ret);
+      syslog(LOG_ERR, "ERROR: stm32_spi_initialize failed: %d\n",
+             local_ret);
       if (ret == OK)
         {
           ret = local_ret;
@@ -506,30 +539,37 @@ static int nucleo_communication_initialize(void)
   local_ret = stm32_spidev_register_all();
   if (local_ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: stm32_spidev_register_all failed: %d\n", 
+      syslog(LOG_ERR, "ERROR: stm32_spidev_register_all failed: %d\n",
              local_ret);
     }
   else
     {
-      syslog(LOG_INFO, "SPI devices registered\n");
-    }
-#endif
-
-#if defined(CONFIG_I2C) && defined(CONFIG_SYSTEM_I2CTOOL)
-  local_ret = nucleo_i2c_tools_initialize();
-  if (local_ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: I2C tools initialization failed: %d\n", 
-             local_ret);
+      syslog(LOG_INFO, "SPI character drivers registered\n");
     }
 #endif
 
 #ifdef CONFIG_STM32H7_I2C
-  ret = stm32_i2c_initialize();
-  if (ret < 0)
+  local_ret = stm32_i2c_initialize();
+  if (local_ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: I2C initialization failed: %d\n", ret);
-      /* Continue anyway - need to  implemente ELSE */
+      syslog(LOG_ERR, "ERROR: I2C bus initialization failed: %d\n",
+             local_ret);
+      if (ret == OK)
+        {
+          ret = local_ret;
+        }
+    }
+  else
+    {
+      syslog(LOG_INFO, "I2C buses initialized\n");
+#if defined(CONFIG_I2C) && defined(CONFIG_SYSTEM_I2CTOOL)
+      local_ret = nucleo_i2c_tools_initialize();
+      if (local_ret < 0)
+        {
+          syslog(LOG_ERR, "ERROR: I2C tools registration failed: %d\n",
+                 local_ret);
+        }
+#endif
     }
 #endif
 
@@ -555,6 +595,7 @@ static int nucleo_input_initialize(void)
   int ret = OK;
 
 #ifdef CONFIG_INPUT_BUTTONS
+
   ret = btn_lower_initialize("/dev/buttons");
   if (ret < 0)
     {
@@ -562,7 +603,8 @@ static int nucleo_input_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "Buttons driver registered as /dev/buttons\n");
+      syslog(LOG_INFO,
+             "Buttons driver registered as /dev/buttons\n");
     }
 #endif
 
@@ -588,10 +630,12 @@ static int nucleo_usb_initialize(void)
   int ret = OK;
 
 #ifdef HAVE_USBHOST
+
   int local_ret = stm32_usbhost_initialize();
   if (local_ret != OK)
     {
-      syslog(LOG_ERR, "ERROR: Failed to initialize USB host: %d\n", local_ret);
+      syslog(LOG_ERR,
+             "ERROR: Failed to initialize USB host: %d\n", local_ret);
       if (ret == OK)
         {
           ret = local_ret;
@@ -599,15 +643,18 @@ static int nucleo_usb_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "USB host initialized\n");
+      syslog(LOG_INFO,
+             "USB host initialized\n");
     }
 #endif
 
 #ifdef HAVE_USBMONITOR
+
   int local_ret = usbmonitor_start();
   if (local_ret != OK)
     {
-      syslog(LOG_ERR, "ERROR: Failed to start USB monitor: %d\n", local_ret);
+      syslog(LOG_ERR, "ERROR: Failed to start USB monitor: %d\n",
+             local_ret);
       if (ret == OK)
         {
           ret = local_ret;
@@ -615,13 +662,16 @@ static int nucleo_usb_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "USB monitor started\n");
+      syslog(LOG_INFO,
+             "USB monitor started\n");
     }
 #endif
 
 #if defined(CONFIG_CDCACM) && !defined(CONFIG_CDCACM_CONSOLE) && \
     !defined(CONFIG_CDCACM_COMPOSITE)
+
   syslog(LOG_INFO, "Initializing CDC/ACM device\n");
+
   int local_ret = cdcacm_initialize(0, NULL);
   if (local_ret < 0)
     {
@@ -633,11 +683,13 @@ static int nucleo_usb_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "CDC/ACM device initialized\n");
+      syslog(LOG_INFO,
+             "CDC/ACM device initialized\n");
     }
 #endif
 
 #if defined(CONFIG_RNDIS) && !defined(CONFIG_RNDIS_COMPOSITE)
+
   uint8_t mac[6];
   mac[0] = 0xa0;
   mac[1] = (CONFIG_NETINIT_MACADDR_2 >> (8 * 0)) & 0xff;
@@ -649,7 +701,8 @@ static int nucleo_usb_initialize(void)
   int local_ret = usbdev_rndis_initialize(mac);
   if (local_ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: RNDIS initialization failed: %d\n", local_ret);
+      syslog(LOG_ERR, "ERROR: RNDIS initialization failed: %d\n",
+             local_ret);
       if (ret == OK)
         {
           ret = local_ret;
@@ -657,7 +710,8 @@ static int nucleo_usb_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "RNDIS USB device initialized\n");
+      syslog(LOG_INFO,
+             "RNDIS USB device initialized\n");
     }
 #endif
 
@@ -683,6 +737,7 @@ static int nucleo_adc_initialize(void)
   int ret = OK;
 
 #ifdef CONFIG_ADC
+
   ret = stm32_adc_setup();
   if (ret < 0)
     {
@@ -690,7 +745,8 @@ static int nucleo_adc_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "ADC driver initialized\n");
+      syslog(LOG_INFO,
+             "ADC driver initialized\n");
     }
 #endif
 
@@ -716,6 +772,7 @@ static int nucleo_sensors_initialize(void)
   int ret = OK;
 
 #ifdef CONFIG_SENSORS_LSM6DSL
+
   int local_ret = stm32_lsm6dsl_initialize("/dev/lsm6dsl0");
   if (local_ret < 0)
     {
@@ -728,11 +785,13 @@ static int nucleo_sensors_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "LSM6DSL sensor initialized as /dev/lsm6dsl0\n");
+      syslog(LOG_INFO,
+             "LSM6DSL sensor initialized as /dev/lsm6dsl0\n");
     }
 #endif
 
 #ifdef CONFIG_SENSORS_LSM9DS1
+
   int local_ret = stm32_lsm9ds1_initialize();
   if (local_ret < 0)
     {
@@ -745,11 +804,13 @@ static int nucleo_sensors_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "LSM9DS1 sensor initialized\n");
+      syslog(LOG_INFO,
+             "LSM9DS1 sensor initialized\n");
     }
 #endif
 
 #ifdef CONFIG_SENSORS_LSM303AGR
+
   int local_ret = stm32_lsm303agr_initialize("/dev/lsm303mag0");
   if (local_ret < 0)
     {
@@ -762,17 +823,19 @@ static int nucleo_sensors_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "LSM303AGR magnetometer initialized as /dev/lsm303mag0\n");
+      syslog(LOG_INFO,
+             "LSM303AGR magnetometer initialized as /dev/lsm303mag0\n");
     }
 #endif
 
 #ifdef CONFIG_NUCLEO_H753ZI_MFRC522_ENABLE
+
   int local_ret = stm32_mfrc522initialize(MFRC522_DEVPATH);
   if (local_ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: stm32_mfrc522initialize() failed: %d\n", 
+      syslog(LOG_ERR, "ERROR: stm32_mfrc522initialize() failed: %d\n",
              local_ret);
-      
+
       if (ret == OK)
         {
           ret = local_ret;
@@ -780,7 +843,8 @@ static int nucleo_sensors_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, "MFRC522 RFID reader initialized successfully at %s\n", 
+      syslog(LOG_INFO,
+             "MFRC522 RFID reader initialized successfully at %s\n",
              MFRC522_DEVPATH);
     }
 #endif
@@ -806,7 +870,9 @@ static int nucleo_display_initialize(void)
 {
   int ret = OK;
 
-#if defined(CONFIG_LCD_SSD1306) && defined(CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE)
+#if defined(CONFIG_LCD_SSD1306) && \
+    defined(CONFIG_NUCLEO_H753ZI_SSD1306_ENABLE)
+
   ret = board_lcd_initialize();
   if (ret == OK)
     {
@@ -814,16 +880,17 @@ static int nucleo_display_initialize(void)
       if (lcd != NULL)
         {
 #ifdef CONFIG_LCD_DEV
+
           ret = lcddev_register(NUCLEO_SSD1306_DEVNO);
           if (ret < 0)
             {
-              syslog(LOG_ERR, 
+              syslog(LOG_ERR,
                      "ERROR: lcddev_register(%d) failed: %d\n",
                      NUCLEO_SSD1306_DEVNO, ret);
             }
           else
             {
-              syslog(LOG_INFO, 
+              syslog(LOG_INFO,
                      "SSD1306 OLED registered at /dev/lcd%d\n",
                      NUCLEO_SSD1306_DEVNO);
             }
@@ -832,13 +899,15 @@ static int nucleo_display_initialize(void)
     }
 #endif
 
-#if defined(CONFIG_LCD_ST7796) && defined(CONFIG_NUCLEO_H753ZI_ST7796_ENABLE)
-  syslog(LOG_INFO, "Initializing ST7796 TFT display...\n");
-  
+#if defined(CONFIG_LCD_ST7796) && \
+    defined(CONFIG_NUCLEO_H753ZI_ST7796_ENABLE)
+
+  /* syslog(LOG_INFO, "Initializing ST7796 TFT display...\n"); */
+
   int local_ret = stm32_st7796initialize(0);
   if (local_ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: stm32_st7796initialize() failed: %d\n", 
+      syslog(LOG_ERR, "ERROR: stm32_st7796initialize() failed: %d\n",
              local_ret);
       if (ret == OK)
         {
@@ -847,27 +916,34 @@ static int nucleo_display_initialize(void)
     }
   else
     {
-      syslog(LOG_INFO, 
-             "ST7796 TFT display initialized successfully at %s\n",
-             ST7796_FB_PATH);
-      
+      /* syslog(LOG_INFO,
+       * "ST7796 TFT display initialized successfully at %s\n",
+       *  ST7796_FB_PATH);
+       */
+
       /* CRITICAL: Flush splashscreen from RAM to SPI display */
+
       local_ret = stm32_st7796_flush_fb();
       if (local_ret < 0)
         {
-          syslog(LOG_ERR, "ERROR: Failed to flush splashscreen: %d\n", 
+          syslog(LOG_ERR, "ERROR: Failed to flush splashscreen: %d\n",
                  local_ret);
         }
       else
         {
-          syslog(LOG_INFO, "ST7796: Splashscreen flushed to display\n");
+          /* syslog(LOG_INFO, "
+           *        ST7796: Splashscreen flushed to display\n");
+           */
         }
-      
-      /* Enable backlight after flush */
-      stm32_st7796_backlight(true);
-      syslog(LOG_INFO, "ST7796 backlight enabled\n");
-    }
 
+      /* Enable backlight after flush */
+
+      stm32_st7796_backlight(true);
+
+      /* syslog(LOG_INFO,
+       *        "ST7796 backlight enabled\n");
+       */
+    }
 #endif
 
   return ret;
@@ -892,6 +968,7 @@ static int nucleo_connectivity_initialize(void)
   int ret = OK;
 
 #ifdef CONFIG_PCA9635PW
+
   ret = stm32_pca9635_initialize();
   if (ret < 0)
     {
@@ -904,10 +981,11 @@ static int nucleo_connectivity_initialize(void)
 #endif
 
 #ifdef CONFIG_WL_NRF24L01
+
   ret = stm32_wlinitialize();
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to initialize wireless driver: %d\n", 
+      syslog(LOG_ERR, "ERROR: Failed to initialize wireless driver: %d\n",
              ret);
     }
   else
@@ -938,6 +1016,7 @@ static int nucleo_storage_initialize(void)
   int ret = OK;
 
 #ifdef CONFIG_MMCSD_SPI
+
   ret = stm32_mmcsd_initialize(CONFIG_NSH_MMCSDMINOR);
   if (ret < 0)
     {
@@ -953,6 +1032,7 @@ static int nucleo_storage_initialize(void)
 
 #ifdef CONFIG_MTD
 #ifdef HAVE_PROGMEM_CHARDEV
+
   ret = stm32_progmem_init();
   if (ret < 0)
     {
@@ -987,6 +1067,7 @@ static int nucleo_timers_initialize(void)
   int ret = OK;
 
 #ifdef CONFIG_PWM
+
   int local_ret = stm32_pwm_setup();
   if (local_ret < 0)
     {
@@ -1003,10 +1084,13 @@ static int nucleo_timers_initialize(void)
 #endif
 
 #ifdef CONFIG_CAPTURE
+
   int local_ret = nucleo_capture_initialize();
   if (local_ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: nucleo_capture_initialize() failed: %d\n", local_ret);
+      syslog(LOG_ERR,
+             "ERROR: nucleo_capture_initialize() failed: %d\n",
+             local_ret);
       if (ret == OK)
         {
           ret = local_ret;
@@ -1040,6 +1124,7 @@ static int nucleo_watchdog_initialize(void)
   int ret = OK;
 
 #ifdef CONFIG_STM32H7_IWDG
+
   ret = stm32_iwdginitialize("/dev/watchdog0", STM32_LSI_FREQUENCY);
   if (ret < 0)
     {
@@ -1058,10 +1143,13 @@ static int nucleo_watchdog_initialize(void)
  * Name: nucleo_i2c_tools_initialize
  *
  * Description:
- * Initialize I2C tools for debugging and development
+ * Initialize I2C tools for debugging and development. This registers the
+ * I2C buses as character drivers (e.g., /dev/i2c1) to allow tools like
+ * i2c-tools to interact with the bus from user space.
+ *
  * Priority: LOW (development/debugging only)
  *
- * Dependencies: I2C
+ * Dependencies: I2C hardware must be initialized first.
  *
  * Returned Value:
  * Zero (OK) on success; a negated errno value on failure.
@@ -1069,48 +1157,78 @@ static int nucleo_watchdog_initialize(void)
  ****************************************************************************/
 
 #if defined(CONFIG_I2C) && defined(CONFIG_SYSTEM_I2CTOOL)
-static void stm32_i2c_register(int bus)
+static int stm32_i2c_register(int bus)
 {
   struct i2c_master_s *i2c;
   int ret;
+
+  /* Get the I2C bus instance */
 
   i2c = stm32_i2cbus_initialize(bus);
   if (i2c == NULL)
     {
       syslog(LOG_ERR, "ERROR: Failed to get I2C%d interface\n", bus);
+      return -ENODEV;
     }
-  else
+
+  /* Register the bus as a character driver (/dev/i2cN) */
+
+  ret = i2c_register(i2c, bus);
+  if (ret < 0)
     {
-      ret = i2c_register(i2c, bus);
-      if (ret < 0)
-        {
-          syslog(LOG_ERR, "ERROR: Failed to register I2C%d driver: %d\n",
-                 bus, ret);
-          stm32_i2cbus_uninitialize(i2c);
-        }
-      else
-        {
-          syslog(LOG_INFO, "I2C%d registered for i2c tools\n", bus);
-        }
+      syslog(LOG_ERR, "ERROR: Failed to register I2C%d driver: %d\n",
+             bus, ret);
+
+      /* Only uninitialize if registration fails and no other
+       * peripheral is using this bus instance.
+       */
+
+      stm32_i2cbus_uninitialize(i2c);
+      return ret;
     }
+
+  syslog(LOG_INFO, "I2C%d registered for tools at /dev/i2c%d\n", bus, bus);
+  return OK;
 }
 
 static int nucleo_i2c_tools_initialize(void)
 {
+  int ret = OK;
+  int local_ret;
+
 #ifdef CONFIG_STM32H7_I2C1
-  stm32_i2c_register(1);
-#endif
-#ifdef CONFIG_STM32H7_I2C2
-  stm32_i2c_register(2);
-#endif
-#ifdef CONFIG_STM32H7_I2C3
-  stm32_i2c_register(3);
-#endif
-#ifdef CONFIG_STM32H7_I2C4
-  stm32_i2c_register(4);
+  local_ret = stm32_i2c_register(1);
+  if (local_ret < 0)
+    {
+      ret = local_ret;
+    }
 #endif
 
-  return OK;
+#ifdef CONFIG_STM32H7_I2C2
+  local_ret = stm32_i2c_register(2);
+  if (local_ret < 0 && ret == OK)
+    {
+      ret = local_ret;
+    }
+#endif
+
+#ifdef CONFIG_STM32H7_I2C3
+  local_ret = stm32_i2c_register(3);
+  if (local_ret < 0 && ret == OK)
+    {
+      ret = local_ret;
+    }
+#endif
+
+#ifdef CONFIG_STM32H7_I2C4
+  local_ret = stm32_i2c_register(4);
+  if (local_ret < 0 && ret == OK)
+    {
+      ret = local_ret;
+    }
+#endif
+
+  return ret;
 }
 #endif
 
@@ -1132,6 +1250,7 @@ static int nucleo_i2c_tools_initialize(void)
 static int nucleo_capture_initialize(void)
 {
   int ret;
+
   struct cap_lowerhalf_s *lower[] =
     {
 #if defined(CONFIG_STM32H7_TIM1_CAP)
@@ -1186,11 +1305,13 @@ static int nucleo_capture_initialize(void)
     }
   else if (ret == EEXIST)
     {
-      syslog(LOG_ERR, "ERROR: cap_register_multiple inode already exists\n");
+      syslog(LOG_ERR,
+             "ERROR: cap_register_multiple inode already exists\n");
     }
   else if (ret == ENOMEM)
     {
-      syslog(LOG_ERR, "ERROR: cap_register_multiple not enough memory\n");
+      syslog(LOG_ERR,
+             "ERROR: cap_register_multiple not enough memory\n");
     }
   else if (ret < 0)
     {
@@ -1209,11 +1330,12 @@ static int nucleo_capture_initialize(void)
  * Name: stm32_bringup
  *
  * Description:
- * Perform architecture-specific initialization with dependency-aware ordering
+ * Perform architecture-specific initialization with dependency-aware
+ * ordering
  *
  * This function initializes all board-specific drivers and subsystems
  * in a controlled manner, ensuring that dependencies between subsystems
- * are respected and failures in one subsystem do not prevent 
+ * are respected and failures in one subsystem do not prevent
  * initialization of others.
  *
  * INITIALIZATION PHASES WITH DEPENDENCY MANAGEMENT:
@@ -1246,13 +1368,16 @@ int stm32_bringup(void)
   int ret = OK;
   int subsys_ret;
 
-  syslog(LOG_INFO, 
-         "\n[INFO: BRINGUP] Nucleo-H753ZI initialization...\n");
+  /* syslog(LOG_INFO,
+   *       "\n[INFO: BRINGUP] Nucleo-H753ZI initialization...\n");
+   */
 
   /* PHASE 1: BASIC SYSTEM & VISUAL FEEDBACK */
 
-  syslog(LOG_INFO, 
-         "[INFO: BRINGUP] Phase 1: Initializing basic system & visual feedback\n");
+  /* syslog(LOG_INFO,
+   *        "[INFO: BRINGUP] Phase 1: Initializing basic system & "
+   *          "visual feedback\n");
+   */
 
   subsys_ret = nucleo_led_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -1274,8 +1399,10 @@ int stm32_bringup(void)
 
   /* PHASE 2: HARDWARE INTERFACES & COMMUNICATION PROTOCOLS */
 
-  syslog(LOG_INFO,
-         "[INFO: BRINGUP] Phase 2: Initializing hardware interfaces & communication protocols\n");
+  /* syslog(LOG_INFO,
+   *       "[INFO: BRINGUP] Phase 2: Initializing hardware interfaces & "
+   *       "communication protocols\n");
+   */
 
   subsys_ret = nucleo_gpio_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -1297,8 +1424,10 @@ int stm32_bringup(void)
 
   /* PHASE 3: USER INTERFACE & USB SERVICES */
 
-  syslog(LOG_INFO,
-         "[INFO: BRINGUP] Phase 3: Initializing user interface & USB services\n");
+  /* syslog(LOG_INFO,
+   *       "[INFO: BRINGUP] Phase 3: Initializing user interface & "
+   *       "USB services\n");
+   */
 
   subsys_ret = nucleo_input_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -1314,8 +1443,10 @@ int stm32_bringup(void)
 
   /* PHASE 4: ANALOG MEASUREMENT (ADC) */
 
-  syslog(LOG_INFO,
-         "[INFO: BRINGUP] Phase 4: Initializing analog measurement (ADC)\n");
+  /* syslog(LOG_INFO,
+   *      "[INFO: BRINGUP] Phase 4: Initializing analog measurement "
+   *       "(ADC)\n");
+   */
 
   subsys_ret = nucleo_adc_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -1325,8 +1456,9 @@ int stm32_bringup(void)
 
   /* PHASE 5: DISPLAY DRIVERS (LCD, OLED, TFT) */
 
-  syslog(LOG_INFO,
-         "[INFO: BRINGUP] Phase 5: Initializing display drivers\n");
+  /* syslog(LOG_INFO,
+   *      "[INFO: BRINGUP] Phase 5: Initializing display drivers\n");
+   */
 
   subsys_ret = nucleo_display_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -1336,8 +1468,10 @@ int stm32_bringup(void)
 
   /* PHASE 6: SENSORS & WIRELESS CONNECTIVITY */
 
-  syslog(LOG_INFO,
-         "[INFO: BRINGUP] Phase 6: Initializing sensors & wireless connectivity\n");
+  /* syslog(LOG_INFO,
+   *     "[INFO: BRINGUP] Phase 6: Initializing sensors & "
+   *        "wireless connectivity\n");
+   */
 
   subsys_ret = nucleo_sensors_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -1353,8 +1487,10 @@ int stm32_bringup(void)
 
   /* PHASE 7: STORAGE DEVICES (SD CARD, FLASH) */
 
-  syslog(LOG_INFO,
-         "[INFO: BRINGUP] Phase 7: Initializing storage devices (SD card, flash)\n");
+  /* syslog(LOG_INFO,
+   *      "[INFO: BRINGUP] Phase 7: Initializing storage devices "
+   *      "(SD card, flash)\n");
+   */
 
   subsys_ret = nucleo_storage_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -1364,8 +1500,10 @@ int stm32_bringup(void)
 
   /* PHASE 8: TIMERS, PWM & SIGNAL PROCESSING */
 
-  syslog(LOG_INFO,
-         "[INFO: BRINGUP] Phase 8: Initializing timers, PWM & signal processing\n");
+  /* syslog(LOG_INFO,
+   *      "[INFO: BRINGUP] Phase 8: Initializing timers, PWM & "
+   *      "signal processing\n");
+   */
 
   subsys_ret = nucleo_timers_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -1375,8 +1513,10 @@ int stm32_bringup(void)
 
   /* PHASE 9: SYSTEM MONITORING (WATCHDOG) */
 
-  syslog(LOG_INFO,
-         "[INFO: BRINGUP] Phase 9: Initializing system monitoring (watchdog)\n");
+  /* syslog(LOG_INFO,
+   *      "[INFO: BRINGUP] Phase 9: Initializing system monitoring "
+   *      "(watchdog)\n");
+   */
 
   subsys_ret = nucleo_watchdog_initialize();
   if (subsys_ret != OK && ret == OK)
@@ -1389,15 +1529,18 @@ int stm32_bringup(void)
   if (ret == OK)
     {
       syslog(LOG_INFO,
-             "[INFO: BRINGUP] Nucleo-H753ZI board initialization completed successfully\n");
+             "[INFO: BRINGUP] Nucleo-H753ZI board initialization "
+             "completed successfully\n");
     }
   else
     {
       syslog(LOG_WARNING,
-             "[WARNING: BRINGUP] Nucleo-H753ZI board initialization completed with errors: %d\n",
+             "[WARNING: BRINGUP] Nucleo-H753ZI board initialization "
+             "completed with errors: %d\n",
              ret);
       syslog(LOG_INFO,
-             "[INFO: BRINGUP] System is functional, but some drivers may be unavailable\n");
+             "[INFO: BRINGUP] System is functional, but some drivers "
+             "may be unavailable\n");
     }
 
   return ret;

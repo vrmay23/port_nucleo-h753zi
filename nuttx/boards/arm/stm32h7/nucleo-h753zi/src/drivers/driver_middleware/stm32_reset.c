@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_reset.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_middleware/stm32_reset.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *

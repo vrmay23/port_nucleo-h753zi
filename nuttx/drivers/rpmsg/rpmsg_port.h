@@ -38,6 +38,14 @@
 #include <nuttx/rpmsg/rpmsg_port.h>
 
 /****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define RPMSG_PORT_DROP_TXQ     0x01
+#define RPMSG_PORT_DROP_RXQ     0x02
+#define RPMSG_PORT_DROP_ALL     0x03
+
+/****************************************************************************
  * Public Types
  ****************************************************************************/
 
@@ -122,6 +130,10 @@ struct rpmsg_port_s
   /* Remote cpu name of this port connected to */
 
   char                              cpuname[RPMSG_NAME_SIZE];
+
+  /* Remote cpu status */
+
+  atomic_t                          signals;
 
   /* Ops need implemented by drivers under port layer */
 
@@ -259,6 +271,12 @@ uint16_t rpmsg_port_queue_nused(FAR struct rpmsg_port_queue_s *queue)
 {
   return atomic_read(&queue->ready.num);
 }
+
+/****************************************************************************
+ * Name: rpmsg_port_drop_packets
+ ****************************************************************************/
+
+void rpmsg_port_drop_packets(FAR struct rpmsg_port_s *rport, uint8_t type);
 
 /****************************************************************************
  * Name: rpmsg_port_initialize

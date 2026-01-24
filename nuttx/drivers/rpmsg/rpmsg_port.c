@@ -51,6 +51,7 @@ static FAR const char *
 rpmsg_port_get_local_cpuname(FAR struct rpmsg_s *rpmsg);
 static FAR const char *rpmsg_port_get_cpuname(FAR struct rpmsg_s *rpmsg);
 static void rpmsg_port_dump(FAR struct rpmsg_s *rpmsg);
+static int rpmsg_port_get_signals(FAR struct rpmsg_s *rpmsg);
 
 /****************************************************************************
  * Private Data
@@ -65,6 +66,7 @@ static const struct rpmsg_ops_s g_rpmsg_port_ops =
   rpmsg_port_dump,
   rpmsg_port_get_local_cpuname,
   rpmsg_port_get_cpuname,
+  rpmsg_port_get_signals,
 };
 
 /****************************************************************************
@@ -565,6 +567,17 @@ static FAR const char *rpmsg_port_get_cpuname(FAR struct rpmsg_s *rpmsg)
 }
 
 /****************************************************************************
+ * Name: rpmsg_port_get_signals
+ ****************************************************************************/
+
+static int rpmsg_port_get_signals(FAR struct rpmsg_s *rpmsg)
+{
+  FAR struct rpmsg_port_s *port = (FAR struct rpmsg_port_s *)rpmsg;
+
+  return atomic_read(&port->signals);
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -612,9 +625,6 @@ int rpmsg_port_initialize(FAR struct rpmsg_port_s *port,
   rdev->support_ack = true;
   rdev->support_ns = true;
 
-  rpmsg_register_endpoint(rdev, &rdev->ns_ept, "NS", RPMSG_NS_EPT_ADDR,
-                          RPMSG_NS_EPT_ADDR, rpmsg_port_ns_callback, NULL,
-                          port);
   port->ops->register_callback(port, rpmsg_port_rx_callback);
 
   return 0;
@@ -626,22 +636,9 @@ int rpmsg_port_initialize(FAR struct rpmsg_port_s *port,
 
 void rpmsg_port_uninitialize(FAR struct rpmsg_port_s *port)
 {
-  FAR struct rpmsg_device *rdev = &port->rdev;
-  FAR struct metal_list *node;
-  FAR struct rpmsg_endpoint *ept;
+  FAR struct rpmsg_s *rpmsg = &port->rpmsg;
 
-  while (!metal_list_is_empty(&rdev->endpoints))
-    {
-      node = rdev->endpoints.next;
-      ept = metal_container_of(node, struct rpmsg_endpoint, node);
-      rpmsg_destroy_ept(ept);
-      if (ept->ns_unbind_cb)
-        {
-          ept->ns_unbind_cb(ept);
-        }
-    }
-
-  metal_mutex_deinit(&rdev->lock);
+  metal_mutex_deinit(&rpmsg->rdev->lock);
   rpmsg_port_destroy_queues(port);
 }
 
@@ -726,6 +723,31 @@ void rpmsg_port_queue_add_buffer(FAR struct rpmsg_port_queue_s *queue,
 }
 
 /****************************************************************************
+ * Name: rpmsg_port_drop_packets
+ ****************************************************************************/
+
+void rpmsg_port_drop_packets(FAR struct rpmsg_port_s *rport, uint8_t type)
+{
+  FAR struct rpmsg_port_header_s *hdr;
+
+  if (type & RPMSG_PORT_DROP_TXQ)
+    {
+      while (!!(hdr = rpmsg_port_queue_get_buffer(&rport->txq, false)))
+        {
+          rpmsg_port_queue_return_buffer(&rport->txq, hdr);
+        }
+    }
+
+  if (type & RPMSG_PORT_DROP_RXQ)
+    {
+      while (!!(hdr = rpmsg_port_queue_get_buffer(&rport->rxq, false)))
+        {
+          rpmsg_port_queue_return_buffer(&rport->rxq, hdr);
+        }
+    }
+}
+
+/****************************************************************************
  * Name: rpmsg_port_register
  ****************************************************************************/
 
@@ -747,6 +769,10 @@ int rpmsg_port_register(FAR struct rpmsg_port_s *port,
       return ret;
     }
 
+  atomic_fetch_or(&port->signals, RPMSG_SIGNAL_RUNNING);
+  rpmsg_register_endpoint(&port->rdev, &port->rdev.ns_ept, "NS",
+                          RPMSG_NS_EPT_ADDR, RPMSG_NS_EPT_ADDR,
+                          rpmsg_port_ns_callback, NULL, port);
   rpmsg_device_created(&port->rpmsg);
   return ret;
 }
@@ -760,9 +786,9 @@ void rpmsg_port_unregister(FAR struct rpmsg_port_s *port)
   char name[64];
 
   snprintf(name, sizeof(name), "/dev/rpmsg/%s", port->cpuname);
-  rpmsg_unregister(name, &port->rpmsg);
 
   rpmsg_device_destory(&port->rpmsg);
+  rpmsg_unregister(name, &port->rpmsg);
 }
 
 /****************************************************************************
@@ -812,14 +838,14 @@ static void rpmsg_port_dump(FAR struct rpmsg_s *rpmsg)
   FAR struct metal_list *node;
   bool needunlock = false;
 
-  if (!up_interrupt_context() && !sched_idletask() &&
-      !nxmutex_is_hold(&rdev->lock))
+  if (!up_interrupt_context() && !sched_idletask())
     {
       metal_mutex_acquire(&rdev->lock);
       needunlock = true;
     }
 
-  metal_log(METAL_LOG_EMERGENCY, "Remote: %s\n", port->cpuname);
+  metal_log(METAL_LOG_EMERGENCY, "Remote: %s state: %d\n",
+            port->cpuname, rpmsg_is_running(rdev));
 
   metal_list_for_each(&rdev->endpoints, node)
     {

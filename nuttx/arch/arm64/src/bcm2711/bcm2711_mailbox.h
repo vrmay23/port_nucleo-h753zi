@@ -258,6 +258,23 @@ int bcm2711_mbox_getmac(uint64_t *mac);
 int bcm2711_mbox_getpwr(uint8_t id, bool *state);
 
 /****************************************************************************
+ * Name: bcm2711_mbox_setpwr
+ *
+ * Description:
+ *   Sets the power state of `id`.
+ *
+ * Input parameters:
+ *   id - The device ID to know the power state of
+ *   on - True for power on, false for power off
+ *   wait - True to block until power stable, false otherwise
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_setpwr(uint8_t id, bool on, bool wait);
+
+/****************************************************************************
  * Name: bcm2711_mbox_ledset
  *
  * Description:
@@ -272,6 +289,284 @@ int bcm2711_mbox_getpwr(uint8_t id, bool *state);
  ****************************************************************************/
 
 int bcm2711_mbox_ledset(uint8_t pin, bool on);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getclken
+ *
+ * Description:
+ *   Get the state of the clock (enabled/disabled) corresponding to `id`
+ *
+ * Input parameters:
+ *   id - The ID of the clock to check
+ *   state - Where to store the state of the clock
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getclken(uint8_t id, bool *state);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_setclken
+ *
+ * Description:
+ *   Set the state of the clock (enabled/disabled) corresponding to `id`
+ *
+ * Input parameters:
+ *   id - The ID of the clock
+ *   en - True to enable the clock, false otherwise
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_setclken(uint8_t id, bool en);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getclkrate
+ *
+ * Description:
+ *   Get the rate of the clock corresponding to `id` in Hz.
+ *
+ * Input parameters:
+ *   id - The ID of the clock
+ *   rate - Where to store the rate of the clock
+ *   measured - True to return clock rate as a measured value (true rate),
+ *              false for configured rate.
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getclkrate(uint8_t id, uint32_t *rate, bool measured);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_setclkrate
+ *
+ * Description:
+ *   Set the rate of the clock corresponding to `id` in Hz.
+ *
+ * Input parameters:
+ *   id - The ID of the clock
+ *   rate - The desired clock rate in Hz. The set rate will be returned in
+ *          this variable, even if the clock is not enabled
+ *   turbo - True to allow turbo settings (voltage, sdram and gpu), false
+ *           otherwise
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_setclkrate(uint8_t id, uint32_t *rate, bool turbo);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getfb
+ *
+ * Description:
+ *   Allocates a frame buffer and returns it.
+ *
+ * Input parameters:
+ *   fb - A place to store the frame buffer address
+ *   size - The frame buffer size in bytes
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getfb(void **fb, uint32_t *size);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_releasefb
+ *
+ * Description:
+ *   Releases the previously allocated frame buffer.
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_releasefb(void);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getdisp
+ *
+ * Description:
+ *   Get physical display width and height.
+ *
+ * Input parameters:
+ *   x - Width in pixels
+ *   y - Height in pixels
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getdisp(uint32_t *x, uint32_t *y);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getdepth
+ *
+ * Description:
+ *   Get the bits per pixel used for the display.
+ *
+ * Input parameters:
+ *   bpp - Bits per pixel
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getdepth(uint32_t *bpp);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getalpha
+ *
+ * Description:
+ *   Get the alpha mode.
+ *
+ * Input parameters:
+ *   alpha - Returned alpha state: 0 enabled, 1 reversed, 2 ignored
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getalpha(uint32_t *alpha);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getpitch
+ *
+ * Description:
+ *   Get the number of bytes per line.
+ *
+ * Input parameters:
+ *   bpl - Bytes per line
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getpitch(uint32_t *bpl);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getvirtres
+ *
+ * Description:
+ *   Get the virtual resolution of the display.
+ *
+ * Input parameters:
+ *   x - Width in pixels
+ *   y - Height in pixels
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getvirtres(uint32_t *x, uint32_t *y);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_setvirtres
+ *
+ * Description:
+ *   Set the virtual resolution of the display. The new virtual resolution is
+ *   returned in the input parameters.
+ *
+ * Input parameters:
+ *   x - Width in pixels
+ *   y - Height in pixels
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_setvirtres(uint32_t *x, uint32_t *y);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getvirtoff
+ *
+ * Description:
+ *   Get the virtual buffer offset in pixels
+ *
+ * Input parameters:
+ *   x - X in pixels
+ *   y - Y in pixels
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getvirtoff(uint32_t *x, uint32_t *y);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getpixord
+ *
+ * Description:
+ *   Get the pixel order of the frame buffer.
+ *
+ * Input parameters:
+ *   rgb - True if RGB order, false for BGR order
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getpixord(bool *rgb);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_setpixord
+ *
+ * Description:
+ *   Set the pixel order of the frame buffer.
+ *
+ * Input parameters:
+ *   rgb - True if RGB order, false for BGR order
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_setpixord(bool rgb);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_getoscan
+ *
+ * Description:
+ *   Get the overscan values of the frame buffer in pixels.
+ *
+ * Input parameters:
+ *   top - The amount of top overscan in pixels
+ *   bot - The amount of bottom overscan in pixels
+ *   left - The amount of left overscan in pixels
+ *   right - The amount of right overscan in pixels
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_getoscan(uint32_t *top, uint32_t *bot, uint32_t *left,
+                          uint32_t *right);
+
+/****************************************************************************
+ * Name: bcm2711_mbox_fbinit
+ *
+ * Description:
+ *   Initializes the frame buffer video interface with the desired settings.
+ *
+ * Input parameters:
+ *   x - The resolution (width) in pixels (physical display width returned
+ *   here)
+ *   y - The resolution (height) in pixels (physical display height returned
+ *   here)
+ *   bpp - The bits per pixel (depth) (real value returned her)
+ *   fb - The returned frame buffer address
+ *   fblen - The length of the frame buffer in bytes
+ *
+ * Returned Value:
+ *   0 on success, negated error code on failure.
+ ****************************************************************************/
+
+int bcm2711_mbox_fbinit(uint32_t *x, uint32_t *y, uint32_t *bpp, void **fb,
+                        uint32_t *fblen);
 
 #undef EXTERN
 #if defined(__cplusplus)

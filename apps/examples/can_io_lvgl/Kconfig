@@ -1,0 +1,25 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config EXAMPLES_CAN_IO_LVGL
+	tristate "CAN_IO_LVGL_DEMO"
+	default n
+	depends on NET_CAN && VIDEO_FB && GRAPHICS_LVGL
+	---help---
+		Simple BEV Cluster example with CAN bus and LVGL display.
+		Shows speed, voltage, current, and direction.
+		Button press sends CAN message.
+
+if EXAMPLES_CAN_IO_LVGL
+
+config EXAMPLES_CAN_IO_LVGL_PRIORITY
+	int "Task priority"
+	default 100
+
+config EXAMPLES_CAN_IO_LVGL_STACKSIZE
+	int "Stack size"
+	default 4096
+
+endif

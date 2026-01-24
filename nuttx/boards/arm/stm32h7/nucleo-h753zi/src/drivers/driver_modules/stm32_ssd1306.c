@@ -306,14 +306,14 @@ static int ssd1306_set_brightness_raw(int percent)
    * phase2 = 1 + (percent * 14 / 100)  -> 1 to 15
    */
 
-  {
+    {
     uint8_t phase1;
     uint8_t phase2;
 
     phase1 = 1 + (uint8_t)((percent * 14) / 100);
     phase2 = 1 + (uint8_t)((percent * 14) / 100);
     precharge = (phase2 << 4) | phase1;
-  }
+    }
 
   /* VCOMH: scale from 0x00 to 0x30 (avoid 0x40 for safety)
    * Linear: 0x00 at 0%, 0x30 at 100%
@@ -413,12 +413,12 @@ int board_lcd_initialize(void)
 
   /* Log what we're doing - helps with debugging */
 
-  syslog(LOG_INFO, "SSD1306: Initializing OLED display\n");
-  syslog(LOG_INFO, "SSD1306:   I2C Bus: I2C%d\n", SSD1306_I2C_BUS);
-  syslog(LOG_INFO, "SSD1306:   Address: 0x%02X\n", SSD1306_I2C_ADDR);
-  syslog(LOG_INFO, "SSD1306:   Frequency: %lu Hz\n",
+  lcdinfo("SSD1306: Initializing OLED display\n");
+  lcdinfo("SSD1306:   I2C Bus: I2C%d\n", SSD1306_I2C_BUS);
+  lcdinfo("SSD1306:   Address: 0x%02X\n", SSD1306_I2C_ADDR);
+  lcdinfo("SSD1306:   Frequency: %lu Hz\n",
          (unsigned long)SSD1306_I2C_FREQUENCY);
-  syslog(LOG_INFO, "SSD1306:   Brightness: %d%%\n", SSD1306_POWER_PERCENT);
+  lcdinfo("SSD1306:   Brightness: %d%%\n", SSD1306_POWER_PERCENT);
 
   /* Step 1: Register I2C device for tracking and debugging
    *
@@ -437,6 +437,7 @@ int board_lcd_initialize(void)
     {
       syslog(LOG_WARNING,
              "SSD1306: WARNING - Failed to register I2C device: %d\n", ret);
+
       /* Continue anyway - registration is optional */
     }
 
@@ -461,7 +462,7 @@ int board_lcd_initialize(void)
       return -ENODEV;
     }
 
-  syslog(LOG_INFO, "SSD1306: I2C interface ready\n");
+  lcdinfo("SSD1306: I2C interface ready\n");
   return OK;
 }
 
@@ -528,7 +529,7 @@ struct lcd_dev_s *board_lcd_getdev(int devno)
    *   devno: Device number for this LCD
    */
 
-  syslog(LOG_INFO, "SSD1306: Binding to I2C%d (device %d)\n",
+  lcdinfo("SSD1306: Binding to I2C%d (device %d)\n",
          SSD1306_I2C_BUS, devno);
 
   g_ssd1306_lcd = ssd1306_initialize(g_ssd1306_i2c, NULL, devno);
@@ -539,7 +540,7 @@ struct lcd_dev_s *board_lcd_getdev(int devno)
       return NULL;
     }
 
-  syslog(LOG_INFO, "SSD1306: Driver initialized successfully\n");
+  lcdinfo("SSD1306: Driver initialized successfully\n");
 
   /* Step 2: Turn on the display (if configured)
    *
@@ -555,7 +556,7 @@ struct lcd_dev_s *board_lcd_getdev(int devno)
 
   if (power_level > 0)
     {
-      syslog(LOG_INFO, "SSD1306: Turning on display\n");
+      lcdinfo("SSD1306: Turning on display\n");
       g_ssd1306_lcd->setpower(g_ssd1306_lcd, power_level);
 
       /* Step 3: Set display brightness using direct I2C commands
@@ -569,7 +570,7 @@ struct lcd_dev_s *board_lcd_getdev(int devno)
     }
   else
     {
-      syslog(LOG_INFO, "SSD1306: Display is OFF (power: 0%%)\n");
+      lcdinfo("SSD1306: Display is OFF (power: 0%%)\n");
     }
 
   /* NOTE: Do NOT call lcddev_register() here!
@@ -605,7 +606,7 @@ struct lcd_dev_s *board_lcd_getdev(int devno)
 
 void board_lcd_uninitialize(void)
 {
-  syslog(LOG_INFO, "SSD1306: Uninitializing display\n");
+  lcdinfo("SSD1306: Uninitializing display\n");
 
   /* Power off display to save energy */
 
@@ -625,7 +626,7 @@ void board_lcd_uninitialize(void)
 
   g_ssd1306_i2c = NULL;
 
-  syslog(LOG_INFO, "SSD1306: Uninitialized\n");
+  lcdinfo("SSD1306: Uninitialized\n");
 }
 
 /****************************************************************************
@@ -700,7 +701,7 @@ int stm32_ssd1306_set_power(int percent)
 
   power_level = calculate_power_level(percent);
 
-  syslog(LOG_INFO, "SSD1306: Setting power to %d%%\n", percent);
+  lcdinfo("SSD1306: Setting power to %d%%\n", percent);
 
   g_ssd1306_lcd->setpower(g_ssd1306_lcd, power_level);
 

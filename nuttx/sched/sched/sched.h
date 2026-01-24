@@ -197,7 +197,7 @@ extern enum task_deliver_e g_delivertasks[CONFIG_SMP_NCPUS];
 
 /* This is the list of idle tasks */
 
-extern FAR struct tcb_s g_idletcb[CONFIG_SMP_NCPUS];
+extern struct tcb_s g_idletcb[CONFIG_SMP_NCPUS];
 
 #endif
 
@@ -307,6 +307,30 @@ extern volatile spinlock_t g_cpu_tasklistlock;
  * Public Function Prototypes
  ****************************************************************************/
 
+/****************************************************************************
+ * Name:  nxsched_tick_expiration
+ *
+ * Description:
+ *   If CONFIG_SCHED_TICKLESS is defined, then this function is provided by
+ *   the RTOS base code and called from platform-specific code when the
+ *   interval timer used to implement the tick-less OS expires.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions/Limitations:
+ *   Base code implementation assumes that this function is called from
+ *   interrupt handling logic with interrupts disabled.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_SCHED_TICKLESS)
+void nxsched_tick_expiration(void);
+#endif
+
 int nxthread_create(FAR const char *name, uint8_t ttype, int priority,
                     FAR void *stack_addr, int stack_size, main_t entry,
                     FAR char * const argv[], FAR char * const envp[]);
@@ -344,8 +368,8 @@ void nxsched_reassess_timer(void);
 /* Scheduler policy support */
 
 #if CONFIG_RR_INTERVAL > 0
-uint32_t nxsched_process_roundrobin(FAR struct tcb_s *tcb, uint32_t ticks,
-                                    bool noswitches);
+clock_t nxsched_process_roundrobin(FAR struct tcb_s *tcb, clock_t ticks,
+                                   bool noswitches);
 #endif
 
 #ifdef CONFIG_SCHED_SPORADIC
@@ -355,8 +379,8 @@ int  nxsched_stop_sporadic(FAR struct tcb_s *tcb);
 int  nxsched_reset_sporadic(FAR struct tcb_s *tcb);
 int  nxsched_resume_sporadic(FAR struct tcb_s *tcb);
 int  nxsched_suspend_sporadic(FAR struct tcb_s *tcb);
-uint32_t nxsched_process_sporadic(FAR struct tcb_s *tcb, uint32_t ticks,
-                                  bool noswitches);
+clock_t nxsched_process_sporadic(FAR struct tcb_s *tcb, clock_t ticks,
+                                 bool noswitches);
 void nxsched_sporadic_lowpriority(FAR struct tcb_s *tcb);
 #endif
 

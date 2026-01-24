@@ -55,4 +55,8 @@
 #define BOARD_NGPIOIN 1
 #define BOARD_NGPIOINT 0
 
+/* Micro SD card slot number to use */
+
+#define MICROSD_SLOTNO 0
+
 #endif /* __BOARDS_ARM64_BCM2711_RPI4B_INCLUDE_BOARD_H */

@@ -50,6 +50,8 @@
 #include <nuttx/syslog/syslog.h>
 #include <nuttx/syslog/syslog_console.h>
 #include <nuttx/thermal.h>
+#include <nuttx/timers/ptp_clock_dummy.h>
+#include <nuttx/timers/capture.h>
 #include <nuttx/trace.h>
 #include <nuttx/usrsock/usrsock_rpmsg.h>
 #include <nuttx/vhost/vhost.h>
@@ -243,6 +245,10 @@ void drivers_initialize(void)
   sensor_rpmsg_initialize();
 #endif
 
+#ifdef CONFIG_SENSORS_MONITOR
+  sensor_monitor_initialize();
+#endif
+
 #ifdef CONFIG_DEV_RPMSG_SERVER
   rpmsgdev_server_init();
 #endif
@@ -291,6 +297,14 @@ void drivers_initialize(void)
 
 #ifdef CONFIG_THERMAL
   thermal_init();
+#endif
+
+#ifdef CONFIG_PTP_CLOCK_DUMMY
+  ptp_clock_dummy_initialize(0);
+#endif
+
+#ifdef CONFIG_FAKE_CAPTURE
+  fake_capture_initialize(2);
 #endif
 
   drivers_trace_end();

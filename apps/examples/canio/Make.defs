@@ -1,0 +1,3 @@
+ifneq ($(CONFIG_EXAMPLES_CANIO),)
+CONFIGURED_APPS += $(APPDIR)/examples/canio
+endif

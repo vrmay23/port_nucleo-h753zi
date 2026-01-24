@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_romfs_initialize.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_middleware/stm32_romfs_initialize.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *

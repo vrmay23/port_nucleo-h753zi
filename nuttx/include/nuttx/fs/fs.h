@@ -407,9 +407,7 @@ struct inode
   uint16_t          i_flags;    /* Flags for inode */
   union inode_ops_u u;          /* Inode operations */
   ino_t             i_ino;      /* Inode serial number */
-#if defined(CONFIG_PSEUDOFS_FILE) || defined(CONFIG_FS_SHMFS)
   size_t            i_size;     /* The size of per inode driver */
-#endif
 #ifdef CONFIG_PSEUDOFS_ATTRIBUTES
   mode_t            i_mode;     /* Access mode flags */
   uid_t             i_owner;    /* Owner */
@@ -624,6 +622,35 @@ void fs_initialize(void);
 int register_driver(FAR const char *path,
                     FAR const struct file_operations *fops, mode_t mode,
                     FAR void *priv);
+
+/****************************************************************************
+ * Name: register_driver_with_size
+ *
+ * Description:
+ *   Register a character driver inode into the pseudo file system and
+ *   assign a size to it.
+ *
+ * Input Parameters:
+ *   path - The path to the inode to create
+ *   fops - The file operations structure
+ *   mode - inmode privileges
+ *   priv - Private, user data that will be associated with the inode.
+ *   size - Size in bytes to assign to the driver
+ *
+ * Returned Value:
+ *   Zero on success (with the inode point in 'inode'); A negated errno
+ *   value is returned on a failure (all error values returned by
+ *   inode_reserve):
+ *
+ *   EINVAL - 'path' is invalid for this operation
+ *   EEXIST - An inode already exists at 'path'
+ *   ENOMEM - Failed to allocate in-memory resources for the operation
+ *
+ ****************************************************************************/
+
+int register_driver_with_size(FAR const char *path,
+                              FAR const struct file_operations *fops,
+                              mode_t mode, FAR void *priv, size_t size);
 
 /****************************************************************************
  * Name: register_blockdriver
@@ -1009,59 +1036,6 @@ int fdlist_dupfile(FAR struct fdlist *list, int oflags, int minfd,
                    FAR struct file *filep);
 
 /****************************************************************************
- * Name: fdlist_allocate
- *
- * Description:
- *   Allocate a struct fd instance and associate it with an empty file
- *   instance. The difference between this function and
- *   file_allocate_from_inode is that this function is only used for
- *   placeholder purposes. Later, the caller will initialize the file entity
- *   through the returned filep.
- *
- *   The fd allocated by this function can be released using fdlist_close.
- *
- *   After the function call is completed, it will hold a reference count
- *   for the filep. Therefore, when the filep is no longer in use, it is
- *   necessary to call file_put to release the reference count, in order
- *   to avoid a race condition where the file might be closed during
- *   this process.
- *
- * Returned Value:
- *   Returns the file descriptor == index into the files array on success;
- *   a negated errno value is returned on any failure.
- *
- ****************************************************************************/
-
-int fdlist_allocate(FAR struct fdlist *list, int oflags,
-                    int minfd, FAR struct file **filep);
-
-/****************************************************************************
- * Name: file_allocate
- *
- * Description:
- *   Allocate a struct fd instance and associate it with an empty file
- *   instance. The difference between this function and
- *   file_allocate_from_inode is that this function is only used for
- *   placeholder purposes. Later, the caller will initialize the file entity
- *   through the returned filep.
- *
- *   The fd allocated by this function can be released using nx_close.
- *
- *   After the function call is completed, it will hold a reference count
- *   for the filep. Therefore, when the filep is no longer in use, it is
- *   necessary to call file_put to release the reference count, in order
- *   to avoid a race condition where the file might be closed during
- *   this process.
- *
- * Returned Value:
- *   Returns the file descriptor == index into the files array on success;
- *   a negated errno value is returned on any failure.
- *
- ****************************************************************************/
-
-int file_allocate(int oflags, int minfd, FAR struct file **filep);
-
-/****************************************************************************
  * Name: file_allocate_from_inode
  *
  * Description:
@@ -1236,6 +1210,26 @@ int fdlist_open(FAR struct fdlist *list,
  ****************************************************************************/
 
 int nx_open(FAR const char *path, int oflags, ...);
+
+/****************************************************************************
+ * Name: file_allocate
+ *
+ * Description:
+ *   Allocate a file instance and return
+ *
+ ****************************************************************************/
+
+FAR struct file *file_allocate(void);
+
+/****************************************************************************
+ * Name: file_deallocate
+ *
+ * Description:
+ *   Free a file instance.
+ *
+ ****************************************************************************/
+
+void file_deallocate(FAR struct file *filep);
 
 /****************************************************************************
  * Name: file_get2

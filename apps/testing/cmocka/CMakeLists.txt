@@ -33,17 +33,17 @@ if(CONFIG_TESTING_CMOCKA)
           ${CMAKE_CURRENT_LIST_DIR}/cmocka BINARY_DIR
           ${CMAKE_BINARY_DIR}/apps/testing/cmocka/cmocka
       PATCH_COMMAND
-        patch -p0 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
+        patch -p1 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
         ${CMAKE_CURRENT_LIST_DIR}/0001-cmocka.c-Reduce-the-call-stack-consumption-of-printf.patch
-        && patch -p0 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
+        && patch -p1 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
         ${CMAKE_CURRENT_LIST_DIR}/0002-cmocka-feature-to-forwarding-cmocka-log-message-to-c.patch
-        && patch -p0 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
+        && patch -p1 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
         ${CMAKE_CURRENT_LIST_DIR}/0003-cmocka-update-method-for-strmatch-to-regex-and-add-list-all-testcases-function.patch
-        && patch -p0 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
-        ${CMAKE_CURRENT_LIST_DIR}/0004-cmocka-xml-report.patch && patch -p0 -d
+        && patch -p1 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
+        ${CMAKE_CURRENT_LIST_DIR}/0004-cmocka-xml-report.patch && patch -p1 -d
         ${CMAKE_CURRENT_LIST_DIR}/cmocka <
         ${CMAKE_CURRENT_LIST_DIR}/0005-cmocka-cmocka_private-fix-warning-in-cmocka_private.patch
-        && patch -p0 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
+        && patch -p1 -d ${CMAKE_CURRENT_LIST_DIR}/cmocka <
         ${CMAKE_CURRENT_LIST_DIR}/0006-fix-linux-risc-v-compile-error-list_initialize.patch
       DOWNLOAD_NO_PROGRESS true
       TIMEOUT 30)
@@ -74,20 +74,22 @@ if(CONFIG_TESTING_CMOCKA)
   target_include_directories(cmocka PRIVATE ${INCDIR})
   target_compile_options(cmocka PRIVATE ${CFLAGS})
 
-  nuttx_add_application(
-    NAME
-    ${CONFIG_TESTING_CMOCKA_PROGNAME}
-    PRIORITY
-    ${CONFIG_TESTING_CMOCKA_PRIORITY}
-    STACKSIZE
-    ${CONFIG_TESTING_CMOCKA_STACKSIZE}
-    MODULE
-    ${CONFIG_TESTING_CMOCKA}
-    INCLUDE_DIRECTORIES
-    ${INCDIR}
-    SRCS
-    cmocka_main.c
-    DEPENDS
-    cmocka)
+  if(CONFIG_TESTING_CMOCKA_PROG)
+    nuttx_add_application(
+      NAME
+      ${CONFIG_TESTING_CMOCKA_PROGNAME}
+      PRIORITY
+      ${CONFIG_TESTING_CMOCKA_PRIORITY}
+      STACKSIZE
+      ${CONFIG_TESTING_CMOCKA_STACKSIZE}
+      MODULE
+      ${CONFIG_TESTING_CMOCKA}
+      INCLUDE_DIRECTORIES
+      ${INCDIR}
+      SRCS
+      cmocka_main.c
+      DEPENDS
+      cmocka)
+  endif()
 
 endif()

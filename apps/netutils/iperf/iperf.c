@@ -48,7 +48,7 @@
 #define IPERF_TRAFFIC_TASK_PRIORITY  100
 #define IPERF_TRAFFIC_TASK_STACK     4096
 #define IPERF_REPORT_TASK_NAME       "iperf_report"
-#define IPERF_REPORT_TASK_PRIORITY   100
+#define IPERF_REPORT_TASK_PRIORITY   101
 #define IPERF_REPORT_TASK_STACK      4096
 
 #define IPERF_UDP_TX_LEN             (1472)
@@ -220,6 +220,7 @@ static void iperf_print_addr(FAR const char *str, FAR struct sockaddr *addr)
 {
   switch (addr->sa_family)
     {
+#ifdef CONFIG_NET_IPv4
       case AF_INET:
         {
           FAR struct sockaddr_in *inaddr = (FAR struct sockaddr_in *)addr;
@@ -227,6 +228,7 @@ static void iperf_print_addr(FAR const char *str, FAR struct sockaddr *addr)
                  inet_ntoa(inaddr->sin_addr), htons(inaddr->sin_port));
           return;
         }
+#endif
 
       case AF_LOCAL:
         {

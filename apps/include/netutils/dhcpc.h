@@ -39,12 +39,21 @@
  * Included Files
  ****************************************************************************/
 
+#include <nuttx/config.h>
 #include <stdint.h>
 #include <netinet/in.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+/* Provide a default value for CONFIG_NETDB_DNSSERVER_NAMESERVERS if
+ * CONFIG_NETDB_DNSCLIENT is not enabled.
+ */
+
+#if !defined(CONFIG_NETDB_DNSSERVER_NAMESERVERS)
+#  define CONFIG_NETDB_DNSSERVER_NAMESERVERS 1
+#endif
 
 /****************************************************************************
  * Public Types
@@ -55,7 +64,8 @@ struct dhcpc_state
   struct in_addr serverid;
   struct in_addr ipaddr;
   struct in_addr netmask;
-  struct in_addr dnsaddr;
+  struct in_addr dnsaddr[CONFIG_NETDB_DNSSERVER_NAMESERVERS];
+  uint8_t        num_dnsaddr;     /* Number of DNS addresses received */
   struct in_addr default_router;
   uint32_t       lease_time;      /* Lease expires in this number of seconds */
   uint32_t       renewal_time;    /* Seconds to transition to RENEW state(T1) */

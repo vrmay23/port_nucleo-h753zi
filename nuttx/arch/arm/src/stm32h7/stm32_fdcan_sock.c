@@ -2267,6 +2267,9 @@ int fdcan_initialize(struct fdcan_driver_s *priv)
    *
    * Discussion:
    * https://community.st.com/s/question/0D73W000001nzqFSAQ
+   * 
+   * Using 64  --> some messages are being received but some are not
+   * Using 128 --> according to the tests, everything is working fine
    */
 
   const uint8_t n_extid = 128;

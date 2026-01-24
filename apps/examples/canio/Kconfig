@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config EXAMPLES_CANIO
+	bool "CAN I/O (Led + push button)"
+	default n
+	depends on NET_CAN && INPUT_BUTTONS && USERLED && !ARCH_LEDS
+	---help---
+	  Interacting with LEDs and Button via CAN
+
+if EXAMPLES_CANIO
+
+config EXAMPLES_CANIO_PROGNAME
+	string "App name"
+	default "canio"
+
+config EXAMPLES_CANIO_PRIORITY
+	int "CANIO priority"
+	default 100
+
+config EXAMPLES_CANIO_STACKSIZE
+	int "CANIO Stack size"
+	default 4096
+
+endif

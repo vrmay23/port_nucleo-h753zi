@@ -147,6 +147,7 @@ SECTIONS
     *libarch.a:*regi2c_ctrl.*(.text .text.* .literal .literal.*)
     *libarch.a:*gpio_periph.*(.text .text.* .literal .literal.*)
     *libarch.a:*modem_clock_hal.*(.text .text.* .literal .literal.*)
+    *libarch.a:*sleep_modes.*(.text .text.* .literal .literal.*)
     *libarch.a:*esp_rom_systimer.*(.text .text.* .literal .literal.*)
     *libarch.a:*esp_rom_wdt.*(.text .text.* .literal .literal.*)
     *libarch.a:*ocode_init.*(.text .text.* .literal .literal.*)
@@ -190,7 +191,6 @@ SECTIONS
     *libarch.a:*esp_rom_sys.*(.text .text.* .literal .literal.*)
     *libarch.a:*esp_rom_spiflash.*(.text .text.* .literal .literal.*)
     *libarch.a:*efuse_hal.*(.text .text.* .literal .literal.*)
-    *libarch.a:esp_spiflash.*(.literal .text .literal.* .text.*)
     *libarch.a:*apm_hal.*(.text .text.* .literal .literal.*)
     *libarch.a:*log.*(.text .text.* .literal .literal.*)
     *libarch.a:*log_lock.*(.literal .literal.* .text .text.*)
@@ -201,6 +201,20 @@ SECTIONS
     *libarch.a:*log_write.*(.literal.esp_log_write .text.esp_log_write)
     *libarch.a:*log_write.*(.literal.esp_log_writev .text.esp_log_writev)
     *libarch.a:*interrupt_plic.*(.literal .literal.* .text .text.*)
+    *libarch.a:esp_spiflash.*(.literal .text .literal.* .text.*)
+    *libarch.a:esp_flash_api.*(.text .text.* .literal .literal.*)
+    *libarch.a:esp_flash_spi_init.*(.text .text.* .literal .literal.*)
+    *libarch.a:spi_flash_hal_iram.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_encrypt_hal_iram.*(.text .text.* .literal .literal.*)
+    *libarch.a:spi_flash_hal_gpspi.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_chip*.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
+    *libarch.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
+    *libarch.a:esp_cache.*(.literal .literal.* .text .text.*)
+    *libarch.a:cache_utils.*(.literal .literal.* .text .text.*)
+    *libarch.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
 
     *libc.a:sq_remlast.*(.literal .text .literal.* .text.*)
 
@@ -297,6 +311,7 @@ SECTIONS
     *libarch.a:*pmu_init.*(.rodata .rodata.*)
     *libarch.a:*modem_clock.*(.rodata .rodata.*)
     *libarch.a:*modem_clock_hal.*(.rodata .rodata.*)
+    *libarch.a:*sleep_modes.*(.rodata .rodata.*)
     *libarch.a:*regi2c_ctrl.*(.rodata .rodata.*)
     *libarch.a:*gpio_periph.*(.rodata .rodata.*)
     *libarch.a:*esp_rom_systimer.*(.rodata .rodata.*)
@@ -345,6 +360,19 @@ SECTIONS
     *libarch.a:*log.*(.rodata .rodata.*)
     *libarch.a:*log_noos.*(.rodata .rodata.*)
     *libarch.a:esp_spiflash.*(.rodata .rodata.*)
+    *libarch.a:esp_flash_api.*(.rodata .rodata.*)
+    *libarch.a:esp_flash_spi_init.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_hal_iram.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_hal_gpspi.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_chip*.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_wrap.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_os_func_noos.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_os_func_app.*(.rodata .rodata.*)
+    *libarch.a:flash_brownout_hook.*(.rodata .rodata.*)
+    *libarch.a:esp_cache.*(.rodata .rodata.*)
+    *libarch.a:cache_utils.*(.rodata .rodata.*)
+    *libarch.a:memspi_host_driver.*(.rodata .rodata.*)
 
     esp_head.*(.rodata .rodata.*)
     esp_start.*(.rodata .rodata.*)
@@ -530,20 +558,60 @@ SECTIONS
   .rtc.text :
   {
     . = ALIGN(4);
-    *(.rtc.literal .rtc.text)
+    _rtc_fast_start = ABSOLUTE(.);
+    _rtc_text_start = ABSOLUTE(.);
+    *(.rtc.literal .rtc.literal.*)
+    *(.rtc.text .rtc.text.*)
     *(.rtc.entry.text)
     /* 16B padding for possible CPU prefetch and 4B alignment for PMS split lines */
     . += 16;
     . = ALIGN(4);
+    _rtc_text_end = ABSOLUTE(.);
+  } > lp_ram_seg AT > ROM
 
+  /* RTC fast memory section */
+
+  .rtc.force_fast :
+  {
+    . = ALIGN(4);
+    _rtc_force_fast_start = ABSOLUTE(.);
+
+    *(.rtc.force_fast .rtc.force_fast.*)
+    . = ALIGN(4);
+    _rtc_force_fast_end = ABSOLUTE(.);
   } > lp_ram_seg AT > ROM
 
   /* RTC BSS section. */
 
   .rtc.bss (NOLOAD) :
   {
+    _rtc_bss_start = ABSOLUTE(.);
     *(.rtc.bss)
+    _rtc_bss_end = ABSOLUTE(.);
   } > lp_ram_seg
+
+
+  /* RTC NOINIT section. */
+
+  .rtc_noinit (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _rtc_noinit_start = ABSOLUTE(.);
+    *(.rtc_noinit .rtc_noinit.*)
+    . = ALIGN(4) ;
+    _rtc_noinit_end = ABSOLUTE(.);
+  } > lp_ram_seg
+
+  /* RTC slow memory section */
+
+  .rtc.force_slow :
+  {
+    . = ALIGN(4);
+    _rtc_force_slow_start = ABSOLUTE(.);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4);
+    _rtc_force_slow_end = ABSOLUTE(.);
+  } > lp_ram_seg AT > ROM
 
   .rtc.data :
   {

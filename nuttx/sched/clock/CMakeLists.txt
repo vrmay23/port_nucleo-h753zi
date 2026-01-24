@@ -23,6 +23,7 @@
 set(SRCS
     clock.c
     clock_initialize.c
+    clock_getres.c
     clock_settime.c
     clock_gettime.c
     clock_realtime2absticks.c
@@ -35,7 +36,7 @@ set(SRCS
 # include the base delay definition (busy-loop) as a minimum-viable product. We
 # don't want the weak references to conflict.
 
-if(NOT CONFIG_TIMER_ARCH)
+if(NOT CONFIG_TIMER_ARCH AND NOT CONFIG_ALARM_ARCH)
   list(APPEND SRCS delay.c)
 endif()
 

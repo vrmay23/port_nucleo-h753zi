@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_spi.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_bus/stm32_spi.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -81,7 +81,7 @@ static struct spi_dc_device_s g_spi1_dc_devices[MAX_CS_DEVICES_PER_SPI];
 #endif
 #endif
 
-#ifdef CONFIG_STM32H7_SPI2  
+#ifdef CONFIG_STM32H7_SPI2
 static struct spi_cs_device_s g_spi2_cs_devices[MAX_CS_DEVICES_PER_SPI];
 #ifdef CONFIG_SPI_CMDDATA
 static struct spi_dc_device_s g_spi2_dc_devices[MAX_CS_DEVICES_PER_SPI];
@@ -192,14 +192,22 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
 
   switch (port)
     {
-      case 'A': port_base = GPIO_PORTA; break;
-      case 'B': port_base = GPIO_PORTB; break;
-      case 'C': port_base = GPIO_PORTC; break;
-      case 'D': port_base = GPIO_PORTD; break;
-      case 'E': port_base = GPIO_PORTE; break;
-      case 'F': port_base = GPIO_PORTF; break;
-      case 'G': port_base = GPIO_PORTG; break;
-      case 'H': port_base = GPIO_PORTH; break;
+      case 'A':
+        port_base = GPIO_PORTA; break;
+      case 'B':
+        port_base = GPIO_PORTB; break;
+      case 'C':
+        port_base = GPIO_PORTC; break;
+      case 'D':
+        port_base = GPIO_PORTD; break;
+      case 'E':
+        port_base = GPIO_PORTE; break;
+      case 'F':
+        port_base = GPIO_PORTF; break;
+      case 'G':
+        port_base = GPIO_PORTG; break;
+      case 'H':
+        port_base = GPIO_PORTH; break;
       default:
         *error = -EINVAL;
         return 0;
@@ -209,22 +217,38 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
 
   switch (pin_num)
     {
-      case 0:  gpio_pin = GPIO_PIN0;  break;
-      case 1:  gpio_pin = GPIO_PIN1;  break;
-      case 2:  gpio_pin = GPIO_PIN2;  break;
-      case 3:  gpio_pin = GPIO_PIN3;  break;
-      case 4:  gpio_pin = GPIO_PIN4;  break;
-      case 5:  gpio_pin = GPIO_PIN5;  break;
-      case 6:  gpio_pin = GPIO_PIN6;  break;
-      case 7:  gpio_pin = GPIO_PIN7;  break;
-      case 8:  gpio_pin = GPIO_PIN8;  break;
-      case 9:  gpio_pin = GPIO_PIN9;  break;
-      case 10: gpio_pin = GPIO_PIN10; break;
-      case 11: gpio_pin = GPIO_PIN11; break;
-      case 12: gpio_pin = GPIO_PIN12; break;
-      case 13: gpio_pin = GPIO_PIN13; break;
-      case 14: gpio_pin = GPIO_PIN14; break;
-      case 15: gpio_pin = GPIO_PIN15; break;
+      case 0:
+        gpio_pin = GPIO_PIN0;  break;
+      case 1:
+        gpio_pin = GPIO_PIN1;  break;
+      case 2:
+        gpio_pin = GPIO_PIN2;  break;
+      case 3:
+        gpio_pin = GPIO_PIN3;  break;
+      case 4:
+        gpio_pin = GPIO_PIN4;  break;
+      case 5:
+        gpio_pin = GPIO_PIN5;  break;
+      case 6:
+        gpio_pin = GPIO_PIN6;  break;
+      case 7:
+        gpio_pin = GPIO_PIN7;  break;
+      case 8:
+        gpio_pin = GPIO_PIN8;  break;
+      case 9:
+        gpio_pin = GPIO_PIN9;  break;
+      case 10:
+        gpio_pin = GPIO_PIN10; break;
+      case 11:
+        gpio_pin = GPIO_PIN11; break;
+      case 12:
+        gpio_pin = GPIO_PIN12; break;
+      case 13:
+        gpio_pin = GPIO_PIN13; break;
+      case 14:
+        gpio_pin = GPIO_PIN14; break;
+      case 15:
+        gpio_pin = GPIO_PIN15; break;
       default:
         *error = -EINVAL;
         return 0;
@@ -253,22 +277,28 @@ static struct spi_cs_device_s *get_cs_devices_array(int spi_bus)
   switch (spi_bus)
     {
 #ifdef CONFIG_STM32H7_SPI1
-      case 1: return g_spi1_cs_devices;
+      case 1:
+        return g_spi1_cs_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI2
-      case 2: return g_spi2_cs_devices;
+      case 2:
+        return g_spi2_cs_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI3
-      case 3: return g_spi3_cs_devices;
+      case 3:
+        return g_spi3_cs_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI4
-      case 4: return g_spi4_cs_devices;
+      case 4:
+        return g_spi4_cs_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI5
-      case 5: return g_spi5_cs_devices;
+      case 5:
+        return g_spi5_cs_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI6
-      case 6: return g_spi6_cs_devices;
+      case 6:
+        return g_spi6_cs_devices;
 #endif
       default:
         return NULL;
@@ -295,22 +325,28 @@ static struct spi_dc_device_s *get_dc_devices_array(int spi_bus)
   switch (spi_bus)
     {
 #ifdef CONFIG_STM32H7_SPI1
-      case 1: return g_spi1_dc_devices;
+      case 1:
+        return g_spi1_dc_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI2
-      case 2: return g_spi2_dc_devices;
+      case 2:
+        return g_spi2_dc_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI3
-      case 3: return g_spi3_dc_devices;
+      case 3:
+        return g_spi3_dc_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI4
-      case 4: return g_spi4_dc_devices;
+      case 4:
+        return g_spi4_dc_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI5
-      case 5: return g_spi5_dc_devices;
+      case 5:
+        return g_spi5_dc_devices;
 #endif
 #ifdef CONFIG_STM32H7_SPI6
-      case 6: return g_spi6_dc_devices;
+      case 6:
+        return g_spi6_dc_devices;
 #endif
       default:
         return NULL;
@@ -347,9 +383,9 @@ static void spi_cs_control(int spi_bus, uint32_t devid, bool selected)
 
   /* Handle SPIDEV_* types */
 
-  if ((devid & 0xFFFF0000) != 0)
+  if ((devid & 0xffff0000) != 0)
     {
-      actual_devid = (devid & 0x0000FFFF);
+      actual_devid = (devid & 0x0000ffff);
       spiinfo("Detected SPIDEV type 0x%04lX, using index %lu for SPI%d\n",
               (unsigned long)(devid >> 16), (unsigned long)actual_devid,
               spi_bus);
@@ -359,11 +395,11 @@ static void spi_cs_control(int spi_bus, uint32_t devid, bool selected)
       spiwarn("WARNING: Device ID %lu >= maximum %d for SPI%d, "
               "trying fallback to ID 0\n",
               (unsigned long)devid, MAX_CS_DEVICES_PER_SPI, spi_bus);
-      
+
       if (cs_devices[0].in_use)
         {
           actual_devid = 0;
-          spiinfo("SUCCESS: Using fallback device ID 0 for invalid ID %lu\n", 
+          spiinfo("SUCCESS: Using fallback device ID 0 for invalid ID %lu\n",
                   (unsigned long)devid);
         }
       else
@@ -396,7 +432,7 @@ static void spi_cs_control(int spi_bus, uint32_t devid, bool selected)
 
   stm32_gpiowrite(device->gpio_config, pin_state);
 
-  spiinfo("SPI%d CS%lu->%lu: %s (pin %s)\n", 
+  spiinfo("SPI%d CS%lu->%lu: %s (pin %s)\n",
           spi_bus, (unsigned long)devid, (unsigned long)actual_devid,
           selected ? "SELECT" : "DESELECT",
           pin_state ? "HIGH" : "LOW");
@@ -431,9 +467,9 @@ static void spi_dc_control(int spi_bus, uint32_t devid, bool cmd)
 
   /* Handle SPIDEV_* types */
 
-  if ((devid & 0xFFFF0000) != 0)
+  if ((devid & 0xffff0000) != 0)
     {
-      actual_devid = (devid & 0x0000FFFF);
+      actual_devid = (devid & 0x0000ffff);
     }
   else if (devid >= MAX_CS_DEVICES_PER_SPI)
     {
@@ -456,16 +492,18 @@ static void spi_dc_control(int spi_bus, uint32_t devid, bool cmd)
 
   stm32_gpiowrite(device->gpio_config, !cmd);
 
-  spiinfo("SPI%d DC%lu: %s (pin %s)\n",
-          spi_bus, (unsigned long)actual_devid,
-          cmd ? "COMMAND" : "DATA",
-          cmd ? "LOW" : "HIGH");
-          
-  syslog(LOG_INFO, "SPI%d DC%lu: %s (pin %s) [GPIO=0x%08lx]\n",  // ← ADICIONE ESTA LINHA
-          spi_bus, (unsigned long)actual_devid,
-          cmd ? "COMMAND" : "DATA",
-          cmd ? "LOW" : "HIGH",
-          (unsigned long)device->gpio_config);  // ← Ver o GPIO config
+  /* DEBUG SESSION
+   * spiinfo("SPI%d DC%lu: %s (pin %s)\n",
+   *       spi_bus, (unsigned long)actual_devid,
+   *       cmd ? "COMMAND" : "DATA",
+   *       cmd ? "LOW" : "HIGH");
+   *
+   * syslog(LOG_INFO, "SPI%d DC%lu: %s (pin %s) [GPIO=0x%08lx]\n",
+   *       spi_bus, (unsigned long)actual_devid,
+   *       cmd ? "COMMAND" : "DATA",
+   *       cmd ? "LOW" : "HIGH",
+   *      (unsigned long)device->gpio_config);
+   */
 }
 #endif
 
@@ -548,7 +586,7 @@ int stm32_spi_initialize(void)
  *
  ****************************************************************************/
 
-int stm32_spi_register_cs_device(int spi_bus, uint32_t devid, 
+int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
                                   const char *cs_pin, bool active_low)
 {
   struct spi_cs_device_s *cs_devices;
@@ -600,7 +638,7 @@ int stm32_spi_register_cs_device(int spi_bus, uint32_t devid,
   device->in_use = true;
 
   spiinfo("Registered SPI%d device %lu: pin %s (%s)\n",
-          spi_bus, (unsigned long)devid, cs_pin, 
+          spi_bus, (unsigned long)devid, cs_pin,
           active_low ? "active_low" : "active_high");
 
   return OK;
@@ -728,7 +766,7 @@ int stm32_spidev_register_all(void)
 
 #ifdef CONFIG_STM32H7_SPI1
   FAR struct spi_dev_s *spi1;
-  
+
   spi1 = stm32_spibus_initialize(1);
   if (spi1)
     {
@@ -746,7 +784,7 @@ int stm32_spidev_register_all(void)
 
 #ifdef CONFIG_STM32H7_SPI2
   FAR struct spi_dev_s *spi2;
-  
+
   spi2 = stm32_spibus_initialize(2);
   if (spi2)
     {
@@ -764,7 +802,7 @@ int stm32_spidev_register_all(void)
 
 #ifdef CONFIG_STM32H7_SPI3
   FAR struct spi_dev_s *spi3;
-  
+
   spi3 = stm32_spibus_initialize(3);
   if (spi3)
     {
@@ -782,7 +820,7 @@ int stm32_spidev_register_all(void)
 
 #ifdef CONFIG_STM32H7_SPI4
   FAR struct spi_dev_s *spi4;
-  
+
   spi4 = stm32_spibus_initialize(4);
   if (spi4)
     {
@@ -800,7 +838,7 @@ int stm32_spidev_register_all(void)
 
 #ifdef CONFIG_STM32H7_SPI5
   FAR struct spi_dev_s *spi5;
-  
+
   spi5 = stm32_spibus_initialize(5);
   if (spi5)
     {
@@ -818,7 +856,7 @@ int stm32_spidev_register_all(void)
 
 #ifdef CONFIG_STM32H7_SPI6
   FAR struct spi_dev_s *spi6;
-  
+
   spi6 = stm32_spibus_initialize(6);
   if (spi6)
     {

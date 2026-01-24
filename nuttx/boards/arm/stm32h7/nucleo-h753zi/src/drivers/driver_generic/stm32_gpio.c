@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_gpio.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_generic/stm32_gpio.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -68,9 +68,8 @@
  * Private Types
  ****************************************************************************/
 
-/* 
- * Standard GPIO device structure
- * 
+/* Standard GPIO device structure
+ *
  * This structure represents a basic GPIO pin device that can be used
  * for either input or output operations. It contains the standard NuttX
  * GPIO device structure plus an ID field to identify which specific
@@ -83,9 +82,8 @@ struct stm32gpio_dev_s
   uint8_t id;                /* Index into the GPIO configuration arrays */
 };
 
-/* 
- * GPIO interrupt device structure
- * 
+/* GPIO interrupt device structure
+ *
  * This structure extends the basic GPIO device to add interrupt capability.
  * It includes a callback function pointer that will be invoked when the
  * GPIO interrupt is triggered. The structure embeds the basic GPIO device
@@ -133,13 +131,12 @@ static int stm32_gpio_init_interrupt_pins(int *pincount);
  * Private Data
  ****************************************************************************/
 
-/* 
- * GPIO Operations Tables
- * 
+/* GPIO Operations Tables
+ *
  * These structures define the operations available for each type of GPIO.
  * Each GPIO type (input, output, interrupt) has different capabilities:
  * - Input: Only read operations
- * - Output: Read and write operations  
+ * - Output: Read and write operations
  * - Interrupt: Read, attach callback, and enable/disable interrupt
  */
 
@@ -154,8 +151,8 @@ static const struct gpio_operations_s g_gpin_ops =
 static const struct gpio_operations_s g_gpout_ops =
 {
   .go_read   = stm32_gpout_read,
-  .go_write  = stm32_gpout_write, /* ← AQUI: Função de escrita para outputs */
-  .go_attach = NULL,              /* Output pins don't support interrupts   */
+  .go_write  = stm32_gpout_write,
+  .go_attach = NULL,              /* Output pins don't support interrupts */
   .go_enable = NULL,
 };
 
@@ -167,9 +164,8 @@ static const struct gpio_operations_s g_gpint_ops =
   .go_enable = stm32_gpint_enable,
 };
 
-/* 
- * GPIO Pin Configuration Arrays and Device Instances
- * 
+/* GPIO Pin Configuration Arrays and Device Instances
+ *
  * These arrays map the logical GPIO numbers used by applications to the
  * actual STM32 GPIO pin configurations. The configurations are defined
  * in the board header file (nucleo-h753zi.h).
@@ -212,21 +208,23 @@ static struct stm32gpint_dev_s g_gpint_devices[BOARD_NGPIOINT];
  * Name: stm32_gpio_interrupt_handler
  *
  * Description:
- *   This is the common interrupt service routine for all GPIO interrupt pins.
+ *   This is the common interrupt service routine for all GPIO interrupt
+ *   pins.
+ *
  *   When a GPIO interrupt occurs, the STM32 interrupt controller will call
  *   this function with the appropriate arguments. This function then calls
  *   the user-provided callback function that was registered via the attach
  *   operation.
- *   
+ *
  *   The function performs minimal processing in interrupt context - it just
- *   validates the parameters and calls the user callback. All complex 
+ *   validates the parameters and calls the user callback. All complex
  *   processing should be done in the callback function, preferably by
  *   posting to a work queue or semaphore.
  *
  * Input Parameters:
- *   irq     - The interrupt request number (not used in this implementation)
- *   context - Saved processor context (not used in this implementation)  
- *   arg     - Pointer to the stm32gpint_dev_s structure for the triggering pin
+ *  irq     -The interrupt request number (not used in this implementation)
+ *  context -Saved processor context (not used in this implementation)
+ *  arg     -Pointer to the stm32gpint_dev_s structure for the triggering pin
  *
  * Returned Value:
  *   Always returns OK to indicate the interrupt was handled
@@ -243,15 +241,14 @@ static int stm32_gpio_interrupt_handler(int irq, void *context, void *arg)
   struct stm32gpint_dev_s *stm32gpint = (struct stm32gpint_dev_s *)arg;
 
   DEBUGASSERT(stm32gpint != NULL && stm32gpint->callback != NULL);
-  
-  gpioinfo("GPIO interrupt %d triggered, calling callback %p\n", 
+
+  gpioinfo("GPIO interrupt %d triggered, calling callback %p\n",
            stm32gpint->stm32gpio.id, stm32gpint->callback);
 
-  /* 
-   * Execute the user-registered callback function.
+  /* Execute the user-registered callback function.
    * The callback receives the GPIO device pointer and the pin ID.
    */
-  
+
   stm32gpint->callback(&stm32gpint->stm32gpio.gpio,
                        stm32gpint->stm32gpio.id);
   return OK;
@@ -262,12 +259,12 @@ static int stm32_gpio_interrupt_handler(int irq, void *context, void *arg)
  *
  * Description:
  *   Read the current logical state of a GPIO input pin.
- *   
+ *
  *   This function reads the physical state of a GPIO pin configured as an
  *   input and returns the logical value (true for HIGH, false for LOW).
  *   The pin configuration (pull-up, pull-down, etc.) affects what voltage
  *   levels are interpreted as HIGH or LOW.
- *   
+ *
  *   For the Nucleo-H753ZI, this is typically used to read the user button
  *   state. The button is active-low (pressed = LOW voltage), but the
  *   logical interpretation depends on how the pin is configured in the
@@ -292,7 +289,7 @@ static int stm32_gpin_read(struct gpio_dev_s *dev, bool *value)
   struct stm32gpio_dev_s *stm32gpio = (struct stm32gpio_dev_s *)dev;
 
   /* Validate all input parameters */
-  
+
   STM32_GPIO_VALIDATE_DEVICE(stm32gpio);
   STM32_GPIO_VALIDATE_VALUE_PTR(value);
   STM32_GPIO_VALIDATE_INDEX(stm32gpio->id, BOARD_NGPIOIN);
@@ -300,12 +297,12 @@ static int stm32_gpin_read(struct gpio_dev_s *dev, bool *value)
   gpioinfo("Reading GPIO input pin %d\n", stm32gpio->id);
 
   /* Read the current state of the input pin */
-  
+
   *value = stm32_gpioread(g_gpioinputs[stm32gpio->id]);
-  
-  gpioinfo("GPIO input %d state: %s\n", 
+
+  gpioinfo("GPIO input %d state: %s\n",
            stm32gpio->id, *value ? "HIGH" : "LOW");
-  
+
   return OK;
 }
 
@@ -314,13 +311,13 @@ static int stm32_gpin_read(struct gpio_dev_s *dev, bool *value)
  *
  * Description:
  *   Read the current logical state of a GPIO output pin.
- *   
+ *
  *   This function reads back the current state that was written to an output
  *   pin. This is useful for applications that need to know the current state
  *   of an output (for example, to toggle a LED state). The function reads
  *   the actual pin state, not just the last written value, so it reflects
  *   the real electrical state of the pin.
- *   
+ *
  *   For the Nucleo-H753ZI LEDs, this allows applications to check if a LED
  *   is currently on or off before deciding whether to toggle it.
  *
@@ -343,7 +340,7 @@ static int stm32_gpout_read(struct gpio_dev_s *dev, bool *value)
   struct stm32gpio_dev_s *stm32gpio = (struct stm32gpio_dev_s *)dev;
 
   /* Validate all input parameters */
-  
+
   STM32_GPIO_VALIDATE_DEVICE(stm32gpio);
   STM32_GPIO_VALIDATE_VALUE_PTR(value);
   STM32_GPIO_VALIDATE_INDEX(stm32gpio->id, BOARD_NGPIOOUT);
@@ -351,12 +348,12 @@ static int stm32_gpout_read(struct gpio_dev_s *dev, bool *value)
   gpioinfo("Reading GPIO output pin %d current state\n", stm32gpio->id);
 
   /* Read the current output state of the pin */
-  
+
   *value = stm32_gpioread(g_gpiooutputs[stm32gpio->id]);
-  
-  gpioinfo("GPIO output %d current state: %s\n", 
+
+  gpioinfo("GPIO output %d current state: %s\n",
            stm32gpio->id, *value ? "HIGH" : "LOW");
-  
+
   return OK;
 }
 
@@ -365,21 +362,22 @@ static int stm32_gpout_read(struct gpio_dev_s *dev, bool *value)
  *
  * Description:
  *   Write a logical value to a GPIO output pin.
- *   
- *   This is the core function that allows applications to control GPIO output
- *   pins. It sets the electrical state of the pin to either HIGH (3.3V) or 
- *   LOW (0V) based on the boolean value provided.
- *   
+ *
+ *   This is the core function that allows applications to control GPIO
+ *   output pins. It sets the electrical state of the pin to either HIGH
+ *   (3.3V) or LOW (0V) based on the boolean value provided.
+ *
  *   For the Nucleo-H753ZI LEDs:
  *   - Writing true (HIGH) will turn ON the LED (LED is active-high)
  *   - Writing false (LOW) will turn OFF the LED
- *   
+ *
  *   The function provides debug output to help with troubleshooting GPIO
  *   operations during development. In production builds with debug disabled,
  *   this overhead is eliminated by the compiler.
- *   
- *   This function is called by the NuttX GPIO framework when user applications
- *   perform write operations via ioctl(GPIOC_WRITE) or gpio_write() calls.
+ *
+ *   This function is called by the NuttX GPIO framework when user
+ *   applications perform write operations via ioctl(GPIOC_WRITE)
+ *   or gpio_write() calls.
  *
  * Input Parameters:
  *   dev   - Pointer to the GPIO device structure
@@ -401,23 +399,22 @@ static int stm32_gpout_write(struct gpio_dev_s *dev, bool value)
   struct stm32gpio_dev_s *stm32gpio = (struct stm32gpio_dev_s *)dev;
 
   /* Validate input parameters */
-  
+
   STM32_GPIO_VALIDATE_DEVICE(stm32gpio);
   STM32_GPIO_VALIDATE_INDEX(stm32gpio->id, BOARD_NGPIOOUT);
 
-  gpioinfo("Writing GPIO output pin %d: %s\n", 
+  gpioinfo("Writing GPIO output pin %d: %s\n",
            stm32gpio->id, value ? "HIGH" : "LOW");
 
-  /* 
-   * Write the new state to the GPIO pin.
+  /* Write the new state to the GPIO pin.
    * This calls the STM32-specific GPIO write function which handles
    * the low-level register manipulation to set the pin state.
    */
-  
+
   stm32_gpiowrite(g_gpiooutputs[stm32gpio->id], value);
-  
+
   gpioinfo("GPIO output %d write completed successfully\n", stm32gpio->id);
-  
+
   return OK;
 }
 
@@ -426,17 +423,17 @@ static int stm32_gpout_write(struct gpio_dev_s *dev, bool value)
  *
  * Description:
  *   Read the current logical state of a GPIO interrupt pin.
- *   
+ *
  *   This function allows reading the current state of a pin that is
  *   configured for interrupt generation. Even though the pin is primarily
  *   used for interrupts, it can still be read synchronously to check its
  *   current state. This is useful for:
- *   
+ *
  *   - Polling the pin state when interrupts are disabled
  *   - Checking initial pin state during initialization
  *   - Debouncing in software by reading multiple times
  *   - Diagnostics and debugging
- *   
+ *
  *   Note that this reads the actual pin electrical state, which may be
  *   different from the last interrupt trigger if the pin has changed
  *   since the interrupt occurred.
@@ -460,21 +457,21 @@ static int stm32_gpint_read(struct gpio_dev_s *dev, bool *value)
   struct stm32gpint_dev_s *stm32gpint = (struct stm32gpint_dev_s *)dev;
 
   /* Validate all input parameters */
-  
+
   STM32_GPIO_VALIDATE_DEVICE(stm32gpint);
   STM32_GPIO_VALIDATE_VALUE_PTR(value);
   STM32_GPIO_VALIDATE_INDEX(stm32gpint->stm32gpio.id, BOARD_NGPIOINT);
 
-  gpioinfo("Reading GPIO interrupt pin %d current state\n", 
+  gpioinfo("Reading GPIO interrupt pin %d current state\n",
            stm32gpint->stm32gpio.id);
 
   /* Read the current state of the interrupt pin */
-  
+
   *value = stm32_gpioread(g_gpiointinputs[stm32gpint->stm32gpio.id]);
-  
-  gpioinfo("GPIO interrupt pin %d current state: %s\n", 
+
+  gpioinfo("GPIO interrupt pin %d current state: %s\n",
            stm32gpint->stm32gpio.id, *value ? "HIGH" : "LOW");
-  
+
   return OK;
 }
 
@@ -483,18 +480,20 @@ static int stm32_gpint_read(struct gpio_dev_s *dev, bool *value)
  *
  * Description:
  *   Attach a callback function to a GPIO interrupt pin.
- *   
+ *
  *   This function registers a user-provided callback function that will be
  *   executed when the GPIO interrupt is triggered. The callback is stored
  *   in the device structure and will be called by the interrupt handler.
- *   
+ *
  *   Key behaviors:
  *   - Any existing interrupt is automatically disabled during attachment
- *   - The callback can be changed by calling attach again with a new function
+ *   - The callback can be changed by calling attach again with a new
+ *     function.
+ *
  *   - Setting callback to NULL effectively detaches the interrupt
- *   - The interrupt must be explicitly enabled after attachment using 
+ *   - The interrupt must be explicitly enabled after attachment using
  *     the enable operation
- *   
+ *
  *   The callback function will be called in interrupt context, so it should:
  *   - Be as fast as possible
  *   - Not call blocking functions
@@ -502,8 +501,9 @@ static int stm32_gpint_read(struct gpio_dev_s *dev, bool *value)
  *   - Be reentrant if the same callback is used for multiple pins
  *
  * Input Parameters:
- *   dev      - Pointer to the GPIO device structure  
- *   callback - Function to call when interrupt occurs (can be NULL to detach)
+ *   dev      - Pointer to the GPIO device structure
+ *   callback - Function to call when interrupt occurs
+ *              (can be NULL to detach)
  *
  * Returned Value:
  *   OK on success; a negated errno value on failure
@@ -521,22 +521,21 @@ static int stm32_gpint_attach(struct gpio_dev_s *dev,
   struct stm32gpint_dev_s *stm32gpint = (struct stm32gpint_dev_s *)dev;
 
   STM32_GPIO_VALIDATE_DEVICE(stm32gpint);
-  
-  gpioinfo("Attaching callback %p to GPIO interrupt pin %d\n", 
+
+  gpioinfo("Attaching callback %p to GPIO interrupt pin %d\n",
            callback, stm32gpint->stm32gpio.id);
 
-  /* 
-   * Disable any existing interrupt configuration before changing callback.
+  /* Disable any existing interrupt configuration before changing callback.
    * This ensures we don't get spurious interrupts during the transition.
    */
-  
-  stm32_gpiosetevent(g_gpiointinputs[stm32gpint->stm32gpio.id], 
+
+  stm32_gpiosetevent(g_gpiointinputs[stm32gpint->stm32gpio.id],
                      false, false, false, NULL, NULL);
 
   /* Store the new callback function */
-  
+
   stm32gpint->callback = callback;
-  
+
   if (callback != NULL)
     {
       gpioinfo("Callback attached successfully to GPIO interrupt %d\n",
@@ -547,7 +546,7 @@ static int stm32_gpint_attach(struct gpio_dev_s *dev,
       gpioinfo("Callback detached from GPIO interrupt %d\n",
                stm32gpint->stm32gpio.id);
     }
-  
+
   return OK;
 }
 
@@ -556,21 +555,21 @@ static int stm32_gpint_attach(struct gpio_dev_s *dev,
  *
  * Description:
  *   Enable or disable GPIO interrupt generation.
- *   
+ *
  *   This function controls whether the GPIO pin will actually generate
  *   interrupts when the configured event occurs. The pin must have a
  *   callback attached before enabling interrupts.
- *   
+ *
  *   When enabling:
  *   - Configures the pin for rising edge detection (button release)
  *   - Registers the interrupt handler with the STM32 interrupt controller
  *   - The interrupt will fire when the pin transitions from LOW to HIGH
- *   
+ *
  *   When disabling:
  *   - Removes interrupt configuration from the pin
  *   - No interrupts will be generated until re-enabled
  *   - The callback remains attached and can be re-enabled later
- *   
+ *
  *   For the Nucleo board button (if used as interrupt):
  *   - Button is typically active-low (pressed = LOW)
  *   - Rising edge = button release
@@ -596,11 +595,11 @@ static int stm32_gpint_enable(struct gpio_dev_s *dev, bool enable)
   struct stm32gpint_dev_s *stm32gpint = (struct stm32gpint_dev_s *)dev;
 
   STM32_GPIO_VALIDATE_DEVICE(stm32gpint);
-  
+
   if (enable)
     {
       /* Cannot enable interrupt without a callback function */
-      
+
       if (stm32gpint->callback == NULL)
         {
           gpioerr("ERROR: Cannot enable GPIO interrupt %d \n",
@@ -608,35 +607,34 @@ static int stm32_gpint_enable(struct gpio_dev_s *dev, bool enable)
           return -EINVAL;
         }
 
-      gpioinfo("Enabling GPIO interrupt %d with rising edge detection\n", 
+      gpioinfo("Enabling GPIO interrupt %d with rising edge detection\n",
                stm32gpint->stm32gpio.id);
 
-      /* 
-       * Configure the interrupt for rising edge detection.
+      /* Configure the interrupt for rising edge detection.
        * Parameters: pin, rising, falling, filter, handler, arg
        * - rising=true: interrupt on LOW->HIGH transition
-       * - falling=false: no interrupt on HIGH->LOW transition  
+       * - falling=false: no interrupt on HIGH->LOW transition
        * - filter=false: no input filtering
        */
-      
+
       stm32_gpiosetevent(g_gpiointinputs[stm32gpint->stm32gpio.id],
-                         true, false, false, 
+                         true, false, false,
                          stm32_gpio_interrupt_handler,
                          &g_gpint_devices[stm32gpint->stm32gpio.id]);
-                         
-      gpioinfo("GPIO interrupt %d enabled successfully\n", 
+
+      gpioinfo("GPIO interrupt %d enabled successfully\n",
                stm32gpint->stm32gpio.id);
     }
   else
     {
       gpioinfo("Disabling GPIO interrupt %d\n", stm32gpint->stm32gpio.id);
-      
+
       /* Disable the interrupt by clearing all event configuration */
-      
+
       stm32_gpiosetevent(g_gpiointinputs[stm32gpint->stm32gpio.id],
                          false, false, false, NULL, NULL);
-                         
-      gpioinfo("GPIO interrupt %d disabled successfully\n", 
+
+      gpioinfo("GPIO interrupt %d disabled successfully\n",
                stm32gpint->stm32gpio.id);
     }
 
@@ -648,15 +646,15 @@ static int stm32_gpint_enable(struct gpio_dev_s *dev, bool enable)
  *
  * Description:
  *   Initialize all GPIO input pins defined for this board.
- *   
+ *
  *   This function sets up each input pin by:
  *   1. Initializing the device structure with proper type and operations
- *   2. Registering the pin with the NuttX GPIO framework  
+ *   2. Registering the pin with the NuttX GPIO framework
  *   3. Configuring the physical STM32 GPIO hardware
- *   
+ *
  *   After this initialization, applications can access the input pins
  *   via the /dev/gpio device interface using standard read operations.
- *   
+ *
  *   For Nucleo-H753ZI, this typically configures the user button (PC13)
  *   as a readable input that applications can poll.
  *
@@ -684,26 +682,27 @@ static int stm32_gpio_init_input_pins(int *pincount)
   for (i = 0; i < BOARD_NGPIOIN; i++)
     {
       /* Initialize the GPIO device structure */
-      
+
       g_gpin_devices[i].gpio.gp_pintype = GPIO_INPUT_PIN;
       g_gpin_devices[i].gpio.gp_ops     = &g_gpin_ops;
       g_gpin_devices[i].id              = i;
 
       /* Register the GPIO pin with the NuttX GPIO framework */
-      
+
       gpio_pin_register(&g_gpin_devices[i].gpio, (*pincount)++);
 
       /* Configure the physical STM32 GPIO pin hardware */
-      
+
       stm32_configgpio(g_gpioinputs[i]);
-      
+
       pins_initialized++;
-      
-      gpioinfo("GPIO input %d: configured and registered as /dev/gpio%d\n", 
+
+      gpioinfo("GPIO input %d: configured and registered as /dev/gpio%d\n",
                i, (*pincount) - 1);
     }
-    
-  gpioinfo("GPIO input initialization completed: %d pins\n", pins_initialized);
+
+  gpioinfo("GPIO input initialization completed: %d pins\n",
+           pins_initialized);
   return pins_initialized;
 #else
   gpioinfo("No GPIO input pins configured for this board\n");
@@ -716,22 +715,22 @@ static int stm32_gpio_init_input_pins(int *pincount)
  *
  * Description:
  *   Initialize all GPIO output pins defined for this board.
- *   
+ *
  *   This function sets up each output pin by:
  *   1. Initializing the device structure with output type and operations
  *   2. Registering the pin with the NuttX GPIO framework
  *   3. Setting initial state to LOW (off) for safety
  *   4. Configuring the physical STM32 GPIO hardware
- *   
+ *
  *   The initial LOW state ensures that LEDs start in the OFF state and
  *   other outputs start in a safe condition. Applications can then control
  *   the outputs via write operations.
- *   
+ *
  *   For Nucleo-H753ZI, this configures the three onboard LEDs:
  *   - LD1 (Green LED on PB0)
- *   - LD2 (Orange LED on PE1) 
+ *   - LD2 (Orange LED on PE1)
  *   - LD3 (Red LED on PB14)
- *   
+ *
  *   After initialization, applications can control these LEDs via
  *   /dev/gpio device interface using ioctl(GPIOC_WRITE) calls.
  *
@@ -760,30 +759,29 @@ static int stm32_gpio_init_output_pins(int *pincount)
   for (i = 0; i < BOARD_NGPIOOUT; i++)
     {
       /* Initialize the GPIO device structure */
-      
+
       g_gpout_devices[i].gpio.gp_pintype = GPIO_OUTPUT_PIN;
       g_gpout_devices[i].gpio.gp_ops     = &g_gpout_ops;
       g_gpout_devices[i].id              = i;
 
       /* Register the GPIO pin with the NuttX GPIO framework */
-      
+
       gpio_pin_register(&g_gpout_devices[i].gpio, (*pincount)++);
 
-      /* 
-       * Initialize output to LOW for safety, then configure hardware.
+      /* Initialize output to LOW for safety, then configure hardware.
        * This ensures LEDs start OFF and other outputs start in safe state.
        */
-      
+
       stm32_gpiowrite(g_gpiooutputs[i], false);
       stm32_configgpio(g_gpiooutputs[i]);
-      
+
       pins_initialized++;
-      
-      gpioinfo("GPIO output %d: configured as LOW at /dev/gpio%d\n", 
+
+      gpioinfo("GPIO output %d: configured as LOW at /dev/gpio%d\n",
                i, (*pincount) - 1);
     }
-    
-  gpioinfo("GPIO output initialization completed: %d pins\n", 
+
+  gpioinfo("GPIO output initialization completed: %d pins\n",
             pins_initialized);
 
   return pins_initialized;
@@ -798,22 +796,22 @@ static int stm32_gpio_init_output_pins(int *pincount)
  *
  * Description:
  *   Initialize all GPIO interrupt pins defined for this board.
- *   
+ *
  *   This function sets up each interrupt-capable pin by:
  *   1. Initializing the extended device structure with interrupt capability
  *   2. Registering the pin with the NuttX GPIO framework
  *   3. Configuring the physical STM32 GPIO hardware for input
  *   4. Setting up initial state (callback = NULL, interrupt disabled)
- *   
+ *
  *   Unlike simple input pins, interrupt pins require additional setup
  *   to support asynchronous event notification. The pin starts in a safe
  *   state with no callback attached and interrupts disabled. Applications
  *   must explicitly attach a callback and enable interrupts to receive
  *   asynchronous notifications.
- *   
+ *
  *   The interrupt pins can also be read synchronously like regular inputs,
  *   providing flexibility in how applications interact with them.
- *   
+ *
  *   Important: The actual interrupt configuration (edge detection, etc.)
  *   is done later when the interrupt is enabled, not during initialization.
  *
@@ -842,30 +840,32 @@ static int stm32_gpio_init_interrupt_pins(int *pincount)
   for (i = 0; i < BOARD_NGPIOINT; i++)
     {
       /* Initialize the GPIO interrupt device structure */
-      
+
       g_gpint_devices[i].stm32gpio.gpio.gp_pintype = GPIO_INTERRUPT_PIN;
       g_gpint_devices[i].stm32gpio.gpio.gp_ops     = &g_gpint_ops;
       g_gpint_devices[i].stm32gpio.id              = i;
-      g_gpint_devices[i].callback                  = NULL;  /* Safe initial state */
+
+      /* Safe initial state */
+
+      g_gpint_devices[i].callback = NULL;
 
       /* Register the GPIO pin with the NuttX GPIO framework */
-      
+
       gpio_pin_register(&g_gpint_devices[i].stm32gpio.gpio, (*pincount)++);
 
-      /* 
-       * Configure the physical STM32 GPIO pin for input.
+      /* Configure the physical STM32 GPIO pin for input.
        * Interrupt configuration will be done later when enabled.
        */
-      
+
       stm32_configgpio(g_gpiointinputs[i]);
-      
+
       pins_initialized++;
-      
-      gpioinfo("GPIO interrupt %d: configured and registered as /dev/gpio%d\n", 
+
+      gpioinfo("GPIO interrupt %d: registered as /dev/gpio%d\n",
                i, (*pincount) - 1);
     }
-    
-  gpioinfo("GPIO interrupt initialization completed: %d pins\n", 
+
+  gpioinfo("GPIO interrupt initialization completed: %d pins\n",
             pins_initialized);
 
   return pins_initialized;
@@ -884,29 +884,29 @@ static int stm32_gpio_init_interrupt_pins(int *pincount)
  *
  * Description:
  *   Initialize the GPIO driver for the STM32H7 Nucleo board.
- *   
+ *
  *   This is the main initialization function that sets up all GPIO pins
  *   defined for the board. It coordinates the initialization of different
  *   types of GPIO pins (inputs, outputs, interrupts) and registers them
  *   with the NuttX GPIO framework.
- *   
+ *
  *   The function creates device nodes under /dev/gpio* that applications
  *   can use to interact with the GPIO pins. The numbering is sequential
  *   across all pin types (inputs first, then outputs, then interrupts).
- *   
+ *
  *   For the Nucleo-H753ZI board, this typically results in:
  *   - /dev/gpio0 : User button (input)
- *   - /dev/gpio1 : LD1 Green LED (output)  
+ *   - /dev/gpio1 : LD1 Green LED (output)
  *   - /dev/gpio2 : LD2 Orange LED (output)
  *   - /dev/gpio3 : LD3 Red LED (output)
  *   - /dev/gpio4 : Custom interrupt pin (interrupt)
- *   
+ *
  *   Applications can then use standard file operations:
  *   - open("/dev/gpio1", O_RDWR)
  *   - ioctl(fd, GPIOC_WRITE, 1)  // Turn on LED
  *   - ioctl(fd, GPIOC_READ, &value)  // Read current state
  *   - close(fd)
- *   
+ *
  *   This function is typically called during board initialization, before
  *   applications start running.
  *
@@ -918,7 +918,7 @@ static int stm32_gpio_init_interrupt_pins(int *pincount)
  *
  * Side Effects:
  *   - Configures STM32 GPIO hardware for all defined pins
- *   - Creates device nodes in /dev filesystem  
+ *   - Creates device nodes in /dev filesystem
  *   - Initializes all GPIO device structures
  *   - May enable GPIO peripheral clocks (handled by lower-level functions)
  *
@@ -937,14 +937,14 @@ int stm32_gpio_initialize(void)
   gpioinfo("Starting STM32H7 GPIO driver initialization\n");
 
   /* Initialize each type of GPIO pin in logical order */
-  
+
   total_pins += stm32_gpio_init_input_pins(&pincount);
-  total_pins += stm32_gpio_init_output_pins(&pincount);  
+  total_pins += stm32_gpio_init_output_pins(&pincount);
   total_pins += stm32_gpio_init_interrupt_pins(&pincount);
 
   gpioinfo("STM32H7 GPIO driver initialization completed successfully\n");
   gpioinfo("Total GPIO pins initialized: %d\n", total_pins);
-  gpioinfo("GPIO devices available: /dev/gpio0 through /dev/gpio%d\n", 
+  gpioinfo("GPIO devices available: /dev/gpio0 through /dev/gpio%d\n",
            pincount - 1);
 
   return OK;

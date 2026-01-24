@@ -1,0 +1,44 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config EXAMPLES_BEV_CLUSTER
+	tristate "BEV Cluster Application"
+	default n
+	depends on GRAPHICS_LVGL
+	select LIBC_FLOATINGPOINT
+	---help---
+		Enable the BEV (Battery Electric Vehicle) Cluster application.
+		This application provides a complete instrument cluster with:
+		- CAN bus integration (10 message/signal placeholders)
+		- LVGL graphical display (speed, battery, power, temp, direction)
+		- Button handling (auto-detects from board config)
+		- Notification system (permanent + 5s timeout)
+
+		Requirements:
+		- GRAPHICS_LVGL=y (Graphics library with framebuffer)
+		- Optional: CAN support (SocketCAN)
+		- Optional: Button driver (/dev/buttons)
+
+if EXAMPLES_BEV_CLUSTER
+
+config EXAMPLES_BEV_CLUSTER_PROGNAME
+	string "Program name"
+	default "bev_cluster"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config EXAMPLES_BEV_CLUSTER_PRIORITY
+	int "BEV Cluster task priority"
+	default 100
+
+config EXAMPLES_BEV_CLUSTER_STACKSIZE
+	int "BEV Cluster stack size"
+	default 8192
+	---help---
+		Stack size for the BEV Cluster application.
+		8192 bytes is recommended for LVGL + CAN + buttons.
+
+endif

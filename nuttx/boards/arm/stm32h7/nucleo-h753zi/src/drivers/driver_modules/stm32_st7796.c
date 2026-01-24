@@ -47,7 +47,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Determine which SPI port to use */
+/* SPI port selection from Kconfig */
 
 #ifdef CONFIG_NUCLEO_H753ZI_ST7796_SPI1
 #  define ST7796_SPI_PORTNO 1
@@ -107,7 +107,7 @@
 #  error "CONFIG_SPI_CMDDATA must be enabled for ST7796 driver"
 #endif
 
-/* Default pin configuration */
+/* Pin configuration from Kconfig with defaults */
 
 #ifndef CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN
 #  define CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN "PA4"
@@ -133,45 +133,68 @@
 #  define CONFIG_NUCLEO_H753ZI_ST7796_DEVID 0
 #endif
 
+/* SPI frequency from Kconfig with default */
+
+#ifndef CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY
+#  define CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY ST7796_SPI_MAXFREQUENCY
+#endif
+
 /* Reset timing (from ST7796 datasheet) */
 
 #define ST7796_RESET_DELAY_MS      10
 #define ST7796_RESET_HOLD_MS       10
 #define ST7796_RESET_RELEASE_MS    120
 
-#define ST7796_GPIO_CONFIG_MASK 0xFFFF0000
-#define ST7796_GPIO_IN_FLOAT \
-  (GPIO_INPUT | GPIO_FLOAT | GPIO_SPEED_50MHz)
+/* GPIO helper macros */
 
-/* Display resolution for flush */
+#define ST7796_GPIO_CONFIG_MASK    0xffff0000
+#define ST7796_GPIO_IN_FLOAT       (GPIO_INPUT | GPIO_FLOAT | GPIO_SPEED_50MHz)
+
+/* Display resolution based on orientation from Kconfig */
 
 #if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE) || \
-    defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE) || \
-    defined(CONFIG_LCD_LANDSCAPE) || defined(CONFIG_LCD_RLANDSCAPE)
-#  define ST7796_FLUSH_XRES 480
-#  define ST7796_FLUSH_YRES 320
+    defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE)
+#  define ST7796_XRES              ST7796_YRES_RAW
+#  define ST7796_YRES              ST7796_XRES_RAW
 #else
-#  define ST7796_FLUSH_XRES 320
-#  define ST7796_FLUSH_YRES 480
+#  define ST7796_XRES              ST7796_XRES_RAW
+#  define ST7796_YRES              ST7796_YRES_RAW
 #endif
 
-/* Rotation configuration */
+/* Base MADCTL value based on orientation and BGR from Kconfig */
+
+#if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE)
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+#    define ST7796_MADCTL_BASE     ST7796_MADCTL_LANDSCAPE_BGR
+#  else
+#    define ST7796_MADCTL_BASE     ST7796_MADCTL_LANDSCAPE
+#  endif
+#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RPORTRAIT)
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+#    define ST7796_MADCTL_BASE     ST7796_MADCTL_RPORTRAIT_BGR
+#  else
+#    define ST7796_MADCTL_BASE     ST7796_MADCTL_RPORTRAIT
+#  endif
+#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE)
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+#    define ST7796_MADCTL_BASE     ST7796_MADCTL_RLANDSCAPE_BGR
+#  else
+#    define ST7796_MADCTL_BASE     ST7796_MADCTL_RLANDSCAPE
+#  endif
+#else /* Portrait (default) */
+#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
+#    define ST7796_MADCTL_BASE     ST7796_MADCTL_PORTRAIT_BGR
+#  else
+#    define ST7796_MADCTL_BASE     ST7796_MADCTL_PORTRAIT
+#  endif
+#endif
+
+/* Initial rotation from Kconfig */
 
 #ifdef CONFIG_NUCLEO_H753ZI_ST7796_ROTATION_180
-#  define ST7796_APPLY_180_ROTATION true
+#  define ST7796_INIT_ROTATION     180
 #else
-#  define ST7796_APPLY_180_ROTATION false
-#endif
-
-
-/* SPI Frequency */
-
-#ifndef CONFIG_LCD_ST7796_FREQUENCY
-#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY
-#    define CONFIG_LCD_ST7796_FREQUENCY CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY
-#  else
-#    define CONFIG_LCD_ST7796_FREQUENCY 40000000
-#  endif
+#  define ST7796_INIT_ROTATION     0
 #endif
 
 /****************************************************************************
@@ -183,6 +206,18 @@ static uint32_t g_led_pin;
 static bool g_st7796_initialized = false;
 static FAR struct spi_dev_s *g_spi_dev = NULL;
 static FAR struct fb_vtable_s *g_fb_vtable = NULL;
+
+/* Board-specific configuration passed to generic driver */
+
+static struct st7796_config_s g_st7796_config =
+{
+  .frequency = CONFIG_NUCLEO_H753ZI_ST7796_FREQUENCY,
+  .xres      = ST7796_XRES,
+  .yres      = ST7796_YRES,
+  .bpp       = 16,
+  .madctl    =  ST7796_MADCTL_BASE /* 0x28 -> will fix it */,
+  .rotation  = ST7796_INIT_ROTATION,
+};
 
 /****************************************************************************
  * Private Functions
@@ -233,7 +268,7 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
     }
 
   port = pin_str[1];
-  if (port < 'A' || port > 'H')
+  if (port < 'A' || port > 'K')
     {
       *error = -EINVAL;
       return 0;
@@ -249,14 +284,22 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
 
   switch (port)
     {
-      case 'A': port_base = GPIO_PORTA; break;
-      case 'B': port_base = GPIO_PORTB; break;
-      case 'C': port_base = GPIO_PORTC; break;
-      case 'D': port_base = GPIO_PORTD; break;
-      case 'E': port_base = GPIO_PORTE; break;
-      case 'F': port_base = GPIO_PORTF; break;
-      case 'G': port_base = GPIO_PORTG; break;
-      case 'H': port_base = GPIO_PORTH; break;
+      case 'A':
+       port_base = GPIO_PORTA; break;
+      case 'B':
+       port_base = GPIO_PORTB; break;
+      case 'C':
+       port_base = GPIO_PORTC; break;
+      case 'D':
+       port_base = GPIO_PORTD; break;
+      case 'E':
+       port_base = GPIO_PORTE; break;
+      case 'F':
+       port_base = GPIO_PORTF; break;
+      case 'G':
+       port_base = GPIO_PORTG; break;
+      case 'H':
+       port_base = GPIO_PORTH; break;
       default:
         *error = -EINVAL;
         return 0;
@@ -264,22 +307,38 @@ static uint32_t parse_gpio_pin(FAR const char *pin_str, FAR int *error)
 
   switch (pin_num)
     {
-      case 0:  gpio_pin = GPIO_PIN0;  break;
-      case 1:  gpio_pin = GPIO_PIN1;  break;
-      case 2:  gpio_pin = GPIO_PIN2;  break;
-      case 3:  gpio_pin = GPIO_PIN3;  break;
-      case 4:  gpio_pin = GPIO_PIN4;  break;
-      case 5:  gpio_pin = GPIO_PIN5;  break;
-      case 6:  gpio_pin = GPIO_PIN6;  break;
-      case 7:  gpio_pin = GPIO_PIN7;  break;
-      case 8:  gpio_pin = GPIO_PIN8;  break;
-      case 9:  gpio_pin = GPIO_PIN9;  break;
-      case 10: gpio_pin = GPIO_PIN10; break;
-      case 11: gpio_pin = GPIO_PIN11; break;
-      case 12: gpio_pin = GPIO_PIN12; break;
-      case 13: gpio_pin = GPIO_PIN13; break;
-      case 14: gpio_pin = GPIO_PIN14; break;
-      case 15: gpio_pin = GPIO_PIN15; break;
+      case 0:
+        gpio_pin = GPIO_PIN0;  break;
+      case 1:
+        gpio_pin = GPIO_PIN1;  break;
+      case 2:
+        gpio_pin = GPIO_PIN2;  break;
+      case 3:
+        gpio_pin = GPIO_PIN3;  break;
+      case 4:
+        gpio_pin = GPIO_PIN4;  break;
+      case 5:
+        gpio_pin = GPIO_PIN5;  break;
+      case 6:
+        gpio_pin = GPIO_PIN6;  break;
+      case 7:
+        gpio_pin = GPIO_PIN7;  break;
+      case 8:
+        gpio_pin = GPIO_PIN8;  break;
+      case 9:
+        gpio_pin = GPIO_PIN9;  break;
+      case 10:
+        gpio_pin = GPIO_PIN10; break;
+      case 11:
+        gpio_pin = GPIO_PIN11; break;
+      case 12:
+        gpio_pin = GPIO_PIN12; break;
+      case 13:
+        gpio_pin = GPIO_PIN13; break;
+      case 14:
+        gpio_pin = GPIO_PIN14; break;
+      case 15:
+        gpio_pin = GPIO_PIN15; break;
       default:
         *error = -EINVAL;
         return 0;
@@ -301,8 +360,6 @@ static int stm32_st7796_gpio_initialize(void)
 {
   int ret;
   int error;
-
-  syslog(LOG_INFO, "ST7796: Configuring GPIO pins...\n");
 
   g_reset_pin = parse_gpio_pin(CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN,
                                &error);
@@ -338,10 +395,6 @@ static int stm32_st7796_gpio_initialize(void)
   stm32_gpiowrite(g_reset_pin, true);
   stm32_gpiowrite(g_led_pin, false);  /* Start with backlight OFF */
 
-  syslog(LOG_INFO, "ST7796 GPIO initialized: RESET=%s, LED=%s\n",
-         CONFIG_NUCLEO_H753ZI_ST7796_RESET_PIN,
-         CONFIG_NUCLEO_H753ZI_ST7796_LED_PIN);
-
   return OK;
 }
 
@@ -355,8 +408,6 @@ static int stm32_st7796_gpio_initialize(void)
 
 static void stm32_st7796_hardware_reset(void)
 {
-  syslog(LOG_INFO, "ST7796: Performing hardware reset...\n");
-
   stm32_gpiowrite(g_reset_pin, true);
   nxsig_usleep(ST7796_RESET_DELAY_MS * 1000);
 
@@ -365,8 +416,6 @@ static void stm32_st7796_hardware_reset(void)
 
   stm32_gpiowrite(g_reset_pin, true);
   nxsig_usleep(ST7796_RESET_RELEASE_MS * 1000);
-
-  syslog(LOG_INFO, "ST7796: Reset complete\n");
 }
 
 /****************************************************************************
@@ -381,19 +430,13 @@ static int stm32_st7796_spi_initialize(void)
 {
   int ret;
 
-  syslog(LOG_INFO, "========================================\n");
-  syslog(LOG_INFO, "ST7796: SPI%d init (CS=%s, DC=%s)\n",
-         ST7796_SPI_PORTNO,
-         CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN,
-         CONFIG_NUCLEO_H753ZI_ST7796_DC_PIN);
-  syslog(LOG_INFO, "========================================\n");
-
   stm32_st7796_hardware_reset();
 
   ret = stm32_spi_register_cs_device(ST7796_SPI_PORTNO,
-                                     CONFIG_NUCLEO_H753ZI_ST7796_DEVID,
-                                     CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN,
-                                     CONFIG_NUCLEO_H753ZI_ST7796_CS_ACTIVE_LOW);
+                                  CONFIG_NUCLEO_H753ZI_ST7796_DEVID,
+                                  CONFIG_NUCLEO_H753ZI_ST7796_CS_PIN,
+                                  CONFIG_NUCLEO_H753ZI_ST7796_CS_ACTIVE_LOW);
+
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to register CS: %d\n", ret);
@@ -412,7 +455,7 @@ static int stm32_st7796_spi_initialize(void)
     }
 
   g_spi_dev = stm32_spibus_initialize(ST7796_SPI_PORTNO);
-  if (!g_spi_dev)
+  if (g_spi_dev == NULL)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize SPI%d\n",
              ST7796_SPI_PORTNO);
@@ -421,94 +464,9 @@ static int stm32_st7796_spi_initialize(void)
       return -ENODEV;
     }
 
-  syslog(LOG_INFO, "ST7796: SPI initialized\n");
   g_st7796_initialized = true;
 
   return OK;
-}
-
-/****************************************************************************
- * Name: stm32_st7796_apply_rotation
- *
- * Description:
- *   Apply 180-degree rotation if configured. This modifies the MADCTL
- *   register to flip both X and Y axes.
- *
- ****************************************************************************/
-
-static void stm32_st7796_apply_rotation(void)
-{
-  uint8_t madctl_base;
-  uint8_t madctl_rotated;
-  
-  if (!ST7796_APPLY_180_ROTATION)
-    {
-      syslog(LOG_INFO, "ST7796: No rotation applied (0°)\n");
-      return;
-    }
-
-  syslog(LOG_INFO, "ST7796: Applying 180° rotation...\n");
-
-  /* Determine base MADCTL value from orientation configuration */
-
-#if defined(CONFIG_NUCLEO_H753ZI_ST7796_LANDSCAPE) || \
-    defined(CONFIG_LCD_LANDSCAPE)
-#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
-  madctl_base = 0x28;  /* Landscape: MV=1, BGR=1 */
-#  else
-  madctl_base = 0x20;  /* Landscape: MV=1, RGB=1 */
-#  endif
-#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RPORTRAIT) || \
-      defined(CONFIG_LCD_RPORTRAIT)
-#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
-  madctl_base = 0x88;  /* Reverse Portrait: MY=1, BGR=1 */
-#  else
-  madctl_base = 0x80;  /* Reverse Portrait: MY=1, RGB=1 */
-#  endif
-#elif defined(CONFIG_NUCLEO_H753ZI_ST7796_RLANDSCAPE) || \
-      defined(CONFIG_LCD_RLANDSCAPE)
-#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
-  madctl_base = 0xE8;  /* Reverse Landscape: MY=1, MX=1, MV=1, BGR=1 */
-#  else
-  madctl_base = 0xE0;  /* Reverse Landscape: MY=1, MX=1, MV=1, RGB=1 */
-#  endif
-#else
-#  ifdef CONFIG_NUCLEO_H753ZI_ST7796_BGR
-  madctl_base = 0x48;  /* Portrait: MX=1, BGR=1 */
-#  else
-  madctl_base = 0x40;  /* Portrait: MX=1, RGB=1 */
-#  endif
-#endif
-
-  /* Apply 180° rotation: XOR with 0xC0 (flip MX and MY bits) */
-
-  madctl_rotated = madctl_base ^ 0xC0;
-  
-  /* Select SPI and send MADCTL command */
-
-  SPI_LOCK(g_spi_dev, true);
-  SPI_SETMODE(g_spi_dev, SPIDEV_MODE0);
-  SPI_SETBITS(g_spi_dev, 8);
-  SPI_SETFREQUENCY(g_spi_dev, CONFIG_LCD_ST7796_FREQUENCY);
-  SPI_SELECT(g_spi_dev, SPIDEV_DISPLAY(0), true);
-
-  /* Send MADCTL command (0x36) */
-
-  SPI_CMDDATA(g_spi_dev, SPIDEV_DISPLAY(0), true);
-  SPI_SEND(g_spi_dev, ST7796_MADCTL);
-  
-  /* Send rotated MADCTL value */
-
-  SPI_CMDDATA(g_spi_dev, SPIDEV_DISPLAY(0), false);
-  SPI_SEND(g_spi_dev, madctl_rotated);
-  
-  /* Deselect SPI */
-
-  SPI_SELECT(g_spi_dev, SPIDEV_DISPLAY(0), false);
-  SPI_LOCK(g_spi_dev, false);
-  
-  syslog(LOG_INFO, "ST7796: 180° rotation applied (MADCTL: 0x%02X -> 0x%02X)\n",
-         madctl_base, madctl_rotated);
 }
 
 /****************************************************************************
@@ -525,8 +483,6 @@ static void stm32_st7796_apply_rotation(void)
 
 int up_fbinitialize(int display)
 {
-  syslog(LOG_INFO, "ST7796: up_fbinitialize(%d)\n", display);
-
   if (!g_st7796_initialized || g_spi_dev == NULL)
     {
       syslog(LOG_ERR, "ERROR: ST7796 not initialized\n");
@@ -539,14 +495,13 @@ int up_fbinitialize(int display)
       return -EINVAL;
     }
 
-  g_fb_vtable = st7796_fbinitialize(g_spi_dev);
-  if (!g_fb_vtable)
+  g_fb_vtable = st7796_fbinitialize(g_spi_dev, &g_st7796_config);
+  if (g_fb_vtable == NULL)
     {
       syslog(LOG_ERR, "ERROR: st7796_fbinitialize() failed\n");
       return -ENODEV;
     }
 
-  syslog(LOG_INFO, "ST7796: Framebuffer initialized\n");
   return OK;
 }
 
@@ -578,8 +533,6 @@ FAR struct fb_vtable_s *up_fbgetvplane(int display, int vplane)
 
 void up_fbuninitialize(int display)
 {
-  syslog(LOG_INFO, "ST7796: up_fbuninitialize(%d)\n", display);
-
   if (display != 0)
     {
       return;
@@ -602,10 +555,6 @@ int stm32_st7796initialize(int devno)
 {
   int ret;
 
-  syslog(LOG_INFO, "========================================\n");
-  syslog(LOG_INFO, "ST7796: Starting initialization\n");
-  syslog(LOG_INFO, "========================================\n");
-
   /* Step 1: Initialize GPIO pins (RESET, LED) */
 
   ret = stm32_st7796_gpio_initialize();
@@ -625,7 +574,8 @@ int stm32_st7796initialize(int devno)
     }
 
   /* Step 3: Register framebuffer device
-   * This calls up_fbinitialize() and draws splashscreen to RAM
+   * This calls up_fbinitialize() which initializes the display
+   * and applies initial rotation from config
    */
 
   ret = fb_register(0, 0);
@@ -636,14 +586,6 @@ int stm32_st7796initialize(int devno)
                                      CONFIG_NUCLEO_H753ZI_ST7796_DEVID);
       return ret;
     }
-
-  /* Step 4: Apply rotation if configured (BEFORE flushing framebuffer) */
-
-  stm32_st7796_apply_rotation();
-
-  syslog(LOG_INFO, "========================================\n");
-  syslog(LOG_INFO, "ST7796: Init complete - /dev/fb%d\n", devno);
-  syslog(LOG_INFO, "========================================\n");
 
   return OK;
 }
@@ -669,11 +611,8 @@ int stm32_st7796_flush_fb(void)
 
   area.x = 0;
   area.y = 0;
-  area.w = ST7796_FLUSH_XRES;
-  area.h = ST7796_FLUSH_YRES;
-
-  syslog(LOG_INFO, "ST7796: Flushing framebuffer (%dx%d) to display...\n", 
-         area.w, area.h);
+  area.w = ST7796_XRES;
+  area.h = ST7796_YRES;
 
   return g_fb_vtable->updatearea(g_fb_vtable, &area);
 }
@@ -689,7 +628,6 @@ int stm32_st7796_flush_fb(void)
 void stm32_st7796_backlight(bool on)
 {
   stm32_gpiowrite(g_led_pin, on);
-  syslog(LOG_INFO, "ST7796 backlight: %s\n", on ? "ON" : "OFF");
 }
 
 /****************************************************************************
@@ -704,13 +642,11 @@ void stm32_st7796_power(bool on)
 {
   if (on)
     {
-      syslog(LOG_INFO, "ST7796: Power ON\n");
       stm32_st7796_hardware_reset();
       stm32_gpiowrite(g_led_pin, true);
     }
   else
     {
-      syslog(LOG_INFO, "ST7796: Power OFF\n");
       stm32_gpiowrite(g_led_pin, false);
     }
 }
@@ -725,7 +661,6 @@ void stm32_st7796_power(bool on)
 
 void stm32_st7796_reset_display(void)
 {
-  syslog(LOG_INFO, "ST7796: Manual reset\n");
   stm32_st7796_hardware_reset();
 }
 
@@ -740,8 +675,6 @@ void stm32_st7796_reset_display(void)
 int stm32_st7796_cleanup(void)
 {
   int ret;
-
-  syslog(LOG_INFO, "ST7796: Cleanup...\n");
 
   stm32_gpiowrite(g_led_pin, false);
 
@@ -760,8 +693,6 @@ int stm32_st7796_cleanup(void)
   g_st7796_initialized = false;
   g_spi_dev = NULL;
   g_fb_vtable = NULL;
-
-  syslog(LOG_INFO, "ST7796: Cleanup complete\n");
 
   return ret;
 }

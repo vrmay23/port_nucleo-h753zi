@@ -1649,18 +1649,19 @@ choice ESP32S3_UNIVERSAL_MAC_ADDRESSES
 		a custom universal MAC address range, the correct setting will depend on the allocation of MAC
 		addresses in this range (either 2 or 4 per device.)
 
-	config ESP32S3_UNIVERSAL_MAC_ADDRESSES_TWO
-		bool "Two"
-		select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
-		select ESP_MAC_ADDR_UNIVERSE_BT
+config ESP32S3_UNIVERSAL_MAC_ADDRESSES_TWO
+	bool "Two"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	select ESP_MAC_ADDR_UNIVERSE_BT
 
-	config ESP32S3_UNIVERSAL_MAC_ADDRESSES_FOUR
-		bool "Four"
-		select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
-		select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
-		select ESP_MAC_ADDR_UNIVERSE_BT
-		select ESP_MAC_ADDR_UNIVERSE_ETH
-endchoice
+config ESP32S3_UNIVERSAL_MAC_ADDRESSES_FOUR
+	bool "Four"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+	select ESP_MAC_ADDR_UNIVERSE_BT
+	select ESP_MAC_ADDR_UNIVERSE_ETH
+
+endchoice # ESP32S3_UNIVERSAL_MAC_ADDRESSES
 
 config ESP32S3_UNIVERSAL_MAC_ADDRESSES
 	int
@@ -1823,6 +1824,7 @@ config ESP32S3_TICKLESS
 
 config ESP32S3_SPIFLASH
 	bool "SPI Flash MTD Partition"
+	select ESPRESSIF_SPIFLASH if !ESP32S3_PARTITION_TABLE && !ESP32S3_SPIRAM
 	default n
 
 menu "SPI Flash configuration"
@@ -1895,7 +1897,7 @@ endchoice # ESP32S3_FLASH_SAMPLE_MODE
 
 config ESP32S3_SPI_FLASH_DONT_USE_ROM_CODE
 	bool "Don't use SPI flash driver in ROM"
-	default n
+	default y
 	---help---
 		Use source code for SPI flash driver instead of functions
 		in ROM.
@@ -1915,22 +1917,23 @@ choice ESP32S3_FLASH_SIZE
 	depends on ARCH_CHIP_ESP32S3CUSTOM
 	default ESP32S3CUSTOM_FLASH_4M
 
-	config ESP32S3CUSTOM_FLASH_4M
-		bool "ESP32S3 Flash 4MB"
-		select ESP32S3_FLASH_4M
+config ESP32S3CUSTOM_FLASH_4M
+	bool "ESP32S3 Flash 4MB"
+	select ESP32S3_FLASH_4M
 
-	config ESP32S3CUSTOM_FLASH_8M
-		bool "ESP32S3 Flash 8MB"
-		select ESP32S3_FLASH_8M
+config ESP32S3CUSTOM_FLASH_8M
+	bool "ESP32S3 Flash 8MB"
+	select ESP32S3_FLASH_8M
 
-	config ESP32S3CUSTOM_FLASH_16M
-		bool "ESP32S3 Flash 16MB"
-		select ESP32S3_FLASH_16M
+config ESP32S3CUSTOM_FLASH_16M
+	bool "ESP32S3 Flash 16MB"
+	select ESP32S3_FLASH_16M
 
-	config ESP32S3CUSTOM_FLASH_32M
-		bool "ESP32S3 Flash 32MB"
-		select ESP32S3_FLASH_32M
-		select ESP32S3_SPI_FLASH_USE_32BIT_ADDRESS
+config ESP32S3CUSTOM_FLASH_32M
+	bool "ESP32S3 Flash 32MB"
+	select ESP32S3_FLASH_32M
+	select ESP32S3_SPI_FLASH_USE_32BIT_ADDRESS
+
 endchoice # ESP32S3_FLASH_SIZE
 
 config ESP32S3_HAVE_OTA_PARTITION
@@ -1985,6 +1988,7 @@ config ESP32S3_MTD
 	select MTD
 	select MTD_BYTE_WRITE
 	select MTD_PARTITION
+	select ESPRESSIF_MTD if !ESP32S3_PARTITION_TABLE && !ESP32S3_SPIRAM
 	---help---
 		Initialize an MTD driver for the ESP32-S3 SPI Flash, which will
 		add an entry at /dev for application access from userspace.
@@ -2784,7 +2788,7 @@ endchoice
 
 config ESP32S3_MCUBOOT_VERSION
 	string "MCUboot version"
-	default "aa4fa2b6e17361dd3ce16a60883059778fd147a9"
+	default "8a07053d42e592c85cb35b79c4de1b7749943387"
 	depends on ESP32S3_APP_FORMAT_MCUBOOT
 
 config ESP32S3_APP_MCUBOOT_HEADER_SIZE

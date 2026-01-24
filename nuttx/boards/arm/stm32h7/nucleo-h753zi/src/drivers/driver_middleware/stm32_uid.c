@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32h7/nucleo-h753zi/src/stm32_uid.c
+ * boards/arm/stm32h7/nucleo-h753zi/src/drivers/driver_middleware/stm32_uid.c
  *
  * SPDX-License-Identifier: BSD-3-Clause
  * SPDX-FileCopyrightText: 2015 Marawan Ragab. All rights reserved.
