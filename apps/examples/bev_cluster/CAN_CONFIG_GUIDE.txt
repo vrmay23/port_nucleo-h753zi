@@ -1,0 +1,160 @@
+/****************************************************************************
+ * QUICK CONFIGURATION GUIDE
+ *
+ * Edit app_config.h to customize CAN messages and signals
+ ****************************************************************************/
+
+/****************************************************************************
+ * EXAMPLE 1: Change speed message ID
+ ****************************************************************************/
+
+/* In app_config.h, find: */
+#define CAN_MSG_SPEED           0x18FEF100
+
+/* Change to your ID: */
+#define CAN_MSG_SPEED           0x0CF00400  /* SAE J1939 Vehicle Speed */
+
+/****************************************************************************
+ * EXAMPLE 2: Add new signal from existing message
+ ****************************************************************************/
+
+/* Step 1: Define signal in app_config.h */
+#define SIGNAL_SOC_MSG          CAN_MSG_BATTERY  /* Same message as voltage */
+#define SIGNAL_SOC_BYTE         6                /* Byte 6 of battery msg */
+#define SIGNAL_SOC_LEN          1                /* 1 byte */
+/* Value = percentage (0-100%) */
+
+/* Step 2: Add field to vehicle_data_s in can_db.h */
+struct vehicle_data_s
+{
+  // ... existing fields
+  uint8_t battery_soc;  /* State of charge 0-100% */
+};
+
+/* Step 3: Decode in can_db.c */
+void can_db_decode_battery(const uint8_t *data,
+                           struct vehicle_data_s *vdata)
+{
+  // ... existing decoding
+  vdata->battery_soc = data[SIGNAL_SOC_BYTE];  /* ADD THIS */
+}
+
+/* Step 4: Display in ui_widgets.c */
+void ui_widgets_update(const struct vehicle_data_s *vdata)
+{
+  // ... existing updates
+  snprintf(buf, sizeof(buf), "SOC: %d%%", vdata->battery_soc);
+  lv_label_set_text(g_soc_label, buf);
+}
+
+/****************************************************************************
+ * EXAMPLE 3: Add completely new message
+ ****************************************************************************/
+
+/* Step 1: Define message ID in app_config.h */
+#define CAN_MSG_MOTOR           0x18FEF500  /* Motor status */
+
+/* Step 2: Define signals from that message */
+#define SIGNAL_RPM_MSG          CAN_MSG_MOTOR
+#define SIGNAL_RPM_BYTE         0
+#define SIGNAL_RPM_LEN          2  /* 16-bit */
+/* Value = raw * 0.25 RPM */
+
+#define SIGNAL_TORQUE_MSG       CAN_MSG_MOTOR
+#define SIGNAL_TORQUE_BYTE      2
+#define SIGNAL_TORQUE_LEN       2  /* 16-bit signed */
+/* Value = raw * 0.1 Nm */
+
+/* Step 3: Add fields to vehicle_data_s in can_db.h */
+struct vehicle_data_s
+{
+  // ... existing
+  uint16_t motor_rpm;
+  int16_t motor_torque;
+};
+
+/* Step 4: Create decode function in can_db.h */
+void can_db_decode_motor(const uint8_t *data,
+                         struct vehicle_data_s *vdata);
+
+/* Step 5: Implement decode in can_db.c */
+void can_db_decode_motor(const uint8_t *data,
+                         struct vehicle_data_s *vdata)
+{
+  vdata->motor_rpm = (data[SIGNAL_RPM_BYTE] << 8) |
+                     data[SIGNAL_RPM_BYTE + 1];
+  
+  vdata->motor_torque = (int16_t)((data[SIGNAL_TORQUE_BYTE] << 8) |
+                                   data[SIGNAL_TORQUE_BYTE + 1]);
+}
+
+/* Step 6: Add handler in can_handler.c (inside can_handler_poll) */
+else if (msg_id == SIGNAL_RPM_MSG)
+  {
+    can_db_decode_motor(frame.data, &g_vehicle_data);
+    data_updated = true;
+  }
+
+/* Step 7: Display in ui_widgets.c */
+snprintf(buf, sizeof(buf), "%.0f RPM", vdata->motor_rpm * 0.25f);
+lv_label_set_text(g_rpm_label, buf);
+
+/****************************************************************************
+ * EXAMPLE 4: Multi-signal extraction from one message
+ ****************************************************************************/
+
+/* Battery message (0x18FEF200) contains multiple signals:
+ *
+ * Byte 0-1: Voltage (16-bit, 0.1V)
+ * Byte 2-3: Current (16-bit signed, 0.1A)
+ * Byte 4:   Direction (0=Fwd, 1=Rev, 2=Neutral)
+ * Byte 5:   State of Charge (0-100%)
+ * Byte 6-7: Reserved
+ *
+ * All handled by single decoder: can_db_decode_battery()
+ */
+
+/****************************************************************************
+ * TESTING CAN MESSAGES
+ ****************************************************************************/
+
+/* From Linux terminal with can-utils installed:
+
+# Speed = 85 km/h
+cansend can0 18FEF100#5500000000000000
+
+# Battery: V=400.5V (4005=0x0FA5), I=123.4A (1234=0x04D2), Dir=0 (Fwd)
+cansend can0 18FEF200#0FA504D200000000
+
+# Temperature = 35°C (0x23)
+cansend can0 18FEF300#2300000000000000
+
+# Motor: RPM=3000 (raw=12000=0x2EE0), Torque=250Nm (raw=2500=0x09C4)
+cansend can0 18FEF500#2EE009C400000000
+*/
+
+/****************************************************************************
+ * SIGNAL EXTRACTION MACROS (optional helpers)
+ ****************************************************************************/
+
+/* You can add these to can_db.c for convenience: */
+
+/* Extract 16-bit big-endian unsigned */
+#define GET_U16_BE(data, offset) \
+  (((uint16_t)(data)[(offset)] << 8) | (data)[(offset) + 1])
+
+/* Extract 16-bit big-endian signed */
+#define GET_S16_BE(data, offset) \
+  ((int16_t)GET_U16_BE(data, offset))
+
+/* Extract 32-bit big-endian unsigned */
+#define GET_U32_BE(data, offset) \
+  (((uint32_t)(data)[(offset)] << 24) | \
+   ((uint32_t)(data)[(offset) + 1] << 16) | \
+   ((uint32_t)(data)[(offset) + 2] << 8) | \
+   (data)[(offset) + 3])
+
+/* Usage in decoder:
+vdata->battery_voltage = GET_U16_BE(data, SIGNAL_BATTERY_V_BYTE);
+vdata->battery_current = GET_S16_BE(data, SIGNAL_BATTERY_I_BYTE);
+*/

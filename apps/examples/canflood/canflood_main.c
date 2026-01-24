@@ -44,7 +44,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-
 #define DEFAULT_IFACE   "can0"
 #define DEFAULT_DELAY   1          /* 1 ms delay between frames */
 #define DEFAULT_COUNT   0          /* 0 = infinite */

@@ -28,6 +28,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 /****************************************************************************
@@ -66,8 +67,8 @@
 #define ST7796_RDDISPBRIGHT     0x52  /* Read Display Brightness */
 #define ST7796_WRCTRLD          0x53  /* Write Control Display */
 #define ST7796_RDCTRLD          0x54  /* Read Control Display */
-#define ST7796_WRCABC           0x55  /* Write Content Adaptive Brightness Control */
-#define ST7796_RDCABC           0x56  /* Read Content Adaptive Brightness Control */
+#define ST7796_WRCABC           0x55  /* Write Content Adaptive Brightness */
+#define ST7796_RDCABC           0x56  /* Read Content Adaptive Brightness */
 #define ST7796_WRCABCMIN        0x5e  /* Write CABC Minimum Brightness */
 #define ST7796_RDCABCMIN        0x5f  /* Read CABC Minimum Brightness */
 
@@ -96,9 +97,45 @@
 #define ST7796_MADCTL_BGR       0x08  /* BGR color filter panel */
 #define ST7796_MADCTL_MH        0x04  /* Horizontal Refresh Order */
 
-/* ST7796 Initialization sequence structure */
+/* Pre-defined MADCTL values for common orientations */
+
+#define ST7796_MADCTL_PORTRAIT           (ST7796_MADCTL_MX)
+#define ST7796_MADCTL_PORTRAIT_BGR       (ST7796_MADCTL_MX | ST7796_MADCTL_BGR)
+#define ST7796_MADCTL_RPORTRAIT          (ST7796_MADCTL_MY)
+#define ST7796_MADCTL_RPORTRAIT_BGR      (ST7796_MADCTL_MY | ST7796_MADCTL_BGR)
+#define ST7796_MADCTL_LANDSCAPE          (ST7796_MADCTL_MV)
+#define ST7796_MADCTL_LANDSCAPE_BGR      (ST7796_MADCTL_MV | ST7796_MADCTL_BGR)
+#define ST7796_MADCTL_RLANDSCAPE         (ST7796_MADCTL_MY | ST7796_MADCTL_MX | \
+                                          ST7796_MADCTL_MV)
+#define ST7796_MADCTL_RLANDSCAPE_BGR     (ST7796_MADCTL_MY | ST7796_MADCTL_MX | \
+                                          ST7796_MADCTL_MV | ST7796_MADCTL_BGR)
+
+/* Display raw dimensions (before orientation transform) */
+
+#define ST7796_XRES_RAW         320
+#define ST7796_YRES_RAW         480
+
+/* Default SPI frequency */
+
+#define ST7796_SPI_MAXFREQUENCY 40000000
+
+/* Rotation ioctl commands (if not defined in fb.h) */
+
+#ifndef FBIOSET_ROTATION
+#  define FBIOSET_ROTATION      _FBIOC(0x0100)
+#endif
+
+#ifndef FBIOGET_ROTATION
+#  define FBIOGET_ROTATION      _FBIOC(0x0101)
+#endif
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
 
 #ifndef __ASSEMBLY__
+
+/* Command sequence entry for initialization */
 
 struct st7796_cmd_s
 {
@@ -106,6 +143,21 @@ struct st7796_cmd_s
   FAR const uint8_t *data;  /* Parameter data (NULL if no params) */
   uint8_t len;              /* Number of parameter bytes */
   uint16_t delay_ms;        /* Delay after command in milliseconds */
+};
+
+/* Board-specific configuration passed to driver at initialization.
+ * This structure allows board code to configure the driver without
+ * requiring board-specific Kconfig options in the generic driver.
+ */
+
+struct st7796_config_s
+{
+  uint32_t frequency;       /* SPI clock frequency in Hz */
+  uint16_t xres;            /* Horizontal resolution (after orientation) */
+  uint16_t yres;            /* Vertical resolution (after orientation) */
+  uint16_t rotation;        /* Initial rotation: 0, 90, 180, or 270 */
+  uint8_t bpp;              /* Bits per pixel: 16 (RGB565) or 18 (RGB666) */
+  uint8_t madctl;           /* Base MADCTL register value for orientation */
 };
 
 /****************************************************************************
@@ -121,27 +173,66 @@ extern "C"
  * Name: st7796_fbinitialize
  *
  * Description:
- *   Initialize the ST7796 LCD driver as a framebuffer device.
+ *   Initialize the ST7796 LCD controller as a framebuffer device.
  *
- *   This function initializes the ST7796 display controller and registers
- *   it as a framebuffer device. The driver uses CONFIG_SPI_CMDDATA to
- *   control the DC (Data/Command) pin automatically via the SPI driver.
+ *   This function initializes the ST7796 display controller using the
+ *   provided configuration and returns a framebuffer virtual table.
+ *   The driver uses CONFIG_SPI_CMDDATA to control the DC (Data/Command)
+ *   pin automatically via the SPI driver.
  *
  * Input Parameters:
- *   spi - SPI device instance configured for the ST7796
+ *   spi    - SPI device instance configured for the ST7796
+ *   config - Board-specific configuration (frequency, resolution, etc.)
  *
  * Returned Value:
  *   Pointer to framebuffer vtable on success; NULL on failure.
  *
  * Assumptions:
  *   - CONFIG_SPI_CMDDATA is enabled
- *   - DC pin has been registered via stm32_spi_register_dc_pin()
- *   - CS pin has been registered via stm32_spi_register_cs_device()
- *   - RESET and LED pins have been configured by board support code
+ *   - DC pin has been registered with the SPI driver
+ *   - CS pin has been registered with the SPI driver
+ *   - RESET and backlight pins configured by board code
  *
  ****************************************************************************/
 
-FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi);
+FAR struct fb_vtable_s *st7796_fbinitialize(FAR struct spi_dev_s *spi,
+                                            FAR const struct st7796_config_s
+                                            *config);
+
+/****************************************************************************
+ * Name: st7796_setrotation
+ *
+ * Description:
+ *   Set display rotation at runtime. Valid rotation values are 0, 90,
+ *   180, and 270 degrees. The rotation is applied by modifying the
+ *   MADCTL register.
+ *
+ * Input Parameters:
+ *   vtable   - Reference to the framebuffer virtual table
+ *   rotation - Rotation angle in degrees (0, 90, 180, or 270)
+ *
+ * Returned Value:
+ *   OK on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int st7796_setrotation(FAR struct fb_vtable_s *vtable, uint16_t rotation);
+
+/****************************************************************************
+ * Name: st7796_getrotation
+ *
+ * Description:
+ *   Get current display rotation.
+ *
+ * Input Parameters:
+ *   vtable - Reference to the framebuffer virtual table
+ *
+ * Returned Value:
+ *   Current rotation in degrees (0, 90, 180, or 270).
+ *
+ ****************************************************************************/
+
+uint16_t st7796_getrotation(FAR struct fb_vtable_s *vtable);
 
 #ifdef __cplusplus
 }
