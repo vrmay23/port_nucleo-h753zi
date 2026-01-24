@@ -4,3 +4,4 @@ nuttx/nuttx
 nuttx/nuttx.map
 nuttx/System.map
 .vscode-ctags
+nuttx/Make.defs
