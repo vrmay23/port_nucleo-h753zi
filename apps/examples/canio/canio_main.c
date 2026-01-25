@@ -52,6 +52,7 @@
 #include <nuttx/can.h>
 #include <nuttx/leds/userled.h>
 #include <nuttx/input/buttons.h>
+#include "../../tgtestapps/tgtest/car_can.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -316,7 +317,7 @@ static void button_handler(int signo, siginfo_t *info, void *context)
  *   Main entry point for the CAN + LED + Button example.
  *
  ****************************************************************************/
-
+struct car_can_inverter_info_t inverte_info_msg;
 int main(int argc, char *argv[])
 {
   int btn_fd;
@@ -501,6 +502,10 @@ int main(int argc, char *argv[])
                 {
                   toggle_led(g_led_fd, led_number);
                 }
+                else if (message.can_id == CAR_CAN_INVERTER_INFO_FRAME_ID)
+  {
+    car_can_inverter_info_unpack(&inverte_info_msg,message.data,CAR_CAN_INVERTER_INFO_LENGTH);
+  }
             }
         }
     }
