@@ -34,7 +34,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <builtin/builtin.h>
 #include "nshlib/nshlib.h"
+
 
 /****************************************************************************
  * Public Functions
@@ -70,7 +72,7 @@ int main(int argc, FAR char *argv[])
 
   nsh_initialize();
 
-  //task_create("tgtest_app",100,2048,tgtest_main,NULL);
+#ifdef CONFIG_TGTEST_APPS_TGTEST
   char *tgtest_app = "tgtest_app";
   struct nsh_param_s tgtest_params =
     {
@@ -81,9 +83,9 @@ int main(int argc, FAR char *argv[])
       .file_in    = NULL,
       .file_out   = NULL
     };
-  //tgtest_params.
 
   exec_builtin(tgtest_app, NULL, &tgtest_params);
+#endif
 
 #ifdef CONFIG_NSH_CONSOLE
   /* If the serial console front end is selected, run it on this thread */
