@@ -19,18 +19,6 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Simple BEV Cluster: CAN + LVGL + Buttons
- *
- * Features:
- *   - Display: Speed, Voltage, Current, Direction
- *   - CAN RX: Receives vehicle data
- *   - CAN TX: Button press sends direction command
- *   - Buttons: Interrupt-based (not polling)
- *
- * Single file, junior-friendly, easy to understand.
- ****************************************************************************/
-
-/****************************************************************************
  * Included Files
  ****************************************************************************/
 
