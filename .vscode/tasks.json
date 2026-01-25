@@ -67,6 +67,15 @@
             },
             "group": "build"
         },
+        {
+            "label": "generate complie commands",
+            "command": "${workspaceFolder}/nuttx/generate_complie_comands.sh",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/nuttx"
+            },
+            "problemMatcher": []
+        },
         // {
         //     "label": "DistClean",
         //     "type": "shell",
