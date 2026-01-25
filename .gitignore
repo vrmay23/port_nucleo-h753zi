@@ -5,3 +5,4 @@ nuttx/nuttx.map
 nuttx/System.map
 .vscode-ctags
 nuttx/Make.defs
+nuttx/boards/arm/stm32h7/nucleo-h753zi/src/Make.dep
