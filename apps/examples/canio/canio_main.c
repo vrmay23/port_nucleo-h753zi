@@ -502,10 +502,11 @@ int main(int argc, char *argv[])
                 {
                   toggle_led(g_led_fd, led_number);
                 }
-                else if (message.can_id == CAR_CAN_INVERTER_INFO_FRAME_ID)
-  {
-    car_can_inverter_info_unpack(&inverte_info_msg,message.data,CAR_CAN_INVERTER_INFO_LENGTH);
-  }
+                else if ((message.can_id & CAN_EFF_MASK) == CAR_CAN_INVERTER_INFO_FRAME_ID)
+                {
+                  car_can_inverter_info_unpack(&inverte_info_msg, message.data, CAR_CAN_INVERTER_INFO_LENGTH);
+                  // Use signal like this: inverte_info_msg.inverter1ms_ticks 
+                }
             }
         }
     }
