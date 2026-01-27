@@ -84,7 +84,7 @@ int main(int argc, FAR char *argv[])
       .file_out   = NULL
     };
 
-  exec_builtin(tgtest_app, NULL, &tgtest_params);
+  //exec_builtin(tgtest_app, NULL, &tgtest_params);
 #endif
 
 #ifdef CONFIG_NSH_CONSOLE
