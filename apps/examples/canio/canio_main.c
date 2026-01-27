@@ -53,6 +53,8 @@
 #include <nuttx/leds/userled.h>
 #include <nuttx/input/buttons.h>
 #include "../../tgtestapps/tgtest/car_can.h"
+#include <spawn.h>
+#include <nuttx/sched.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -100,6 +102,9 @@ static const char *g_btn_names[NUM_BUTTONS] =
 static int g_can_socket = -1;
 static int g_led_fd = -1;
 static volatile int g_button_pressed = 0;
+
+// Allocate can tx msg (internal states for cyclic msgs)
+struct car_can_driver_commands_t driver_commands_msg;
 
 /****************************************************************************
  * Private Functions
@@ -307,6 +312,50 @@ static void button_handler(int signo, siginfo_t *info, void *context)
 }
 
 /****************************************************************************
+ * Name: can_send_loop_100ms
+ *
+ * Description:
+ *   Sends  cyclic CAN message every 100ms
+ *
+ * Input Parameters:
+ *   arg   - void pointer from pthread
+ *
+ ****************************************************************************/
+static void *can_send_loop_100ms(void *arg)
+{
+	
+	struct can_frame frameSend;
+
+  /* Set default values */ 
+  driver_commands_msg.dc_link_active_demand = 
+  CAR_CAN_DRIVER_COMMANDS_DC_LINK_ACTIVE_DEMAND_NO_DEMAND_CHOICE;
+	driver_commands_msg.demanded_drive_direction = 
+  CAR_CAN_DRIVER_COMMANDS_DEMANDED_DRIVE_DIRECTION_FORWARD_CHOICE;
+	driver_commands_msg.demanded_drive_state = 
+  CAR_CAN_DRIVER_COMMANDS_DEMANDED_DRIVE_STATE_DISABLE_CHOICE;
+
+	while (true)
+	{
+		
+		/* Pack frame */
+		car_can_driver_commands_pack(frameSend.data, &driver_commands_msg, 
+      CAR_CAN_DRIVER_COMMANDS_LENGTH);
+		frameSend.can_id = (CAR_CAN_DRIVER_COMMANDS_FRAME_ID & CAN_EFF_MASK) 
+    | CAN_EFF_FLAG;
+		frameSend.can_dlc = CAR_CAN_DRIVER_COMMANDS_LENGTH;
+
+    /* send frame */
+		if (write(g_can_socket, &frameSend, CAN_MTU ) != CAN_MTU)
+		{
+			perror("write");
+			//return 1;
+		}
+		nxsched_msleep(100);
+	}
+	return NULL;
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -329,6 +378,9 @@ int main(int argc, char *argv[])
   btn_buttonset_t supported;
   int led_number;
   int ret;
+  pthread_t can_tx_100ms_thread;
+	pthread_attr_t attr;
+	struct sched_param param;
 
   /* ===== Welcome message ===== */
 
@@ -460,6 +512,18 @@ int main(int argc, char *argv[])
       return 1;
     }
 
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, 2048);
+	param.sched_priority = SCHED_PRIORITY_DEFAULT;
+	pthread_attr_setschedparam(&attr, &param);
+
+	ret = pthread_create(&can_tx_100ms_thread, &attr, can_send_loop_100ms, NULL);
+	if (ret != 0)
+	{
+		printf("Error: pthread_create failed: %d\n", ret);
+		return 1;
+	}
+
   printf("  OK!\n");
 
   /* ===== Main Loop ===== */
@@ -476,6 +540,16 @@ int main(int argc, char *argv[])
       if (g_button_pressed)
         {
           g_button_pressed = 0;
+          if(driver_commands_msg.dc_link_active_demand == 
+            CAR_CAN_DRIVER_COMMANDS_DC_LINK_ACTIVE_DEMAND_NO_DEMAND_CHOICE)
+          {
+            driver_commands_msg.dc_link_active_demand = 
+            CAR_CAN_DRIVER_COMMANDS_DC_LINK_ACTIVE_DEMAND_ACTIVE_DEMAND_CHOICE;
+          } else
+          {
+            driver_commands_msg.dc_link_active_demand = 
+            CAR_CAN_DRIVER_COMMANDS_DC_LINK_ACTIVE_DEMAND_NO_DEMAND_CHOICE;
+          }
           send_button_message(g_can_socket, 0);
         }
 
@@ -512,7 +586,7 @@ int main(int argc, char *argv[])
     }
 
   /* Cleanup (never reached) */
-
+  pthread_join(can_tx_100ms_thread, NULL);
   close(g_can_socket);
   close(btn_fd);
   close(g_led_fd);
